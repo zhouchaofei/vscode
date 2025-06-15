@@ -11,19 +11,8 @@
         <div class="controls">
           <button @click="togglePlay" class="btn">{{ isPlaying ? '暂停' : '播放' }}</button>
           <button @click="startDrawing" class="btn" :disabled="isDrawing">开始标注</button>
-          <button @click="clearCanvas" class="btn btn-danger">清除画布</button>
-          <button @click="saveAllAnnotations" class="btn btn-secondary">保存所有标注</button>
         </div>
         
-        <div class="instructions">
-          <h3>使用说明：</h3>
-          <ul>
-            <li>点击<strong>开始标注</strong>按钮，然后在视频上按住鼠标左键拖动绘制矩形框</li>
-            <li>绘制完成后，在右侧输入标注信息并保存</li>
-            <li>标注会显示在右侧列表中，点击标注可跳转到对应时间点</li>
-            <li>使用<strong>保存所有标注</strong>按钮导出所有标注数据</li>
-          </ul>
-        </div>
       </div>
       
       <div class="annotations-section">
@@ -41,23 +30,25 @@
         <div class="annotation-list">
           <div v-if="annotations.length === 0" class="no-annotations">
             <p>尚未添加任何标注</p>
-            <p>点击"开始标注"按钮创建第一个标注</p>
+            <!-- <p>点击"开始标注"按钮创建第一个标注</p> -->
           </div>
           
           <div v-for="(annotation, index) in annotations" :key="index" class="annotation-item">
             <div class="annotation-header">
-              <div class="annotation-time">时间: {{ formatTime(annotation.time) }}</div>
+              <!-- <div class="annotation-time">时间: {{ formatTime(annotation.time) }}</div> -->
               <div>标注 #{{ index + 1 }}</div>
             </div>
             <div class="annotation-position">
-              位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})
-              尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}
+              <div>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</div>
+              <!-- 位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }}) -->
+              <div>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</div>
             </div>
             <div class="annotation-content">
-              {{ annotation.text }}
+              名称: {{ annotation.text }}
             </div>
             <div class="annotation-actions">
-              <button @click="goToAnnotation(annotation)" class="action-btn">查看</button>
+              <!-- 暂不需要查看 -->
+              <!-- <button @click="goToAnnotation(annotation)" class="action-btn">查看</button> -->
               <button @click="deleteAnnotation(index)" class="action-btn delete-btn">删除</button>
             </div>
           </div>
@@ -65,7 +56,11 @@
         
         <div class="status-bar">
           <div>标注总数: {{ annotations.length }}</div>
-          <div>当前状态: {{ isDrawing ? '标注中...' : (isPlaying ? '播放中' : '已暂停') }}</div>
+          <!-- <div>当前状态: {{ isDrawing ? '标注中...' : (isPlaying ? '播放中' : '已暂停') }}</div> -->
+        </div>
+        <div class="controls">
+          <button @click="clearCanvas" class="btn btn-danger">清除画布</button>
+          <button @click="saveAllAnnotations" class="btn btn-secondary">保存所有标注</button>
         </div>
       </div>
     </div>
@@ -309,14 +304,14 @@ onUnmounted(() => {
 
 .app-container {
   display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 25px;
+  grid-template-columns: 1fr 200px;
+  gap: 10px;
 }
 
 .video-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 15px;
-  padding: 20px;
+  padding: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
 }
@@ -329,7 +324,7 @@ onUnmounted(() => {
   overflow: hidden;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
   background: #000;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 video, canvas {
@@ -349,7 +344,7 @@ canvas {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .btn {
@@ -391,7 +386,7 @@ canvas {
 .annotations-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 15px;
-  padding: 25px;
+  padding: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   height: fit-content;
@@ -399,7 +394,7 @@ canvas {
 
 .section-title {
   font-size: 1.5rem;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   padding-bottom: 10px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
   text-align: center;
@@ -491,7 +486,7 @@ canvas {
   font-size: 0.9rem;
 }
 
-.instructions {
+/* .instructions {
   background: rgba(0, 0, 0, 0.3);
   padding: 15px;
   border-radius: 10px;
@@ -511,7 +506,7 @@ canvas {
 
 .instructions li {
   margin-bottom: 8px;
-}
+} */
 
 .no-annotations {
   text-align: center;

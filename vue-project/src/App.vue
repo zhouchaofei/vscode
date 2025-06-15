@@ -2,7 +2,6 @@
   <div class="app-container">
     <header>
       <h1>智慧监管平台</h1>
-      <!-- <p class="subtitle">在MP4视频上绘制标注框并添加说明文字，适用于视频分析、目标检测、教学讲解等多种场景</p> -->
     </header>
     
     <VideoAnnotator />
@@ -35,15 +34,15 @@ body {
 }
 
 .app-container {
-  max-width: 1200px;
+  /* max-width: 1200px; */
   margin: 0 auto;
-  padding: 20px;
+  /* padding: 20px; */
 }
 
 header {
   text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
+  margin-bottom: 10px;
+  /* padding: 20px; */
   background: rgba(0, 0, 0, 0.3);
   border-radius: 15px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -51,7 +50,7 @@ header {
 
 h1 {
   font-size: 2.8rem;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */
   background: linear-gradient(90deg, #ff8a00, #e52e71);
   -webkit-background-clip: text;
   background-clip: text;
