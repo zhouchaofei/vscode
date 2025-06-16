@@ -5,6 +5,7 @@
     </header>
     
     <VideoAnnotator />
+    <!-- <VideoTest /> -->
   </div>
 </template>
 
@@ -16,6 +17,13 @@ export default {
     VideoAnnotator
   }
 }
+// import VideoTest from './components/VideoTest.vue'
+
+// export default {
+//   components: {
+//     VideoTest
+//   }
+// }
 </script>
 
 <style>

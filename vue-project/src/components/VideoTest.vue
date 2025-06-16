@@ -3,53 +3,59 @@
     <div class="app-container">
       <div class="video-section">
         <h2 class="section-title">视频标注区域</h2>
-        <!-- <div class="zoom-controls">
+        
+        <div class="zoom-controls">
           <button @click="zoomVideo(0.8)" class="zoom-btn">缩小 (-)</button>
           <button @click="zoomVideo(1.2)" class="zoom-btn">放大 (+)</button>
           <button @click="resetZoom" class="zoom-btn">重置缩放</button>
-        </div> -->
-
+        </div>
+        
         <div class="video-container">
           <video ref="videoPlayer" :src="videoSource" autoplay muted playsinline></video>
           <canvas ref="canvas"></canvas>
-        </div>  
+        </div>
+        
+        <!-- <div class="instructions">
+          <h3>操作指南：</h3>
+          <ul>
+            <li>按住鼠标左键在视频上<strong>拖动绘制矩形框</strong></li>
+            <li>在右侧输入标注信息并点击<strong>保存标注</strong></li>
+            <li>标注框会<strong>持续显示</strong>在视频上</li>
+            <li>使用缩放按钮调整视频大小，标注框会自动适应</li>
+            <li>点击标注列表中的<strong>删除按钮</strong>可移除标注</li>
+          </ul>
+        </div> -->
       </div>
       
       <div class="annotations-section">
-        <h2 class="section-title">标注列表</h2>
+        <h2 class="section-title">标注管理</h2>
         
         <div class="annotation-input">
           <h3>添加标注说明</h3>
           <textarea v-model="currentAnnotation.text" placeholder="在此输入标注说明..." rows="4"></textarea>
           <button @click="saveAnnotation" class="save-btn">保存标注</button>
-          <button @click="cancelAnnotation" class="btn btn-danger">取消</button>
         </div>
         
-        <!-- 添加滚动区域的容器 -->
         <div class="scrollable-area">
           <div class="annotation-list">
             <div v-if="annotations.length === 0" class="no-annotations">
               <p>尚未添加任何标注</p>
               <p>在视频上绘制矩形框并添加说明</p>
-              <!-- <p>点击"开始标注"按钮创建第一个标注</p> -->
             </div>
             
             <div v-for="(annotation, index) in annotations" :key="annotation.id" class="annotation-item">
               <div class="annotation-header">
                 <div class="annotation-id">标注 #{{ index + 1 }}</div>
-                <!-- <div class="annotation-time">ID: {{ annotation.id.slice(0, 6) }}</div> -->
+                <div class="annotation-time">ID: {{ annotation.id.slice(0, 6) }}</div>
               </div>
               <div class="annotation-position">
-                <div>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</div>
-                <!-- 位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }}) -->
-                <div>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</div>
+                位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})
+                尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}
               </div>
               <div class="annotation-content">
-                名称: {{ annotation.text }}
+                {{ annotation.text }}
               </div>
               <div class="annotation-actions">
-                <!-- 暂不需要查看 -->
-                <!-- <button @click="goToAnnotation(annotation)" class="action-btn">查看</button> -->
                 <button @click="deleteAnnotation(index)" class="action-btn delete-btn">删除</button>
               </div>
             </div>
@@ -58,9 +64,7 @@
         
         <div class="status-bar">
           <div>标注总数: {{ annotations.length }}</div>
-        </div>
-        <div class="controls">
-          <button @click="saveAllAnnotations" class="btn btn-secondary">保存所有标注</button>
+          <div>缩放比例: {{ (videoScale * 100).toFixed(0) }}%</div>
         </div>
       </div>
     </div>
@@ -99,7 +103,7 @@ const initCanvas = () => {
     canvas.value.height = videoPlayer.value.offsetHeight
     ctx.value = canvas.value.getContext('2d')
     ctx.value.lineWidth = 3
-    drawCanvas()// 初始绘制
+    drawCanvas()
   }
 }
 
@@ -115,27 +119,26 @@ const playVideo = () => {
   }
 }
 
-// 用不到视频缩放
 // 视频缩放
-// const zoomVideo = (factor) => {
-//   videoScale.value *= factor
-//   videoPlayer.value.style.transform = `scale(${videoScale.value})`
-//   videoPlayer.value.style.transformOrigin = 'top left'
+const zoomVideo = (factor) => {
+  videoScale.value *= factor
+  videoPlayer.value.style.transform = `scale(${videoScale.value})`
+  videoPlayer.value.style.transformOrigin = 'top left'
   
-//   // 重新初始化Canvas以适应缩放
-//   nextTick(() => {
-//     initCanvas()
-//   })
-// }
+  // 重新初始化Canvas以适应缩放
+  nextTick(() => {
+    initCanvas()
+  })
+}
 
 // 重置缩放
-// const resetZoom = () => {
-//   videoScale.value = 1.0
-//   videoPlayer.value.style.transform = 'scale(1)'
-//   nextTick(() => {
-//     initCanvas()
-//   })
-// }
+const resetZoom = () => {
+  videoScale.value = 1.0
+  videoPlayer.value.style.transform = 'scale(1)'
+  nextTick(() => {
+    initCanvas()
+  })
+}
 
 // 鼠标按下事件处理
 const handleMouseDown = (e) => {
@@ -176,7 +179,6 @@ const handleMouseUp = () => {
   
   // 保存绘制的矩形
   currentAnnotation.value.rect = { ...drawingRect.value }
-  currentAnnotation.value.time = videoPlayer.value.currentTime
   
   // 重置临时矩形
   drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
@@ -205,6 +207,7 @@ const drawCanvas = () => {
   // 绘制已保存的标注
   annotations.value.forEach(anno => {
     ctx.value.strokeStyle = '#4CAF50'
+    ctx.value.lineWidth = 2
     ctx.value.strokeRect(
       anno.rect.x,
       anno.rect.y,
@@ -248,15 +251,6 @@ const saveAnnotation = () => {
   }
 }
 
-// 取消标注
-const cancelAnnotation = () => {
-  isDrawing.value = false
-  currentAnnotation.value.text = ''
-  drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
-  canvas.value.style.cursor = 'default'
-  drawCanvas()
-}
-
 // 删除标注
 const deleteAnnotation = (index) => {
   annotations.value.splice(index, 1)
@@ -268,26 +262,11 @@ const generateId = () => {
   return Math.random().toString(36).substr(2, 9)
 }
 
-// 保存所有标注
-const saveAllAnnotations = () => {
-  const dataStr = JSON.stringify(annotations.value, null, 2)
-  const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
-  
-  const exportFileDefaultName = `video-annotations-${new Date().toISOString().slice(0, 10)}.json`
-  
-  const linkElement = document.createElement('a')
-  linkElement.setAttribute('href', dataUri)
-  linkElement.setAttribute('download', exportFileDefaultName)
-  linkElement.click()
-  
-  alert(`已保存 ${annotations.value.length} 个标注`)
-}
-
 // 生命周期钩子
 onMounted(() => {
   initCanvas()
   playVideo()
-
+  
   // 添加事件监听
   if (canvas.value) {
     canvas.value.addEventListener('mousedown', handleMouseDown)
@@ -310,19 +289,19 @@ onUnmounted(() => {
 <style scoped>
 .annotator-container {
   width: 100%;
-  height: 100%;
 }
 
 .app-container {
   display: grid;
-  grid-template-columns: 1fr 200px;
-  gap: 10px;
+  grid-template-columns: 1fr 350px;
+  gap: 25px;
+  height: calc(100vh - 150px);
 }
 
 .video-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 15px;
-  padding: 10px;
+  padding: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   display: flex;
@@ -335,9 +314,9 @@ onUnmounted(() => {
   padding-top: 56.25%; /* 16:9 Aspect Ratio */
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   background: #000;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 video, canvas {
@@ -353,72 +332,73 @@ canvas {
   cursor: crosshair;
 }
 
-.controls {
+.zoom-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: auto;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
-.btn {
-  padding: 10px 20px;
+.zoom-btn {
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
-  background: linear-gradient(90deg, #ff8a00, #e52e71);
+  border-radius: 6px;
+  background: linear-gradient(90deg, #4776E6, #8E54E9);
   color: white;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   flex: 1;
-  min-width: 120px;
 }
 
-.btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+.zoom-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
-.btn:active {
-  transform: translateY(1px);
+.instructions {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: auto;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.instructions h3 {
+  margin-bottom: 10px;
+  color: #00c9ff;
 }
 
-.btn-secondary {
-  background: linear-gradient(90deg, #4776E6, #8E54E9);
+.instructions ul {
+  padding-left: 20px;
 }
 
-.btn-danger {
-  background: linear-gradient(90deg, #ff416c, #ff4b2b);
+.instructions li {
+  margin-bottom: 8px;
 }
 
 .annotations-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 15px;
-  padding: 10px;
+  padding: 25px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
-  /* height: fit-content; */
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* 还未查看======================= */
 }
 
 .section-title {
   font-size: 1.5rem;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
   text-align: center;
   background: linear-gradient(90deg, #00c9ff, #92fe9d);
   -webkit-background-clip: text;
   background-clip: text;
-  /* color: transparent; */
+  color: transparent;
 }
 
 .annotation-input {
@@ -428,12 +408,17 @@ canvas {
   padding: 15px;
 }
 
+.annotation-input h3 {
+  margin-bottom: 10px;
+  color: #92fe9d;
+}
+
 .annotation-input textarea {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   margin: 10px 0;
   border-radius: 8px;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: white;
   border: none;
   resize: vertical;
@@ -441,14 +426,14 @@ canvas {
 }
 
 .annotation-input textarea:focus {
-  outline: 1px solid #ff8a00;
+  outline: 1px solid #00c9ff;
 }
 
 .save-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(90deg, #ff8a00, #e52e71);
+  background: linear-gradient(90deg, #00c9ff, #92fe9d);
   color: #0f1a3d;
   font-weight: bold;
   cursor: pointer;
@@ -463,23 +448,20 @@ canvas {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* 新增的滚动区域容器 */
 .scrollable-area {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  /* margin-bottom: 15px; */
-  max-height: 700px;
+  margin-bottom: 15px;
 }
 
 .annotation-list {
-  /* max-height: 400px; */
   overflow-y: auto;
+  padding-right: 8px;
   flex: 1;
 }
 
-/* 滚动条样式 */
 .annotation-list::-webkit-scrollbar {
   width: 8px;
 }
@@ -490,12 +472,12 @@ canvas {
 }
 
 .annotation-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 138, 0, 0.6);
+  background: rgba(0, 201, 255, 0.6);
   border-radius: 4px;
 }
 
 .annotation-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 138, 0, 0.8);
+  background: rgba(0, 201, 255, 0.8);
 }
 
 .annotation-item {
@@ -503,7 +485,7 @@ canvas {
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 15px;
-  border-left: 4px solid #ff8a00;
+  border-left: 4px solid #00c9ff;
   transition: all 0.3s;
 }
 
@@ -520,13 +502,8 @@ canvas {
 
 .annotation-id {
   font-weight: bold;
-  color: #ff8a00;
+  color: #00c9ff;
 }
-
-    /* .annotation-time {
-      font-weight: bold;
-      color: #ff8a00;
-    } */
 
 .annotation-position {
   font-size: 0.9rem;
@@ -535,8 +512,6 @@ canvas {
 }
 
 .annotation-content {
-  /* margin-top: 8px;
-  line-height: 1.5; */
   line-height: 1.5;
   padding: 8px 0;
   border-top: 1px dashed rgba(255, 255, 255, 0.1);
@@ -575,12 +550,11 @@ canvas {
 .status-bar {
   display: flex;
   justify-content: space-between;
-  /* margin-top: 20px; */
   padding: 10px 15px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   font-size: 0.9rem;
-  margin-top: auto;/* 确保状态栏保持在底部 */
+  margin-top: auto;
 }
 
 .no-annotations {
@@ -595,12 +569,8 @@ canvas {
     height: auto;
   }
   
-  .controls {
-    flex-direction: column;
-  }
-
   .annotations-section {
-    height: 500px; /* 在移动设备上设置固定高度 */
+    height: 500px;
   }
 }
 </style>
