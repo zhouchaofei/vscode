@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app">
     <header>
       <h1>智慧监管平台</h1>
     </header>
@@ -41,7 +41,7 @@ body {
   padding: 20px;
 }
 
-.app-container {
+#app {
   /* max-width: 1200px; */
   margin: 0 auto;
   /* padding: 20px; */
@@ -64,13 +64,5 @@ h1 {
   background-clip: text;
   color: transparent;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.subtitle {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  max-width: 700px;
-  margin: 0 auto;
-  line-height: 1.6;
 }
 </style>

@@ -4,27 +4,21 @@
       <div class="video-section">
         <h2 class="section-title">视频标注区域</h2>
         
-        <div class="zoom-controls">
-          <button @click="zoomVideo(0.8)" class="zoom-btn">缩小 (-)</button>
-          <button @click="zoomVideo(1.2)" class="zoom-btn">放大 (+)</button>
-          <button @click="resetZoom" class="zoom-btn">重置缩放</button>
-        </div>
-        
         <div class="video-container">
           <video ref="videoPlayer" :src="videoSource" autoplay muted playsinline></video>
           <canvas ref="canvas"></canvas>
         </div>
         
-        <!-- <div class="instructions">
+        <div class="instructions">
           <h3>操作指南：</h3>
           <ul>
             <li>按住鼠标左键在视频上<strong>拖动绘制矩形框</strong></li>
             <li>在右侧输入标注信息并点击<strong>保存标注</strong></li>
             <li>标注框会<strong>持续显示</strong>在视频上</li>
-            <li>使用缩放按钮调整视频大小，标注框会自动适应</li>
             <li>点击标注列表中的<strong>删除按钮</strong>可移除标注</li>
+            <li>使用<strong>保存所有标注</strong>按钮导出标注数据</li>
           </ul>
-        </div> -->
+        </div>
       </div>
       
       <div class="annotations-section">
@@ -33,7 +27,10 @@
         <div class="annotation-input">
           <h3>添加标注说明</h3>
           <textarea v-model="currentAnnotation.text" placeholder="在此输入标注说明..." rows="4"></textarea>
-          <button @click="saveAnnotation" class="save-btn">保存标注</button>
+          <div class="input-buttons">
+            <button @click="saveAnnotation" class="save-btn">保存标注</button>
+            <button @click="cancelAnnotation" class="cancel-btn">取消</button>
+          </div>
         </div>
         
         <div class="scrollable-area">
@@ -62,9 +59,11 @@
           </div>
         </div>
         
+        <button @click="saveAllAnnotations" class="save-all-btn">保存所有标注</button>
+        
         <div class="status-bar">
           <div>标注总数: {{ annotations.length }}</div>
-          <div>缩放比例: {{ (videoScale * 100).toFixed(0) }}%</div>
+          <div>当前时间: {{ formatTime(videoCurrentTime) }}</div>
         </div>
       </div>
     </div>
@@ -72,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 // 视频源 - 实际项目中可替换为您的视频URL
 const videoSource = ref('/src/assets/demo-video.mp4')
@@ -89,7 +88,7 @@ const currentAnnotation = ref({
 })
 const annotations = ref([])
 const ctx = ref(null)
-const videoScale = ref(1.0) // 视频缩放比例
+const videoCurrentTime = ref(0)
 
 // 绘制状态变量
 const startX = ref(0)
@@ -119,25 +118,11 @@ const playVideo = () => {
   }
 }
 
-// 视频缩放
-const zoomVideo = (factor) => {
-  videoScale.value *= factor
-  videoPlayer.value.style.transform = `scale(${videoScale.value})`
-  videoPlayer.value.style.transformOrigin = 'top left'
-  
-  // 重新初始化Canvas以适应缩放
-  nextTick(() => {
-    initCanvas()
-  })
-}
-
-// 重置缩放
-const resetZoom = () => {
-  videoScale.value = 1.0
-  videoPlayer.value.style.transform = 'scale(1)'
-  nextTick(() => {
-    initCanvas()
-  })
+// 更新视频当前时间
+const updateVideoTime = () => {
+  if (videoPlayer.value) {
+    videoCurrentTime.value = videoPlayer.value.currentTime
+  }
 }
 
 // 鼠标按下事件处理
@@ -251,15 +236,39 @@ const saveAnnotation = () => {
   }
 }
 
+// 取消标注
+const cancelAnnotation = () => {
+  currentAnnotation.value.text = ''
+  drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
+  drawCanvas()
+}
+
 // 删除标注
 const deleteAnnotation = (index) => {
   annotations.value.splice(index, 1)
   drawCanvas()
 }
 
-// 生成随机ID
-const generateId = () => {
-  return Math.random().toString(36).substr(2, 9)
+// 保存所有标注
+const saveAllAnnotations = () => {
+  const dataStr = JSON.stringify(annotations.value, null, 2)
+  const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
+  
+  const exportFileDefaultName = `video-annotations-${new Date().toISOString().slice(0, 10)}.json`
+  
+  const linkElement = document.createElement('a')
+  linkElement.setAttribute('href', dataUri)
+  linkElement.setAttribute('download', exportFileDefaultName)
+  linkElement.click()
+  
+  alert(`已保存 ${annotations.value.length} 个标注`)
+}
+
+// 格式化时间
+const formatTime = (seconds) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 // 生命周期钩子
@@ -277,7 +286,10 @@ onMounted(() => {
   
   // 视频时间更新时重绘画布
   if (videoPlayer.value) {
-    videoPlayer.value.addEventListener('timeupdate', drawCanvas)
+    videoPlayer.value.addEventListener('timeupdate', () => {
+      updateVideoTime()
+      drawCanvas()
+    })
   }
 })
 
@@ -295,7 +307,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 1fr 350px;
   gap: 25px;
-  height: calc(100vh - 150px);
+  height: calc(100vh - 180px);
 }
 
 .video-section {
@@ -311,6 +323,7 @@ onUnmounted(() => {
 .video-container {
   position: relative;
   width: 100%;
+  height: 0;
   padding-top: 56.25%; /* 16:9 Aspect Ratio */
   border-radius: 10px;
   overflow: hidden;
@@ -332,30 +345,6 @@ canvas {
   cursor: crosshair;
 }
 
-.zoom-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.zoom-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #4776E6, #8E54E9);
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  flex: 1;
-}
-
-.zoom-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
-}
-
 .instructions {
   background: rgba(0, 0, 0, 0.3);
   padding: 15px;
@@ -367,7 +356,7 @@ canvas {
 
 .instructions h3 {
   margin-bottom: 10px;
-  color: #00c9ff;
+  color: #ff8a00;
 }
 
 .instructions ul {
@@ -395,7 +384,7 @@ canvas {
   padding-bottom: 10px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
   text-align: center;
-  background: linear-gradient(90deg, #00c9ff, #92fe9d);
+  background: linear-gradient(90deg, #ff8a00, #e52e71);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -410,7 +399,7 @@ canvas {
 
 .annotation-input h3 {
   margin-bottom: 10px;
-  color: #92fe9d;
+  color: #ff8a00;
 }
 
 .annotation-input textarea {
@@ -426,24 +415,64 @@ canvas {
 }
 
 .annotation-input textarea:focus {
-  outline: 1px solid #00c9ff;
+  outline: 1px solid #ff8a00;
+}
+
+.input-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .save-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(90deg, #00c9ff, #92fe9d);
-  color: #0f1a3d;
+  background: linear-gradient(90deg, #ff8a00, #e52e71);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  flex: 1;
+  font-size: 1rem;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #4776E6, #8E54E9);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  flex: 1;
+  font-size: 1rem;
+}
+
+.save-btn:hover, .cancel-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.save-all-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #ff8a00, #e52e71);
+  color: white;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   width: 100%;
-  font-size: 1rem;
+  margin-top: 15px;
+  font-size: 1.1rem;
 }
 
-.save-btn:hover {
+.save-all-btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
@@ -472,12 +501,12 @@ canvas {
 }
 
 .annotation-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 201, 255, 0.6);
+  background: rgba(255, 138, 0, 0.6);
   border-radius: 4px;
 }
 
 .annotation-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 201, 255, 0.8);
+  background: rgba(255, 138, 0, 0.8);
 }
 
 .annotation-item {
@@ -485,7 +514,7 @@ canvas {
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 15px;
-  border-left: 4px solid #00c9ff;
+  border-left: 4px solid #ff8a00;
   transition: all 0.3s;
 }
 
@@ -502,7 +531,7 @@ canvas {
 
 .annotation-id {
   font-weight: bold;
-  color: #00c9ff;
+  color: #ff8a00;
 }
 
 .annotation-position {
