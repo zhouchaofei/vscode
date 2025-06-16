@@ -27,29 +27,32 @@
           </div>
         </div>
         
-        <div class="annotation-list">
-          <div v-if="annotations.length === 0" class="no-annotations">
-            <p>尚未添加任何标注</p>
-            <!-- <p>点击"开始标注"按钮创建第一个标注</p> -->
-          </div>
-          
-          <div v-for="(annotation, index) in annotations" :key="index" class="annotation-item">
-            <div class="annotation-header">
-              <!-- <div class="annotation-time">时间: {{ formatTime(annotation.time) }}</div> -->
-              <div>标注 #{{ index + 1 }}</div>
+        <!-- 添加滚动区域的容器 -->
+        <div class="scrollable-area">
+          <div class="annotation-list">
+            <div v-if="annotations.length === 0" class="no-annotations">
+              <p>尚未添加任何标注</p>
+              <!-- <p>点击"开始标注"按钮创建第一个标注</p> -->
             </div>
-            <div class="annotation-position">
-              <div>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</div>
-              <!-- 位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }}) -->
-              <div>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</div>
-            </div>
-            <div class="annotation-content">
-              名称: {{ annotation.text }}
-            </div>
-            <div class="annotation-actions">
-              <!-- 暂不需要查看 -->
-              <!-- <button @click="goToAnnotation(annotation)" class="action-btn">查看</button> -->
-              <button @click="deleteAnnotation(index)" class="action-btn delete-btn">删除</button>
+            
+            <div v-for="(annotation, index) in annotations" :key="index" class="annotation-item">
+              <div class="annotation-header">
+                <!-- <div class="annotation-time">时间: {{ formatTime(annotation.time) }}</div> -->
+                <div>标注 #{{ index + 1 }}</div>
+              </div>
+              <div class="annotation-position">
+                <div>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</div>
+                <!-- 位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }}) -->
+                <div>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</div>
+              </div>
+              <div class="annotation-content">
+                名称: {{ annotation.text }}
+              </div>
+              <div class="annotation-actions">
+                <!-- 暂不需要查看 -->
+                <!-- <button @click="goToAnnotation(annotation)" class="action-btn">查看</button> -->
+                <button @click="deleteAnnotation(index)" class="action-btn delete-btn">删除</button>
+              </div>
             </div>
           </div>
         </div>
@@ -100,6 +103,7 @@ const initCanvas = () => {
     canvas.value.height = videoPlayer.value.offsetHeight
     ctx.value = canvas.value.getContext('2d')
     ctx.value.lineWidth = 3
+    drawCanvas()// 初始绘制
   }
 }
 
@@ -196,10 +200,11 @@ const drawCanvas = () => {
     
     // 绘制标注文本背景
     ctx.value.fillStyle = 'rgba(76, 175, 80, 0.7)'
+    const textWidth = ctx.value.measureText(anno.text).width
     ctx.value.fillRect(
       anno.rect.x,
       anno.rect.y - 20,
-      ctx.value.measureText(anno.text).width + 10,
+      textWidth + 10,
       20
     )
     
@@ -221,6 +226,7 @@ const saveAnnotation = () => {
     currentAnnotation.value.text = ''
     isDrawing.value = false
     canvas.value.style.cursor = 'default'
+    drawCanvas()
   }
 }
 
@@ -300,6 +306,7 @@ onUnmounted(() => {
 <style scoped>
 .annotator-container {
   width: 100%;
+  height: 100%;
 }
 
 .app-container {
@@ -314,6 +321,8 @@ onUnmounted(() => {
   padding: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
 }
 
 .video-container {
@@ -344,7 +353,7 @@ canvas {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 10px;
+  margin-top: auto;
 }
 
 .btn {
@@ -411,10 +420,40 @@ canvas {
   resize: vertical;
 }
 
+/* 新增的滚动区域容器 */
+.scrollable-area {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* margin-bottom: 15px; */
+  max-height: 700px;
+}
+
 .annotation-list {
-  max-height: 400px;
+  /* max-height: 400px; */
   overflow-y: auto;
   padding-right: 10px;
+  flex: 1;
+}
+
+/* 滚动条样式 */
+.annotation-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.annotation-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.annotation-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 138, 0, 0.6);
+  border-radius: 4px;
+}
+
+.annotation-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 138, 0, 0.8);
 }
 
 .annotation-item {
@@ -479,14 +518,15 @@ canvas {
 .status-bar {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
+  /* margin-top: 20px; */
   padding: 10px 15px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   font-size: 0.9rem;
+  margin-top: auto;/* 确保状态栏保持在底部 */
 }
 
-/* .instructions {
+.instructions {
   background: rgba(0, 0, 0, 0.3);
   padding: 15px;
   border-radius: 10px;
@@ -506,7 +546,7 @@ canvas {
 
 .instructions li {
   margin-bottom: 8px;
-} */
+}
 
 .no-annotations {
   text-align: center;
@@ -517,10 +557,15 @@ canvas {
 @media (max-width: 900px) {
   .app-container {
     grid-template-columns: 1fr;
+    height: auto;
   }
   
   .controls {
     flex-direction: column;
+  }
+
+  .annotations-section {
+    height: 500px; /* 在移动设备上设置固定高度 */
   }
 }
 </style>
