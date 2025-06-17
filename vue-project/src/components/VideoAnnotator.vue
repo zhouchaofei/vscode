@@ -87,7 +87,7 @@ const calculateScrollHeight = () => {
   const annotationInputHeight = annotationInput.offsetHeight
   const saveAllBtnHeight = saveAllBtn.offsetHeight
   const statusBarHeight = statusBar.offsetHeight
-  // 计算可滚动区域的高度 = 视频容器高度 - 标题高度 - 输入框高度 - 保存按钮高度 - 状态栏高度 - 20(margin的高度)
+  // 计算可滚动区域的高度 = 视频容器高度 - 标题高度 - 输入框高度 - 保存按钮高度 - 状态栏高度 - 40(margin的高度)
   const scrollableHeight = videoHeight - sectionTitleHeight - annotationInputHeight - saveAllBtnHeight - statusBarHeight - 40
   
   // 设置滚动区域的最大高度
@@ -268,14 +268,34 @@ const drawCanvas = () => {
   
   // 绘制已保存的标注
   annotations.value.forEach(anno => {
+    // 添加半透明填充效果（标注框内部区域）
+    annotationCtx.fillStyle = 'rgba(76, 175, 80, 0.2)' // 20% 透明度的绿色
+    annotationCtx.fillRect(
+      anno.rect.x,
+      anno.rect.y,
+      anno.rect.width,
+      anno.rect.height
+    )
     annotationCtx.strokeStyle = '#4CAF50'
     annotationCtx.lineWidth = 2
+    // 使用半透明颜色增加模糊感
+    // annotationCtx.strokeStyle = 'rgba(76, 175, 80, 0.7)'
+    // annotationCtx.lineWidth = 3
+    
+    // 添加阴影效果增强模糊感
+    // annotationCtx.shadowColor = 'rgba(76, 175, 80, 0.5)';
+    // annotationCtx.shadowBlur = 5;
+
     annotationCtx.strokeRect(
       anno.rect.x,
       anno.rect.y,
       anno.rect.width,
       anno.rect.height
     )
+
+    // 重置阴影效果
+    annotationCtx.shadowColor = 'transparent';
+    annotationCtx.shadowBlur = 0;
     
     // 绘制标注文本背景
     annotationCtx.fillStyle = 'rgba(76, 175, 80, 0.7)'
