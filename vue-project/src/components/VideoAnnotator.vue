@@ -29,7 +29,7 @@
         </div>
         
         <!-- 添加滚动区域的容器 -->
-        <div class="scrollable-area">
+        <div class="scrollable-area" ref="scrollableArea">
           <div class="annotation-list">
             <div v-if="annotations.length === 0" class="no-annotations">
               <p>尚未添加任何标注</p>
@@ -67,7 +67,32 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+
+// 添加滚动区域的引用
+const scrollableArea = ref(null)
+
+// 计算左侧视频容器的高度
+const calculateScrollHeight = () => {
+  const videoContainer = document.querySelector('.video-container')
+  const sectionTitle = document.querySelector('.annotations-section .section-title')
+  const annotationInput = document.querySelector('.annotation-input')
+  const saveAllBtn = document.querySelector('.save-all-btn')
+  const statusBar = document.querySelector('.status-bar')
+  if (!videoContainer || !sectionTitle || !annotationInput || !saveAllBtn || !statusBar || !scrollableArea.value) return
+  
+  // 获取左侧视频容器的高度
+  const videoHeight = videoContainer.clientHeight
+  const sectionTitleHeight = sectionTitle.offsetHeight
+  const annotationInputHeight = annotationInput.offsetHeight
+  const saveAllBtnHeight = saveAllBtn.offsetHeight
+  const statusBarHeight = statusBar.offsetHeight
+  // 计算可滚动区域的高度 = 视频容器高度 - 标题高度 - 输入框高度 - 保存按钮高度 - 状态栏高度 - 20(margin的高度)
+  const scrollableHeight = videoHeight - sectionTitleHeight - annotationInputHeight - saveAllBtnHeight - statusBarHeight - 40
+  
+  // 设置滚动区域的最大高度
+  scrollableArea.value.style.maxHeight = `${scrollableHeight}px`
+}
 
 // 引用Canvas元素
 const videoCanvas = ref(null)
@@ -345,6 +370,16 @@ onMounted(() => {
   
   // 窗口大小改变时重新初始化Canvas
   window.addEventListener('resize', initCanvas)
+
+  calculateScrollHeight()
+  
+  // 监听窗口大小变化
+  window.addEventListener('resize', calculateScrollHeight)
+  
+  // 监听标注数量变化
+  watch(annotations, () => {
+    nextTick(calculateScrollHeight)
+  })
 })
 
 onUnmounted(() => {
@@ -359,6 +394,8 @@ onUnmounted(() => {
   if (annotationCanvas.value) {
     annotationCanvas.value.removeEventListener('mousedown', handleMouseDown)
   }
+
+  window.removeEventListener('resize', calculateScrollHeight)
 })
 </script>
 
@@ -537,12 +574,11 @@ canvas {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  /* margin-bottom: 15px; */
-  /* max-height: 600px; */
+  max-height: 100%; /* 添加最大高度限制 */
 }
 
 .annotation-list {
-  max-height: 600px;
+  /* max-height: 600px; */
   overflow-y: auto;
   flex: 1;
 }
