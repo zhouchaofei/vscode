@@ -3,13 +3,19 @@
     <div class="app-container">
       <div class="video-section">
         <h2 class="section-title">视频标注区域</h2>
-
-        <div class="video-container">
-          <video ref="videoPlayer" :src="videoSource" autoplay muted playsinline></video>
-          <canvas ref="canvas"></canvas>
-        </div>  
       </div>
+
+      <div class="connection-status">
+        <div class="status-indicator" :class="{ connected: isConnected }"></div>
+        <div>{{ connectionStatus }}</div>
+      </div>
+        
+      <div class="video-container">
+        <canvas ref="videoCanvas"></canvas>
+        <canvas ref="annotationCanvas"></canvas>
+      </div>      
       
+
       <div class="annotations-section">
         <h2 class="section-title">标注列表</h2>
         
@@ -28,7 +34,6 @@
             <div v-if="annotations.length === 0" class="no-annotations">
               <p>尚未添加任何标注</p>
               <p>在视频上绘制矩形框并添加说明</p>
-              <!-- <p>点击"开始标注"按钮创建第一个标注</p> -->
             </div>
             
             <div v-for="(annotation, index) in annotations" :key="annotation.id" class="annotation-item">
@@ -38,7 +43,6 @@
               </div>
               <div class="annotation-position">
                 <div>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</div>
-                <!-- 位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }}) -->
                 <div>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</div>
               </div>
               <div class="annotation-content">
@@ -55,7 +59,7 @@
 
         <div class="status-bar">
           <div>标注总数: {{ annotations.length }}</div>
-          <!-- <div>当前时间: {{ formatTime(videoCurrentTime) }}</div> -->
+          <div>帧率: {{ fps.toFixed(1) }} FPS</div>
         </div>
       </div>
     </div>
@@ -65,12 +69,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-// 视频源 - 实际项目中可替换为您的视频URL
-const videoSource = ref('/src/assets/demo-video.mp4')
-
-// 引用DOM元素
-const videoPlayer = ref(null)
-const canvas = ref(null)
+// 引用Canvas元素
+const videoCanvas = ref(null)
+const annotationCanvas = ref(null)
 
 // 状态管理
 const isDrawing = ref(true) // 默认开启标注模式
@@ -80,43 +81,96 @@ const currentAnnotation = ref({
   text: ''
 })
 const annotations = ref([])
-const ctx = ref(null)
-const videoCurrentTime = ref(0)
+const isConnected = ref(false)
+const fps = ref(0)
+const frameCount = ref(0)
+const startTime = ref(0)
+const connectionStatus = ref("连接中...")
 
-// 绘制状态变量
-const startX = ref(0)
-const startY = ref(0)
-const drawingRect = ref({ x: 0, y: 0, width: 0, height: 0 })
+// Canvas上下文
+let videoCtx = null
+let annotationCtx = null
+let socket = null
 
 // 初始化Canvas
 const initCanvas = () => {
-  if (canvas.value && videoPlayer.value) {
-    canvas.value.width = videoPlayer.value.offsetWidth
-    canvas.value.height = videoPlayer.value.offsetHeight
-    ctx.value = canvas.value.getContext('2d')
-    ctx.value.lineWidth = 3
-    drawCanvas()// 初始绘制
+  // 设置Canvas尺寸
+  const container = document.querySelector('.video-container')
+  videoCanvas.value.width = container.clientWidth
+  videoCanvas.value.height = container.clientHeight
+  annotationCanvas.value.width = container.clientWidth
+  annotationCanvas.value.height = container.clientHeight
+  
+  // 获取上下文
+  videoCtx = videoCanvas.value.getContext('2d')
+  annotationCtx = annotationCanvas.value.getContext('2d')
+  annotationCtx.lineWidth = 3
+  
+  drawCanvas()
+}
+
+// 建立WebSocket连接
+const connectWebSocket = () => {
+  // 替换为您的WebSocket服务器地址
+  socket = new WebSocket('ws://10.1.40.6:3000')
+  socket.binaryType = 'arraybuffer'
+  
+  socket.onopen = () => {
+    isConnected.value = true
+    connectionStatus.value = "已连接"
+    startTime.value = performance.now()
+    frameCount.value = 0
+  }
+  
+  socket.onmessage = (event) => {
+    if (typeof event.data === 'string') {
+      // 文本消息（如元数据）
+      console.log('Received header:', event.data)
+    } else {
+      // 二进制数据（JPEG图像）
+      frameCount.value++
+      
+      // 计算FPS
+      const elapsed = (performance.now() - startTime.value) / 1000
+      if (elapsed >= 1) {
+        fps.value = frameCount.value / elapsed
+        frameCount.value = 0
+        startTime.value = performance.now()
+      }
+      
+      // 处理图像
+      processImageData(event.data)
+    }
+  }
+  
+  socket.onclose = () => {
+    isConnected.value = false
+    connectionStatus.value = "连接已断开"
+  }
+  
+  socket.onerror = (error) => {
+    console.error('WebSocket error:', error)
+    connectionStatus.value = "连接错误"
   }
 }
 
-// 自动播放视频
-const playVideo = () => {
-  if (videoPlayer.value) {
-    videoPlayer.value.play()
-      .catch(error => {
-        console.log("视频自动播放失败:", error)
-        // 对于某些浏览器需要用户交互才能自动播放
-        // 这里可以添加一个提示让用户点击播放
-      })
+// 处理图像数据
+const processImageData = (data) => {
+  const blob = new Blob([data], { type: 'image/jpeg' })
+  const url = URL.createObjectURL(blob)
+  const img = new Image()
+  
+  img.onload = () => {
+    if (videoCtx) {
+      videoCtx.clearRect(0, 0, videoCtx.canvas.width, videoCtx.canvas.height)
+      videoCtx.drawImage(img, 0, 0, videoCtx.canvas.width, videoCtx.canvas.height)
+    }
+    URL.revokeObjectURL(url)
+    drawCanvas()
   }
+  
+  img.src = url
 }
-
-// 更新视频当前时间
-// const updateVideoTime = () => {
-//   if (videoPlayer.value) {
-//     videoCurrentTime.value = videoPlayer.value.currentTime
-//   }
-// }
 
 // 鼠标按下事件处理
 const handleMouseDown = (e) => {
@@ -124,37 +178,33 @@ const handleMouseDown = (e) => {
   
   // 开始新绘制时清除前一个未保存的标注
   if (isActiveDrawing.value) {
-    drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
     currentAnnotation.value.rect = { x: 0, y: 0, width: 0, height: 0 }
   }
   
   isActiveDrawing.value = true
 
-  const rect = canvas.value.getBoundingClientRect()
+  const rect = annotationCanvas.value.getBoundingClientRect()
   startX.value = e.clientX - rect.left
   startY.value = e.clientY - rect.top
   
   // 开始绘制
-  canvas.value.addEventListener('mousemove', handleMouseMove)
-  canvas.value.addEventListener('mouseup', handleMouseUp)
+  annotationCanvas.value.addEventListener('mousemove', handleMouseMove)
+  annotationCanvas.value.addEventListener('mouseup', handleMouseUp)
 }
 
 // 鼠标移动事件处理
 const handleMouseMove = (e) => {
-  const rect = canvas.value.getBoundingClientRect()
+  const rect = annotationCanvas.value.getBoundingClientRect()
   const mouseX = e.clientX - rect.left
   const mouseY = e.clientY - rect.top
   
   // 计算矩形尺寸
-  drawingRect.value = {
+  currentAnnotation.value.rect = {
     x: Math.min(startX.value, mouseX),
     y: Math.min(startY.value, mouseY),
     width: Math.abs(mouseX - startX.value),
     height: Math.abs(mouseY - startY.value)
   }
-  
-  // 保存到当前标注
-  currentAnnotation.value.rect = { ...drawingRect.value }
 
   // 绘制临时矩形
   drawCanvas()
@@ -163,44 +213,39 @@ const handleMouseMove = (e) => {
 // 鼠标释放事件处理
 const handleMouseUp = () => {
   // 移除事件监听
-  canvas.value.removeEventListener('mousemove', handleMouseMove)
-  canvas.value.removeEventListener('mouseup', handleMouseUp)
+  annotationCanvas.value.removeEventListener('mousemove', handleMouseMove)
+  annotationCanvas.value.removeEventListener('mouseup', handleMouseUp)
   
   // 保持临时矩形显示直到保存或取消
   drawCanvas()
-
-  // // 保存绘制的矩形
-  // currentAnnotation.value.rect = { ...drawingRect.value }
-  
-  // // 重置临时矩形
-  // drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
 }
 
 // 绘制Canvas（标注框和已有标注）
 const drawCanvas = () => {
-  if (!ctx.value) return
+  if (!annotationCtx) return
   
   // 清除画布
-  ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height)
+  annotationCtx.clearRect(0, 0, annotationCtx.canvas.width, annotationCtx.canvas.height)
+
   
   // 绘制临时矩形（用户正在绘制的或已绘制但未保存的）
   if (isActiveDrawing.value && currentAnnotation.value.rect.width > 0 && currentAnnotation.value.rect.height > 0) {
-    ctx.value.strokeStyle = '#FF5722'
-    ctx.value.setLineDash([5, 5])
-    ctx.value.strokeRect(
+    annotationCtx.strokeStyle = '#FF5722'
+    annotationCtx.setLineDash([5, 5])
+    annotationCtx.strokeRect(
       currentAnnotation.value.rect.x,
       currentAnnotation.value.rect.y,
       currentAnnotation.value.rect.width,
       currentAnnotation.value.rect.height
     )
-    ctx.value.setLineDash([])
+    annotationCtx.setLineDash([])
   }
   
   // 绘制已保存的标注
   annotations.value.forEach(anno => {
-    ctx.value.strokeStyle = '#4CAF50'
-    ctx.value.lineWidth = 2
-    ctx.value.strokeRect(
+    annotationCtx.strokeStyle = '#4CAF50'
+    annotationCtx.lineWidth = 2
+    annotationCtx.strokeRect(
       anno.rect.x,
       anno.rect.y,
       anno.rect.width,
@@ -208,9 +253,9 @@ const drawCanvas = () => {
     )
     
     // 绘制标注文本背景
-    ctx.value.fillStyle = 'rgba(76, 175, 80, 0.7)'
-    const textWidth = ctx.value.measureText(anno.text).width
-    ctx.value.fillRect(
+    annotationCtx.fillStyle = 'rgba(76, 175, 80, 0.7)'
+    const textWidth = annotationCtx.measureText(anno.text).width
+    annotationCtx.fillRect(
       anno.rect.x,
       anno.rect.y - 20,
       textWidth + 10,
@@ -218,9 +263,9 @@ const drawCanvas = () => {
     )
     
     // 绘制标注文本
-    ctx.value.fillStyle = 'white'
-    ctx.value.font = '14px Arial'
-    ctx.value.fillText(
+    annotationCtx.fillStyle = 'white'
+    annotationCtx.font = '14px Arial'
+    annotationCtx.fillText(
       anno.text,
       anno.rect.x + 5,
       anno.rect.y - 5
@@ -233,6 +278,7 @@ const saveAnnotation = () => {
   if (currentAnnotation.value.text.trim() !== '' && 
       currentAnnotation.value.rect.width > 0 && 
       currentAnnotation.value.rect.height > 0) {
+
     // 添加唯一ID
     const annotationWithId = {
       ...currentAnnotation.value,
@@ -259,7 +305,6 @@ const resetDrawingState = () => {
     rect: { x: 0, y: 0, width: 0, height: 0 },
     text: ''
   }
-  drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
   isActiveDrawing.value = false
 }
 
@@ -268,7 +313,6 @@ const deleteAnnotation = (index) => {
   annotations.value.splice(index, 1)
   drawCanvas()
 }
-
 
 // 保存所有标注
 const saveAllAnnotations = () => {
@@ -285,37 +329,36 @@ const saveAllAnnotations = () => {
   alert(`已保存 ${annotations.value.length} 个标注`)
 }
 
-// 格式化时间
-const formatTime = (seconds) => {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-}
+// 鼠标位置变量
+const startX = ref(0)
+const startY = ref(0)
 
 // 生命周期钩子
 onMounted(() => {
   initCanvas()
-  playVideo()
+  connectWebSocket()
 
   // 添加事件监听
-  if (canvas.value) {
-    canvas.value.addEventListener('mousedown', handleMouseDown)
+  if (annotationCanvas.value) {
+    annotationCanvas.value.addEventListener('mousedown', handleMouseDown)
   }
   
   // 窗口大小改变时重新初始化Canvas
   window.addEventListener('resize', initCanvas)
-  
-  // 视频时间更新时重绘画布
-  if (videoPlayer.value) {
-    videoPlayer.value.addEventListener('timeupdate', () => {
-      updateVideoTime()
-      drawCanvas()
-    })
-  }
 })
 
 onUnmounted(() => {
+  // 关闭WebSocket连接
+  if (socket) {
+    socket.close()
+  }
+  
+  // 移除事件监听
   window.removeEventListener('resize', initCanvas)
+  
+  if (annotationCanvas.value) {
+    annotationCanvas.value.removeEventListener('mousedown', handleMouseDown)
+  }
 })
 </script>
 
@@ -344,6 +387,7 @@ onUnmounted(() => {
 .video-container {
   position: relative;
   width: 100%;
+  height: 0;
   padding-top: 56.25%; /* 16:9 Aspect Ratio */
   border-radius: 10px;
   overflow: hidden;
@@ -365,12 +409,16 @@ canvas {
   cursor: crosshair;
 }
 
-.controls {
+#annotationCanvas {
+  cursor: crosshair;
+}
+
+/* .controls {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   margin-top: auto;
-}
+} */
 
 .annotations-section {
   background: rgba(0, 0, 0, 0.4);
@@ -386,7 +434,7 @@ canvas {
 .section-title {
   font-size: 1.5rem;
   margin-bottom: 10px;
-  padding-bottom: 10px;
+  /* padding-bottom: 10px; */
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
   text-align: center;
   background: linear-gradient(90deg, #ff8a00, #e52e71);
@@ -434,7 +482,7 @@ canvas {
   border: none;
   border-radius: 8px;
   background: linear-gradient(90deg, #ff8a00, #e52e71);
-  color: #0f1a3d;
+  color: white;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -521,8 +569,8 @@ canvas {
 .annotation-item {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
   border-left: 4px solid #ff8a00;
   transition: all 0.3s;
 }
@@ -589,17 +637,41 @@ canvas {
   display: flex;
   justify-content: space-between;
   /* margin-top: 20px; */
-  padding: 10px 15px;
+  padding: 10px 10px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   font-size: 0.9rem;
   margin-top: auto;/* 确保状态栏保持在底部 */
+  flex-direction: column;
 }
 
 .no-annotations {
   text-align: center;
   padding: 30px 0;
   opacity: 0.7;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* margin-bottom: 15px; */
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ff5722;
+}
+
+.status-indicator.connected {
+  background-color: #4CAF50;
 }
 
 @media (max-width: 900px) {
