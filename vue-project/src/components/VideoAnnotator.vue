@@ -297,23 +297,31 @@ const drawCanvas = () => {
     annotationCtx.shadowColor = 'transparent';
     annotationCtx.shadowBlur = 0;
     
+    // 设置25px字体大小
+    annotationCtx.font = 'bold 25px Arial'
+    const text = anno.text
+    const textWidth = annotationCtx.measureText(text).width
+
+   // 计算文本背景框尺寸 - 高度设为30px以适应25px字体
+    const textHeight = 30
+    const padding = 10
+
     // 绘制标注文本背景
     annotationCtx.fillStyle = 'rgba(76, 175, 80, 0.7)'
-    const textWidth = annotationCtx.measureText(anno.text).width
     annotationCtx.fillRect(
       anno.rect.x,
-      anno.rect.y - 20,
-      textWidth + 10,
-      20
+      anno.rect.y - textHeight,
+      textWidth + padding * 2,  // 两侧各加10px内边距
+      textHeight
     )
     
     // 绘制标注文本
     annotationCtx.fillStyle = 'white'
-    annotationCtx.font = '14px Arial'
+    annotationCtx.textBaseline = 'middle' // 垂直居中
     annotationCtx.fillText(
-      anno.text,
-      anno.rect.x + 5,
-      anno.rect.y - 5
+      text,
+      anno.rect.x + padding, // 水平位置加10px内边距
+      anno.rect.y - textHeight / 2 // 垂直居中
     )
   })
 }
