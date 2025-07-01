@@ -3,37 +3,39 @@
     <div class="app-container">
       <div class="video-section">
         <h2 class="section-title">视频标注区域</h2>
-        
-        <div class="video-container">
-          <video ref="videoPlayer" :src="videoSource" autoplay muted playsinline></video>
-          <canvas ref="canvas"></canvas>
-        </div>
-        
-        <div class="instructions">
-          <h3>操作指南：</h3>
-          <ul>
-            <li>按住鼠标左键在视频上<strong>拖动绘制矩形框</strong></li>
-            <li>在右侧输入标注信息并点击<strong>保存标注</strong></li>
-            <li>标注框会<strong>持续显示</strong>在视频上</li>
-            <li>点击标注列表中的<strong>删除按钮</strong>可移除标注</li>
-            <li>使用<strong>保存所有标注</strong>按钮导出标注数据</li>
-          </ul>
+        <div class="transform-controls">
+          <button @click="rotateLeft" class="transform-btn">↺ 左转</button>
+          <button @click="rotateRight" class="transform-btn">↻ 右转</button>
+          <button @click="zoomIn" class="transform-btn">+ 放大</button>
+          <button @click="zoomOut" class="transform-btn">- 缩小</button>
+          <button @click="resetTransform" class="transform-btn">重置</button>
         </div>
       </div>
+
+      <div class="connection-status">
+        <div class="status-indicator" :class="{ connected: isConnected }"></div>
+        <div>{{ connectionStatus }}</div>
+      </div>
+        
+      <div class="video-container">
+        <canvas ref="videoCanvas"></canvas>
+        <canvas ref="annotationCanvas"></canvas>
+      </div>      
       
+
       <div class="annotations-section">
-        <h2 class="section-title">标注管理</h2>
+        <h2 class="section-title">标注列表</h2>
         
         <div class="annotation-input">
           <h3>添加标注说明</h3>
           <textarea v-model="currentAnnotation.text" placeholder="在此输入标注说明..." rows="4"></textarea>
           <div class="input-buttons">
-            <button @click="saveAnnotation" class="save-btn">保存标注</button>
+            <button @click="saveAnnotation" class="save-btn">保存</button>
             <button @click="cancelAnnotation" class="cancel-btn">取消</button>
           </div>
         </div>
         
-        <div class="scrollable-area">
+        <div class="scrollable-area" ref="scrollableArea">
           <div class="annotation-list">
             <div v-if="annotations.length === 0" class="no-annotations">
               <p>尚未添加任何标注</p>
@@ -43,14 +45,13 @@
             <div v-for="(annotation, index) in annotations" :key="annotation.id" class="annotation-item">
               <div class="annotation-header">
                 <div class="annotation-id">标注 #{{ index + 1 }}</div>
-                <div class="annotation-time">ID: {{ annotation.id.slice(0, 6) }}</div>
               </div>
               <div class="annotation-position">
-                位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})
-                尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}
+                <div>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</div>
+                <div>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</div>
               </div>
               <div class="annotation-content">
-                {{ annotation.text }}
+                名称: {{ annotation.text }}
               </div>
               <div class="annotation-actions">
                 <button @click="deleteAnnotation(index)" class="action-btn delete-btn">删除</button>
@@ -60,10 +61,12 @@
         </div>
         
         <button @click="saveAllAnnotations" class="save-all-btn">保存所有标注</button>
-        
+
         <div class="status-bar">
           <div>标注总数: {{ annotations.length }}</div>
-          <div>当前时间: {{ formatTime(videoCurrentTime) }}</div>
+          <div>帧率: {{ fps.toFixed(1) }} FPS</div>
+          <div>旋转: {{ transform.rotation }}°</div>
+          <div>缩放: {{ (transform.scale * 100).toFixed(0) }}%</div>
         </div>
       </div>
     </div>
@@ -71,176 +74,327 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 
-// 视频源 - 实际项目中可替换为您的视频URL
-const videoSource = ref('/src/assets/demo-video.mp4')
+// 变换矩阵状态
+const transform = ref({
+  scale: 1,
+  rotation: 0, // 角度值，单位为度
+  offsetX: 0,
+  offsetY: 0
+})
 
-// 引用DOM元素
-const videoPlayer = ref(null)
-const canvas = ref(null)
+// 变换控制函数
+const rotateLeft = () => {
+  transform.value.rotation = (transform.value.rotation - 15) % 360
+  drawCanvas()
+}
+
+const rotateRight = () => {
+  transform.value.rotation = (transform.value.rotation + 15) % 360
+  drawCanvas()
+}
+
+const zoomIn = () => {
+  transform.value.scale = Math.min(transform.value.scale * 1.2, 3)
+  drawCanvas()
+}
+
+const zoomOut = () => {
+  transform.value.scale = Math.max(transform.value.scale / 1.2, 0.5)
+  drawCanvas()
+}
+
+const resetTransform = () => {
+  transform.value = {
+    scale: 1,
+    rotation: 0,
+    offsetX: 0,
+    offsetY: 0
+  }
+  drawCanvas()
+}
+
+// 获取当前变换矩阵
+const getTransformMatrix = () => {
+  const { scale, rotation, offsetX, offsetY } = transform.value
+  const rad = rotation * Math.PI / 180
+  
+  return {
+    a: scale * Math.cos(rad),  // 水平缩放
+    b: scale * Math.sin(rad),  // 水平倾斜
+    c: -scale * Math.sin(rad), // 垂直倾斜
+    d: scale * Math.cos(rad),  // 垂直缩放
+    e: offsetX,                // 水平移动
+    f: offsetY                 // 垂直移动
+  }
+}
+
+// 屏幕坐标转原始坐标
+const screenToOriginal = (x, y) => {
+  const matrix = getTransformMatrix()
+  // 计算逆矩阵
+  const det = matrix.a * matrix.d - matrix.b * matrix.c
+  return {
+    x: (matrix.d * (x - matrix.e) - matrix.c * (y - matrix.f)) / det,
+    y: (-matrix.b * (x - matrix.e) + matrix.a * (y - matrix.f)) / det
+  }
+}
+
+// 原始坐标转屏幕坐标
+const originalToScreen = (x, y) => {
+  const matrix = getTransformMatrix()
+  return {
+    x: matrix.a * x + matrix.c * y + matrix.e,
+    y: matrix.b * x + matrix.d * y + matrix.f
+  }
+}
+
+// 添加滚动区域的引用
+const scrollableArea = ref(null)
+
+// 引用Canvas元素
+const videoCanvas = ref(null)
+const annotationCanvas = ref(null)
 
 // 状态管理
-const isDrawing = ref(true) // 默认开启标注模式
+const isDrawing = ref(true)
+const isActiveDrawing = ref(false)
 const currentAnnotation = ref({
   rect: { x: 0, y: 0, width: 0, height: 0 },
   text: ''
 })
 const annotations = ref([])
-const ctx = ref(null)
-const videoCurrentTime = ref(0)
+const isConnected = ref(false)
+const fps = ref(0)
+const frameCount = ref(0)
+const startTime = ref(0)
+const connectionStatus = ref("连接中...")
 
-// 绘制状态变量
-const startX = ref(0)
-const startY = ref(0)
-const drawingRect = ref({ x: 0, y: 0, width: 0, height: 0 })
+// Canvas上下文
+let videoCtx = null
+let annotationCtx = null
+let socket = null
 
 // 初始化Canvas
 const initCanvas = () => {
-  if (canvas.value && videoPlayer.value) {
-    canvas.value.width = videoPlayer.value.offsetWidth
-    canvas.value.height = videoPlayer.value.offsetHeight
-    ctx.value = canvas.value.getContext('2d')
-    ctx.value.lineWidth = 3
+  const container = document.querySelector('.video-container')
+  videoCanvas.value.width = container.clientWidth
+  videoCanvas.value.height = container.clientHeight
+  annotationCanvas.value.width = container.clientWidth
+  annotationCanvas.value.height = container.clientHeight
+  
+  videoCtx = videoCanvas.value.getContext('2d')
+  annotationCtx = annotationCanvas.value.getContext('2d')
+  annotationCtx.lineWidth = 3
+  
+  drawCanvas()
+}
+
+// 建立WebSocket连接
+const connectWebSocket = () => {
+  socket = new WebSocket('ws://10.1.40.6:3000')
+  socket.binaryType = 'arraybuffer'
+  
+  socket.onopen = () => {
+    isConnected.value = true
+    connectionStatus.value = "已连接"
+    startTime.value = performance.now()
+    frameCount.value = 0
+  }
+  
+  socket.onmessage = (event) => {
+    if (typeof event.data === 'string') {
+      console.log('Received header:', event.data)
+    } else {
+      frameCount.value++
+      
+      const elapsed = (performance.now() - startTime.value) / 1000
+      if (elapsed >= 1) {
+        fps.value = frameCount.value / elapsed
+        frameCount.value = 0
+        startTime.value = performance.now()
+      }
+      
+      processImageData(event.data)
+    }
+  }
+  
+  socket.onclose = () => {
+    isConnected.value = false
+    connectionStatus.value = "连接已断开"
+  }
+  
+  socket.onerror = (error) => {
+    console.error('WebSocket error:', error)
+    connectionStatus.value = "连接错误"
+  }
+}
+
+// 处理图像数据
+const processImageData = (data) => {
+  const blob = new Blob([data], { type: 'image/jpeg' })
+  const url = URL.createObjectURL(blob)
+  const img = new Image()
+  
+  img.onload = () => {
+    if (videoCtx) {
+      videoCtx.clearRect(0, 0, videoCtx.canvas.width, videoCtx.canvas.height)
+      
+      // 应用变换到视频
+      const matrix = getTransformMatrix()
+      videoCtx.save()
+      videoCtx.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f)
+      videoCtx.drawImage(img, 0, 0, videoCtx.canvas.width, videoCtx.canvas.height)
+      videoCtx.restore()
+    }
+    URL.revokeObjectURL(url)
     drawCanvas()
   }
-}
-
-// 自动播放视频
-const playVideo = () => {
-  if (videoPlayer.value) {
-    videoPlayer.value.play()
-      .catch(error => {
-        console.log("视频自动播放失败:", error)
-        // 对于某些浏览器需要用户交互才能自动播放
-        // 这里可以添加一个提示让用户点击播放
-      })
-  }
-}
-
-// 更新视频当前时间
-const updateVideoTime = () => {
-  if (videoPlayer.value) {
-    videoCurrentTime.value = videoPlayer.value.currentTime
-  }
+  
+  img.src = url
 }
 
 // 鼠标按下事件处理
 const handleMouseDown = (e) => {
   if (!isDrawing.value) return
   
-  const rect = canvas.value.getBoundingClientRect()
-  startX.value = e.clientX - rect.left
-  startY.value = e.clientY - rect.top
+  if (isActiveDrawing.value) {
+    currentAnnotation.value.rect = { x: 0, y: 0, width: 0, height: 0 }
+  }
   
-  // 开始绘制
-  canvas.value.addEventListener('mousemove', handleMouseMove)
-  canvas.value.addEventListener('mouseup', handleMouseUp)
+  isActiveDrawing.value = true
+
+  const rect = annotationCanvas.value.getBoundingClientRect()
+  const screenX = e.clientX - rect.left
+  const screenY = e.clientY - rect.top
+  
+  // 转换为原始坐标
+  const originalPos = screenToOriginal(screenX, screenY)
+  
+  startX.value = originalPos.x
+  startY.value = originalPos.y
+  
+  annotationCanvas.value.addEventListener('mousemove', handleMouseMove)
+  annotationCanvas.value.addEventListener('mouseup', handleMouseUp)
 }
 
 // 鼠标移动事件处理
 const handleMouseMove = (e) => {
-  const rect = canvas.value.getBoundingClientRect()
-  const mouseX = e.clientX - rect.left
-  const mouseY = e.clientY - rect.top
+  const rect = annotationCanvas.value.getBoundingClientRect()
+  const screenX = e.clientX - rect.left
+  const screenY = e.clientY - rect.top
   
-  // 计算矩形尺寸
-  drawingRect.value = {
-    x: Math.min(startX.value, mouseX),
-    y: Math.min(startY.value, mouseY),
-    width: Math.abs(mouseX - startX.value),
-    height: Math.abs(mouseY - startY.value)
+  // 转换为原始坐标
+  const originalPos = screenToOriginal(screenX, screenY)
+  
+  currentAnnotation.value.rect = {
+    x: Math.min(startX.value, originalPos.x),
+    y: Math.min(startY.value, originalPos.y),
+    width: Math.abs(originalPos.x - startX.value),
+    height: Math.abs(originalPos.y - startY.value)
   }
-  
-  // 绘制临时矩形
+
   drawCanvas()
 }
 
 // 鼠标释放事件处理
 const handleMouseUp = () => {
-  // 移除事件监听
-  canvas.value.removeEventListener('mousemove', handleMouseMove)
-  canvas.value.removeEventListener('mouseup', handleMouseUp)
-  
-  // 保存绘制的矩形
-  currentAnnotation.value.rect = { ...drawingRect.value }
-  
-  // 重置临时矩形
-  drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
+  annotationCanvas.value.removeEventListener('mousemove', handleMouseMove)
+  annotationCanvas.value.removeEventListener('mouseup', handleMouseUp)
+  drawCanvas()
 }
 
-// 绘制Canvas（标注框和已有标注）
+// 绘制Canvas
 const drawCanvas = () => {
-  if (!ctx.value) return
+  if (!annotationCtx) return
   
-  // 清除画布
-  ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height)
+  annotationCtx.clearRect(0, 0, annotationCtx.canvas.width, annotationCtx.canvas.height)
   
-  // 绘制临时矩形（用户正在绘制的）
-  if (isDrawing.value && drawingRect.value.width > 0 && drawingRect.value.height > 0) {
-    ctx.value.strokeStyle = '#FF5722'
-    ctx.value.setLineDash([5, 5])
-    ctx.value.strokeRect(
-      drawingRect.value.x,
-      drawingRect.value.y,
-      drawingRect.value.width,
-      drawingRect.value.height
-    )
-    ctx.value.setLineDash([])
+  // 保存当前状态
+  annotationCtx.save()
+  
+  // 应用变换
+  const matrix = getTransformMatrix()
+  annotationCtx.transform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f)
+  
+  // 绘制临时矩形
+  if (isActiveDrawing.value && currentAnnotation.value.rect.width > 0 && currentAnnotation.value.rect.height > 0) {
+    const rect = currentAnnotation.value.rect
+    annotationCtx.strokeStyle = '#FF5722'
+    annotationCtx.setLineDash([5, 5])
+    annotationCtx.strokeRect(rect.x, rect.y, rect.width, rect.height)
+    annotationCtx.setLineDash([])
   }
   
   // 绘制已保存的标注
   annotations.value.forEach(anno => {
-    ctx.value.strokeStyle = '#4CAF50'
-    ctx.value.lineWidth = 2
-    ctx.value.strokeRect(
-      anno.rect.x,
-      anno.rect.y,
-      anno.rect.width,
-      anno.rect.height
+    const rect = anno.rect
+    
+    annotationCtx.fillStyle = 'rgba(76, 175, 80, 0.2)'
+    annotationCtx.fillRect(rect.x, rect.y, rect.width, rect.height)
+    
+    annotationCtx.strokeStyle = '#4CAF50'
+    annotationCtx.lineWidth = 2
+    annotationCtx.strokeRect(rect.x, rect.y, rect.width, rect.height)
+    
+    annotationCtx.font = 'bold 25px Arial'
+    const text = anno.text
+    const textWidth = annotationCtx.measureText(text).width
+    const textHeight = 30
+    const padding = 10
+    
+    annotationCtx.fillStyle = 'rgba(76, 175, 80, 0.7)'
+    annotationCtx.fillRect(
+      rect.x,
+      rect.y - textHeight,
+      textWidth + padding * 2,
+      textHeight
     )
     
-    // 绘制标注文本背景
-    ctx.value.fillStyle = 'rgba(76, 175, 80, 0.7)'
-    const textWidth = ctx.value.measureText(anno.text).width
-    ctx.value.fillRect(
-      anno.rect.x,
-      anno.rect.y - 20,
-      textWidth + 10,
-      20
-    )
-    
-    // 绘制标注文本
-    ctx.value.fillStyle = 'white'
-    ctx.value.font = '14px Arial'
-    ctx.value.fillText(
-      anno.text,
-      anno.rect.x + 5,
-      anno.rect.y - 5
+    annotationCtx.fillStyle = 'white'
+    annotationCtx.textBaseline = 'middle'
+    annotationCtx.fillText(
+      text,
+      rect.x + padding,
+      rect.y - textHeight / 2
     )
   })
+  
+  // 恢复状态
+  annotationCtx.restore()
 }
 
 // 保存标注
 const saveAnnotation = () => {
-  if (currentAnnotation.value.text.trim() !== '') {
-    // 添加唯一ID
+  if (currentAnnotation.value.text.trim() !== '' && 
+      currentAnnotation.value.rect.width > 0 && 
+      currentAnnotation.value.rect.height > 0) {
+    
     const annotationWithId = {
       ...currentAnnotation.value,
       id: 'anno-' + Date.now().toString(36)
     }
     
     annotations.value.push(annotationWithId)
-    currentAnnotation.value.text = ''
+    resetDrawingState()
     drawCanvas()
   }
 }
 
 // 取消标注
 const cancelAnnotation = () => {
-  currentAnnotation.value.text = ''
-  drawingRect.value = { x: 0, y: 0, width: 0, height: 0 }
+  resetDrawingState()
   drawCanvas()
+}
+
+// 重置绘制状态
+const resetDrawingState = () => {
+  currentAnnotation.value = {
+    rect: { x: 0, y: 0, width: 0, height: 0 },
+    text: ''
+  }
+  isActiveDrawing.value = false
 }
 
 // 删除标注
@@ -264,60 +418,91 @@ const saveAllAnnotations = () => {
   alert(`已保存 ${annotations.value.length} 个标注`)
 }
 
-// 格式化时间
-const formatTime = (seconds) => {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-}
+// 鼠标位置变量
+const startX = ref(0)
+const startY = ref(0)
 
 // 生命周期钩子
 onMounted(() => {
   initCanvas()
-  playVideo()
-  
-  // 添加事件监听
-  if (canvas.value) {
-    canvas.value.addEventListener('mousedown', handleMouseDown)
+  connectWebSocket()
+
+  if (annotationCanvas.value) {
+    annotationCanvas.value.addEventListener('mousedown', handleMouseDown)
   }
   
-  // 窗口大小改变时重新初始化Canvas
   window.addEventListener('resize', initCanvas)
-  
-  // 视频时间更新时重绘画布
-  if (videoPlayer.value) {
-    videoPlayer.value.addEventListener('timeupdate', () => {
-      updateVideoTime()
-      drawCanvas()
-    })
+
+  // 计算滚动区域高度
+  const calculateScrollHeight = () => {
+    // ... (原有实现)
   }
+  
+  calculateScrollHeight()
+  window.addEventListener('resize', calculateScrollHeight)
+  watch(annotations, () => {
+    nextTick(calculateScrollHeight)
+  })
 })
 
 onUnmounted(() => {
+  if (socket) {
+    socket.close()
+  }
+  
   window.removeEventListener('resize', initCanvas)
+  
+  if (annotationCanvas.value) {
+    annotationCanvas.value.removeEventListener('mousedown', handleMouseDown)
+  }
 })
 </script>
 
 <style scoped>
 .annotator-container {
   width: 100%;
+  height: 100%;
 }
 
 .app-container {
   display: grid;
-  grid-template-columns: 1fr 350px;
-  gap: 25px;
-  height: calc(100vh - 180px);
+  grid-template-columns: 1fr 200px;
+  gap: 10px;
 }
 
 .video-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 15px;
-  padding: 20px;
+  padding: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
+}
+
+.transform-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.transform-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  flex: 1;
+  min-width: 70px;
+}
+
+.transform-btn:hover {
+  background: rgba(255, 138, 0, 0.6);
+  transform: translateY(-2px);
 }
 
 .video-container {
@@ -327,9 +512,9 @@ onUnmounted(() => {
   padding-top: 56.25%; /* 16:9 Aspect Ratio */
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
   background: #000;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 video, canvas {
@@ -345,32 +530,14 @@ canvas {
   cursor: crosshair;
 }
 
-.instructions {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: auto;
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-.instructions h3 {
-  margin-bottom: 10px;
-  color: #ff8a00;
-}
-
-.instructions ul {
-  padding-left: 20px;
-}
-
-.instructions li {
-  margin-bottom: 8px;
+#annotationCanvas {
+  cursor: crosshair;
 }
 
 .annotations-section {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 15px;
-  padding: 25px;
+  padding: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   display: flex;
@@ -380,8 +547,7 @@ canvas {
 
 .section-title {
   font-size: 1.5rem;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
+  margin-bottom: 10px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
   text-align: center;
   background: linear-gradient(90deg, #ff8a00, #e52e71);
@@ -398,16 +564,15 @@ canvas {
 }
 
 .annotation-input h3 {
-  margin-bottom: 10px;
   color: #ff8a00;
 }
 
 .annotation-input textarea {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   margin: 10px 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.1);
   color: white;
   border: none;
   resize: vertical;
@@ -421,11 +586,10 @@ canvas {
 .input-buttons {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
 }
 
 .save-btn {
-  padding: 10px 20px;
+  padding: 10px 10px;
   border: none;
   border-radius: 8px;
   background: linear-gradient(90deg, #ff8a00, #e52e71);
@@ -434,12 +598,12 @@ canvas {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  flex: 1;
+  width: 100%;
   font-size: 1rem;
 }
 
 .cancel-btn {
-  padding: 10px 20px;
+  padding: 10px 10px;
   border: none;
   border-radius: 8px;
   background: linear-gradient(90deg, #4776E6, #8E54E9);
@@ -448,7 +612,7 @@ canvas {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  flex: 1;
+  width: 100%;
   font-size: 1rem;
 }
 
@@ -468,7 +632,6 @@ canvas {
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   width: 100%;
-  margin-top: 15px;
   font-size: 1.1rem;
 }
 
@@ -482,12 +645,11 @@ canvas {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
+  max-height: 100%;
 }
 
 .annotation-list {
   overflow-y: auto;
-  padding-right: 8px;
   flex: 1;
 }
 
@@ -512,15 +674,14 @@ canvas {
 .annotation-item {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
   border-left: 4px solid #ff8a00;
   transition: all 0.3s;
 }
 
 .annotation-item:hover {
   background: rgba(255, 255, 255, 0.15);
-  transform: translateX(5px);
 }
 
 .annotation-header {
@@ -579,17 +740,44 @@ canvas {
 .status-bar {
   display: flex;
   justify-content: space-between;
-  padding: 10px 15px;
+  padding: 10px 10px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
   font-size: 0.9rem;
   margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.status-bar > div {
+  margin: 3px 5px;
 }
 
 .no-annotations {
   text-align: center;
   padding: 30px 0;
   opacity: 0.7;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ff5722;
+}
+
+.status-indicator.connected {
+  background-color: #4CAF50;
 }
 
 @media (max-width: 900px) {
