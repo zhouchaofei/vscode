@@ -49,7 +49,13 @@
           
           <div class="panel-footer">
             <button @click="saveAllAnnotations" class="btn btn-primary btn-block">保存所有标注 ({{ annotations.length }})</button>
-            <div class="fps-display">帧率: {{ fps.toFixed(1) }} FPS</div>
+            <!-- <div class="fps-display">帧率: {{ fps.toFixed(1) }} FPS</div> -->
+            <div class="stats-display">
+              <div class="stat-item"><span>帧率:</span> <span>{{ fps }} FPS</span></div>
+              <div class="stat-item"><span>延迟:</span> <span>{{ latency }} ms</span></div>
+              <div class="stat-item"><span>数据量:</span> <span>{{ dataSize }}</span></div>
+              <div class="stat-item"><span>时长:</span> <span>{{ uptime }}</span></div>
+            </div>
           </div>
         </aside>
       </main>
@@ -72,20 +78,31 @@ const currentAnnotation = ref({
   text: ''
 });
 const annotations = ref([]);
-const isConnected = ref(false);
-const fps = ref(0);
-const frameCount = ref(0);
-let startTime = 0;
-const connectionStatus = ref("连接中...");
+// 鼠标位置变量
+const startX = ref(0);
+const startY = ref(0);
 
 // Canvas 上下文
 let videoCtx = null;
 let annotationCtx = null;
-let socket = null;
 
-// 鼠标位置变量
-const startX = ref(0);
-const startY = ref(0);
+const socket = ref(null);
+const isConnected = ref(false);
+const connectionStatus = ref("未连接");
+
+// 详细统计信息
+const frameCount = ref(0);
+const fps = ref(0);
+const latency = ref(0);
+const dataSize = ref('0 KB');
+const uptime = ref('00:00:00');
+const totalDataSize = ref(0);
+
+// 计时器引用
+let connectionStartTime = null;
+let fpsInterval = null;
+let uptimeInterval = null;
+let fpsCounter = 0; // 用于在1秒内计数的临时变量
 
 // 初始化 Canvas
 const initCanvas = () => {
@@ -111,53 +128,104 @@ const initCanvas = () => {
 
 // 建立 WebSocket 连接
 const connectWebSocket = () => {
-  // 替换为您的WebSocket服务器地址
-  socket = new WebSocket('ws://10.1.40.6:3000');
-  socket.binaryType = 'arraybuffer';
+  if (isConnected.value) return;
+
+  // const serverUrl = 'ws://172.16.145.1:8765'; 
+  const serverUrl = 'ws://59.110.65.210:8765'; 
+
+  connectionStatus.value = "连接中...";
   
-  socket.onopen = () => {
-    isConnected.value = true;
-    connectionStatus.value = "已连接";
-    startTime = performance.now();
-    frameCount.value = 0;
-  };
-  
-  socket.onmessage = (event) => {
-    if (typeof event.data === 'string') {
-      // 文本消息（如元数据）
-      console.log('Received header:', event.data);
-    } else {
-      // 二进制数据（JPEG图像）
-      frameCount.value++;
-      // 计算FPS
-      const elapsed = (performance.now() - startTime) / 1000;
-      if (elapsed >= 1) {
-        fps.value = frameCount.value / elapsed;
-        frameCount.value = 0;
-        startTime = performance.now();
+  try {
+    const ws = new WebSocket(serverUrl);
+    socket.value = ws;
+
+    ws.onopen = () => {
+      isConnected.value = true;
+      connectionStatus.value = "已连接";
+      connectionStartTime = Date.now();
+      startFPSCounter();
+      startUptimeCounter();
+      console.log('WebSocket连接成功');
+    };
+
+    ws.onmessage = (event) => {
+      // 假设服务器发送的是JSON字符串
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === 'frame' && message.data) {
+          displayFrame(message.data, message.timestamp);
+        }
+      } catch (error) {
+        // 如果解析失败，可能是 ArrayBuffer，做兼容处理
+        // 注意：这是一个降级方案，理想情况下服务器格式应统一
+        if (event.data instanceof ArrayBuffer) {
+           processImageData(event.data); // 调用旧的处理函数
+        } else {
+          console.error('消息解析错误:', error);
+        }
       }
-      // 处理图像
-      processImageData(event.data);
+    };
+
+    ws.onclose = () => {
+      handleDisconnect('连接已断开');
+      console.log('WebSocket连接关闭');
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket错误:', error);
+      handleDisconnect('连接错误');
+    };
+
+  } catch (error) {
+    console.error('连接初始化错误:', error);
+    handleDisconnect('连接失败');
+  }
+};
+
+const handleDisconnect = (statusText) => {
+  isConnected.value = false;
+  connectionStatus.value = statusText;
+  
+  if (socket.value) {
+    socket.value.close();
+    socket.value = null;
+  }
+  
+  stopFPSCounter();
+  stopUptimeCounter();
+  resetStats();
+};
+
+const displayFrame = (base64Data, timestamp) => {
+  // 1. 更新统计数据
+  frameCount.value++;
+  fpsCounter++;
+  
+  if (timestamp) {
+    latency.value = Math.round(Date.now() - (timestamp * 1000));
+  }
+  
+  // 假设base64字符串的长度约等于字节数 (实际会稍大)
+  totalDataSize.value += base64Data.length;
+  dataSize.value = formatBytes(totalDataSize.value);
+
+  // 2. 将Base64数据绘制到Canvas
+  const img = new Image();
+  img.onload = () => {
+    if (videoCtx) {
+      videoCtx.clearRect(0, 0, videoCtx.canvas.width, videoCtx.canvas.height);
+      videoCtx.drawImage(img, 0, 0, videoCtx.canvas.width, videoCtx.canvas.height);
     }
   };
-  
-  socket.onclose = () => {
-    isConnected.value = false;
-    connectionStatus.value = "连接已断开";
-  };
-  
-  socket.onerror = (error) => {
-    console.error('WebSocket error:', error);
-    connectionStatus.value = "连接错误";
-  };
+  img.src = 'data:image/jpeg;base64,' + base64Data;
 };
 
 // 处理图像数据并绘制到背景 Canvas
+// 兼容旧的 ArrayBuffer 格式
 const processImageData = (data) => {
   const blob = new Blob([data], { type: 'image/jpeg' });
   const url = URL.createObjectURL(blob);
   const img = new Image();
-  
   img.onload = () => {
     if (videoCtx) {
       videoCtx.clearRect(0, 0, videoCtx.canvas.width, videoCtx.canvas.height);
@@ -165,9 +233,71 @@ const processImageData = (data) => {
     }
     URL.revokeObjectURL(url);
   };
-  
   img.src = url;
 };
+
+
+// --- 新增：从 client.html 移植的辅助函数 ---
+
+const startFPSCounter = () => {
+  stopFPSCounter(); // 先停止以防万一
+  fpsInterval = setInterval(() => {
+    fps.value = fpsCounter;
+    fpsCounter = 0;
+  }, 1000);
+};
+
+const stopFPSCounter = () => {
+  if (fpsInterval) {
+    clearInterval(fpsInterval);
+    fpsInterval = null;
+  }
+};
+
+const startUptimeCounter = () => {
+  stopUptimeCounter();
+  uptimeInterval = setInterval(() => {
+    if (connectionStartTime) {
+      const duration = Date.now() - connectionStartTime;
+      uptime.value = formatUptime(duration);
+    }
+  }, 1000);
+};
+
+const stopUptimeCounter = () => {
+  if (uptimeInterval) {
+    clearInterval(uptimeInterval);
+    uptimeInterval = null;
+  }
+};
+
+const resetStats = () => {
+  frameCount.value = 0;
+  fps.value = 0;
+  latency.value = 0;
+  totalDataSize.value = 0;
+  dataSize.value = '0 KB';
+  uptime.value = '00:00:00';
+  connectionStartTime = null;
+};
+
+const formatBytes = (bytes) => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const formatUptime = (ms) => {
+  const seconds = Math.floor(ms / 1000) % 60;
+  const minutes = Math.floor(ms / (1000 * 60)) % 60;
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+
+
 
 // 绘制所有标注
 const drawAnnotations = () => {
@@ -330,7 +460,8 @@ const saveAllAnnotations = () => {
 // 生命周期钩子
 onMounted(() => {
   initCanvas();
-  connectWebSocket();
+  // connectWebSocket();
+  connectWebSocket(); // 使用新的连接函数
 
   // 添加事件监听
   if (annotationCanvas.value) {
@@ -343,9 +474,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   // 关闭WebSocket连接
-  if (socket) {
-    socket.close();
-  }
+  // if (socket) {
+  //   socket.close();
+  // }
+  handleDisconnect("组件已卸载"); // 使用新的断开连接函数
   
   // 移除事件监听
   window.removeEventListener('resize', initCanvas);
@@ -488,6 +620,37 @@ position: relative; /* 子元素绝对定位所必需 */
   border-top-right-radius: 10px;
   border-bottom: 1px solid rgba(0, 191, 255, 0.5);
   flex-shrink: 0;
+}
+
+.annotations-panel {
+  width: 280px; /* 可以适当加宽以容纳更多信息 */
+}
+
+.panel-footer {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(0, 191, 255, 0.5);
+  flex-shrink: 0;
+}
+
+/* 新增的统计信息样式 */
+.stats-display {
+  margin-top: 15px;
+  font-size: 0.85rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  opacity: 0.9;
+}
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  background-color: rgba(0,0,0,0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.stat-item span:first-child {
+  color: #00BFFF;
 }
 
 /* 标注输入区域 */
