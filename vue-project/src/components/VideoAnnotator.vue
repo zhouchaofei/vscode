@@ -1,7 +1,11 @@
 <template>
   <div class="annotator-container">
     <canvas ref="videoCanvas" class="background-canvas"></canvas>
-    <canvas ref="annotationCanvas" class="annotation-canvas-layer"></canvas>
+    <canvas
+      ref="annotationCanvas"
+      class="annotation-canvas-layer"
+      :style="{ cursor: isDrawing ? 'crosshair' : 'default' }"
+    ></canvas>
 
     <div class="ui-overlay">
       <header class="app-header">
@@ -13,52 +17,67 @@
       </header>
 
       <main class="main-content">
-        <aside class="annotations-panel">
-          <h2 class="panel-title">标注列表</h2>
-          
-          <div class="annotation-input">
-            <h3>添加标注说明</h3>
-            <textarea v-model="currentAnnotation.text" placeholder="在此输入标注说明..."></textarea>
-            <div class="input-buttons">
-              <button @click="saveAnnotation" class="btn btn-primary">保存</button>
-              <button @click="cancelAnnotation" class="btn btn-secondary">取消</button>
+        <aside class="annotations-panel" :class="{ collapsed: !isPanelVisible }">
+          <div class="panel-content-wrapper">
+            <h2 class="panel-title">标注列表</h2>
+
+            <div class="annotation-input">
+              <h3>添加标注说明</h3>
+              <textarea v-model="currentAnnotation.text" placeholder="在此输入标注说明..."></textarea>
+              <div class="input-buttons">
+                <button @click="saveAnnotation" class="btn btn-primary">保存</button>
+                <button @click="cancelAnnotation" class="btn btn-secondary">取消</button>
+              </div>
             </div>
-          </div>
-          
-          <div class="annotation-list-wrapper">
-            <div v-if="annotations.length === 0" class="no-annotations">
-              <p>尚未添加任何标注</p>
-              <p>在视频上绘制矩形框并添加说明</p>
-            </div>
-            <div v-else class="annotation-list">
-              <div v-for="(annotation, index) in annotations" :key="annotation.id" class="annotation-item">
-                <div class="annotation-header">
-                  <span class="annotation-id">标注 #{{ index + 1 }}</span>
-                </div>
-                <div class="annotation-details">
-                  <p>名称: {{ annotation.text }}</p>
-                  <p>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</p>
-                  <p>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</p>
-                </div>
-                <div class="annotation-actions">
-                  <button @click="deleteAnnotation(index)" class="btn-delete">删除</button>
+
+            <div class="annotation-list-wrapper">
+              <div v-if="annotations.length === 0" class="no-annotations">
+                <p>尚未添加任何标注</p>
+                <p>点击右侧箭头展开面板以开始</p>
+              </div>
+              <div v-else class="annotation-list">
+                <div v-for="(annotation, index) in annotations" :key="annotation.id" class="annotation-item">
+                  <div class="annotation-header">
+                    <span class="annotation-id">标注 #{{ index + 1 }}</span>
+                  </div>
+                  <div class="annotation-details">
+                    <p>名称: {{ annotation.text }}</p>
+                    <p>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</p>
+                    <p>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</p>
+                  </div>
+                  <div class="annotation-actions">
+                    <button @click="deleteAnnotation(index)" class="btn-delete">删除</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <div class="panel-footer">
-            <button @click="saveAllAnnotations" class="btn btn-primary btn-block">保存所有标注 ({{ annotations.length }})</button>
-            <!-- <div class="fps-display">帧率: {{ fps.toFixed(1) }} FPS</div> -->
-            <div class="stats-display">
-              <div class="stat-item"><span>帧率:</span> <span>{{ fps }} FPS</span></div>
-              <div class="stat-item"><span>延迟:</span> <span>{{ latency }} ms</span></div>
-              <div class="stat-item"><span>数据量:</span> <span>{{ dataSize }}</span></div>
-              <div class="stat-item"><span>时长:</span> <span>{{ uptime }}</span></div>
+
+            <div class="panel-footer">
+              <button @click="saveAllAnnotations" class="btn btn-primary btn-block">保存所有标注 ({{ annotations.length }})</button>
+              <div class="stats-display">
+                <div class="stat-item"><span>帧率:</span> <span>{{ fps }} FPS</span></div>
+                <div class="stat-item"><span>延迟:</span> <span>{{ latency }} ms</span></div>
+                <div class="stat-item"><span>数据量:</span> <span>{{ dataSize }}</span></div>
+                <div class="stat-item"><span>时长:</span> <span>{{ uptime }}</span></div>
+              </div>
             </div>
           </div>
         </aside>
+
+        <button @click="togglePanel" class="panel-toggle-btn" :class="{ 'panel-visible': isPanelVisible }">
+          <span class="arrow"></span>
+        </button>
       </main>
+
+      <div class="ptz-controls">
+        <button @click="sendPtzCommand('zoom_in')" class="ptz-btn">放大</button>
+        <button @click="sendPtzCommand('pan_up')" class="ptz-btn">上移</button>
+        <button @click="sendPtzCommand('zoom_out')" class="ptz-btn">缩小</button>
+        <button @click="sendPtzCommand('pan_left')" class="ptz-btn">左移</button>
+        <button @click="sendPtzCommand('pan_down')" class="ptz-btn">下移</button>
+        <button @click="sendPtzCommand('pan_right')" class="ptz-btn">右移</button>
+      </div>
+
     </div>
   </div>
 </template>
@@ -71,8 +90,15 @@ const videoCanvas = ref(null);
 const annotationCanvas = ref(null);
 
 // 状态管理
-const isDrawing = ref(true); // 默认开启标注模式
+// --- 状态管理修改 ---
+// isDrawing 现在由 isPanelVisible 控制，初始为 false
+const isDrawing = ref(false);
+// const isDrawing = ref(true); // 默认开启标注模式
 const isActiveDrawing = ref(false); // 是否有活跃的未保存标注
+
+// 新增：控制面板可见性的状态，初始为隐藏
+const isPanelVisible = ref(false);
+
 const currentAnnotation = ref({
   rect: { x: 0, y: 0, width: 0, height: 0 },
   text: ''
@@ -86,6 +112,7 @@ const startY = ref(0);
 let videoCtx = null;
 let annotationCtx = null;
 
+// WebSocket 和统计相关状态
 const socket = ref(null);
 const isConnected = ref(false);
 const connectionStatus = ref("未连接");
@@ -103,6 +130,52 @@ let connectionStartTime = null;
 let fpsInterval = null;
 let uptimeInterval = null;
 let fpsCounter = 0; // 用于在1秒内计数的临时变量
+
+// --- 新增：面板控制功能 ---
+const togglePanel = () => {
+  isPanelVisible.value = !isPanelVisible.value;
+  // 将标注模式与面板的可见性进行联动
+  isDrawing.value = isPanelVisible.value;
+};
+
+// --- 新增：PTZ 控制接口 ---
+const sendPtzCommand = async (command) => {
+  // API 端点 URL (需要替换为实际的摄像头控制接口地址)
+  const apiUrl = 'http://your-camera-api.com/ptz_control';
+
+  console.log(`准备发送 PTZ 指令: ${command}`);
+
+  // 我们选择 POST 请求，因为这是改变服务器资源状态（移动摄像头）的正确方法。
+  // GET 请求通常用于获取数据，不应产生副作用。
+  const requestOptions = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // 如果需要，可以在这里添加认证 Token
+      // 'Authorization': 'Bearer YOUR_TOKEN_HERE'
+    },
+    body: JSON.stringify({
+      command: command,
+      timestamp: new Date().toISOString()
+    })
+  };
+
+  try {
+    const response = await fetch(apiUrl, requestOptions);
+
+    if (!response.ok) {
+      throw new Error(`HTTP 错误! 状态码: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('PTZ 指令发送成功, 响应:', result);
+    alert(`指令 "${command}" 已成功发送!`);
+
+  } catch (error) {
+    console.error('发送 PTZ 指令失败:', error);
+    alert(`指令 "${command}" 发送失败: ${error.message}\n请检查API地址或网络连接。`);
+  }
+};
 
 // 初始化 Canvas
 const initCanvas = () => {
@@ -601,10 +674,11 @@ position: relative; /* 子元素绝对定位所必需 */
   overflow: hidden; /* 防止内容溢出 */
 }
 
-/* 左侧标注面板 */
+/* --- 修改：左侧面板收缩样式 --- */
 .annotations-panel {
-  width: 250px;
-  max-height: 100%; /* 确保面板不会超出父容器 */
+  position: relative;
+  width: 290px;
+  height: 100%;
   background-color: rgba(10, 40, 90, 0.75);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(0, 191, 255, 0.5);
@@ -613,14 +687,106 @@ position: relative; /* 子元素绝对定位所必需 */
   color: #fff;
   display: flex;
   flex-direction: column;
+  pointer-events: auto;
+  transition: transform 0.4s ease-in-out;
+  transform: translateX(0);
+}
+.annotations-panel.collapsed {
+  transform: translateX(calc(-100% - 20px));
+}
+.panel-content-wrapper {
   padding: 15px;
-  pointer-events: auto; /* 面板本身可交互 */
-  transition: background-color 0.3s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
-.annotations-panel:hover {
-    background-color: rgba(10, 40, 90, 0.85);
+/* --- 新增：面板开关按钮样式 --- */
+.panel-toggle-btn {
+  position: absolute;
+  left: 300px; /* 280px panel width + 20px padding */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 25px;
+  height: 60px;
+  background-color: rgba(10, 40, 90, 0.85);
+  border: 1px solid rgba(0, 191, 255, 0.5);
+  border-left: none;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: left 0.4s ease-in-out, background-color 0.3s;
 }
+.panel-toggle-btn.panel-visible {
+  left: 310px; /* Aligns with the right edge of the visible panel */
+}
+.panel-toggle-btn:not(.panel-visible) {
+  left: 0px; /* Aligns with the left padding when panel is hidden */
+}
+.panel-toggle-btn .arrow {
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid white;
+  border-left: 2px solid white;
+  transition: transform 0.4s ease-in-out;
+}
+.panel-toggle-btn.panel-visible .arrow {
+  transform: rotate(-45deg); /* Left-pointing arrow */
+}
+.panel-toggle-btn:not(.panel-visible) .arrow {
+  transform: rotate(135deg); /* Right-pointing arrow */
+}
+.panel-toggle-btn:hover {
+  background-color: rgba(0, 191, 255, 0.5);
+}
+
+/* --- 新增：PTZ 控制按钮样式 --- */
+.ptz-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 180px;
+  display: grid;
+  grid-template-areas:
+    "zoom-in pan-up zoom-out"
+    "pan-left pan-down pan-right";
+  gap: 8px;
+  pointer-events: auto;
+}
+.ptz-btn {
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background-color: rgba(20, 40, 80, 0.7);
+  border: 1px solid rgba(0, 191, 255, 0.6);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+.ptz-btn:hover {
+  background-color: rgba(0, 191, 255, 0.7);
+  border-color: #fff;
+  transform: scale(1.05);
+}
+.ptz-btn:active {
+  transform: scale(0.95);
+}
+/* 使用 grid-area 进行布局 */
+.ptz-controls button:nth-child(1) { grid-area: zoom-in; }
+.ptz-controls button:nth-child(2) { grid-area: pan-up; }
+.ptz-controls button:nth-child(3) { grid-area: zoom-out; }
+.ptz-controls button:nth-child(4) { grid-area: pan-left; }
+.ptz-controls button:nth-child(5) { grid-area: pan-down; }
+.ptz-controls button:nth-child(6) { grid-area: pan-right; }
 
 .panel-title {
   font-size: 1.2rem;
@@ -633,37 +799,6 @@ position: relative; /* 子元素绝对定位所必需 */
   border-top-right-radius: 10px;
   border-bottom: 1px solid rgba(0, 191, 255, 0.5);
   flex-shrink: 0;
-}
-
-.annotations-panel {
-  width: 280px; /* 可以适当加宽以容纳更多信息 */
-}
-
-.panel-footer {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid rgba(0, 191, 255, 0.5);
-  flex-shrink: 0;
-}
-
-/* 新增的统计信息样式 */
-.stats-display {
-  margin-top: 15px;
-  font-size: 0.85rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  opacity: 0.9;
-}
-.stat-item {
-  display: flex;
-  justify-content: space-between;
-  background-color: rgba(0,0,0,0.2);
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-.stat-item span:first-child {
-  color: #00BFFF;
 }
 
 /* 标注输入区域 */
@@ -837,11 +972,23 @@ position: relative; /* 子元素绝对定位所必需 */
   flex-shrink: 0;
 }
 
-.fps-display {
-  text-align: center;
-  margin-top: 10px;
-  font-size: 0.9rem;
-  opacity: 0.8;
+/* 新增的统计信息样式 */
+.stats-display {
+  margin-top: 15px;
+  font-size: 0.85rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  opacity: 0.9;
 }
-
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  background-color: rgba(0,0,0,0.2);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.stat-item span:first-child {
+  color: #00BFFF;
+}
 </style>
