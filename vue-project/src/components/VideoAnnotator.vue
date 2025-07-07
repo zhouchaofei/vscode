@@ -538,7 +538,20 @@ position: relative; /* 子元素绝对定位所必需 */
   height: 50px;
   width: 100%;
   color: #fff;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  /* 添加渐变背景 */
+  background: linear-gradient(
+    to right, 
+    rgba(0, 123, 255, 0) 0%, 
+    rgba(0, 123, 255, 0.6) 20%,
+    rgba(0, 123, 255, 1) 50%,
+    rgba(0, 123, 255, 0.6) 80%,
+    rgba(0, 123, 255, 0) 100%
+  );
+  /* 添加底部边框 */
+  /* border-bottom: 1px solid rgba(0, 191, 255, 0.3); */
+  /* 增强文字阴影 */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 191, 255, 0.5);
+  /* text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); */
   pointer-events: none; /* 允许点击事件穿透空的头部区域 */
   flex-shrink: 0; /* 防止flex布局压缩标题栏 */
 }
@@ -548,7 +561,7 @@ position: relative; /* 子元素绝对定位所必需 */
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%); /* 完美居中元素 */
-  font-size: 1.5rem;
+  font-size: 2.5rem;
   font-weight: 600;
   pointer-events: auto; /* 使文本本身可交互 */
 }
