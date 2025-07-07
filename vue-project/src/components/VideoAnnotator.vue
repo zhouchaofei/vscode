@@ -42,8 +42,8 @@
                   </div>
                   <div class="annotation-details">
                     <p>名称: {{ annotation.text }}</p>
-                    <p>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</p>
-                    <p>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</p>
+                    <!-- <p>位置: ({{ annotation.rect.x.toFixed(0) }}, {{ annotation.rect.y.toFixed(0) }})</p>
+                    <p>尺寸: {{ annotation.rect.width.toFixed(0) }}×{{ annotation.rect.height.toFixed(0) }}</p> -->
                   </div>
                   <div class="annotation-actions">
                     <button @click="deleteAnnotation(index)" class="btn-delete">删除</button>
@@ -133,6 +133,17 @@ let fpsCounter = 0; // 用于在1秒内计数的临时变量
 
 // --- 新增：面板控制功能 ---
 const togglePanel = () => {
+  // --- 本次优化修改的核心 ---
+  // 检查条件：当面板是可见的（即正要收起时）并且存在一个活跃的、未保存的标注框
+  if (isPanelVisible.value && isActiveDrawing.value) {
+    // 调用已有的 resetDrawingState 函数来清除临时标注
+    resetDrawingState();
+    // 重新绘制画布，此时临时的标注框就不会被画出来了
+    drawAnnotations();
+  }
+  // --- 修改结束 ---
+
+  // 继续执行面板的收起/展开逻辑
   isPanelVisible.value = !isPanelVisible.value;
   // 将标注模式与面板的可见性进行联动
   isDrawing.value = isPanelVisible.value;
