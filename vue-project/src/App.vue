@@ -4,26 +4,26 @@
       <h1>智慧监管平台</h1>
     </header> -->
     
-    <VideoAnnotator />
-    <!-- <VideoTest /> -->
+    <!-- <VideoAnnotator /> -->
+    <Annotation />
   </div>
 </template>
 
 <script>
-import VideoAnnotator from './components/VideoAnnotator.vue'
-
-export default {
-  components: {
-    VideoAnnotator
-  }
-}
-// import VideoTest from './components/VideoTest.vue'
+// import VideoAnnotator from './components/VideoAnnotator.vue'
 
 // export default {
 //   components: {
-//     VideoTest
+//     VideoAnnotator
 //   }
 // }
+import Annotation from './components/Annotation.vue'
+
+export default {
+  components: {
+    Annotation
+  }
+}
 </script>
 
 <style>
