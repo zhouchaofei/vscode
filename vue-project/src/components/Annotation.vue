@@ -53,7 +53,7 @@ const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointe
 
 // 不同标注类型的颜色映射
 const typeColors = {
-  '粱盖': '#FFA500', // 橙色
+  '盖梁': '#FFA500', // 橙色
   '桥墩': '#FFD700', // 黄色
   '通道': '#32CD32', // 绿色
   '匝道': '#1E90FF', // 蓝色
@@ -177,8 +177,8 @@ const drawAnnotations = () => {
  * },
  * {
  * "id": "anno_002",
- * "type": "粱盖",
- * "title": "粱盖 #B2",
+ * "type": "盖梁",
+ * "title": "盖梁 #B2",
  * "details": "钢结构，2023年进行过安全检查。",
  * "coordinates": [
  * { "x": 100, "y": 350 },
@@ -214,8 +214,8 @@ const fetchAnnotations = async () => {
       },
       {
         id: "anno_002",
-        type: "粱盖",
-        title: "粱盖 #B2",
+        type: "盖梁",
+        title: "盖梁 #B2",
         details: "钢结构，2023年进行过安全检查。",
         coordinates: [ { "x": 100, "y": 350 }, { "x": 800, "y": 370 }, { "x": 790, "y": 410 }, { "x": 90, "y": 390 } ],
         imageHeight: 1439,
