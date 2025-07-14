@@ -98,9 +98,9 @@ const initCanvas = () => {
   drawAnnotations(); // 窗口大小调整时重绘标注
 };
 
+// CHANGE: 优化了handleResize，现在只进行重绘，不再重新获取数据
 const handleResize = () => {
-    initCanvas();
-    fetchAnnotations(); // 可选：如果标注位置是相对于屏幕尺寸的，则重新获取
+    initCanvas(); // initCanvas 会重设画布大小并调用 drawAnnotations
 }
 
 /**
@@ -108,34 +108,51 @@ const handleResize = () => {
  */
 const drawAnnotations = () => {
   if (!annotationCtx) return;
-  annotationCtx.clearRect(0, 0, annotationCtx.canvas.width, annotationCtx.canvas.height);
+  // 获取当前画布的实时尺寸
+  const currentCanvasWidth = annotationCtx.canvas.width;
+  const currentCanvasHeight = annotationCtx.canvas.height;
+  
+  annotationCtx.clearRect(0, 0, currentCanvasWidth, currentCanvasHeight);
 
   annotations.value.forEach(anno => {
-    const color = typeColors[anno.type] || '#FFFFFF'; // 如果类型未知，默认为白色
+    const color = typeColors[anno.type] || '#FFFFFF'; 
     const coordinates = anno.coordinates;
     
-    if (!coordinates || coordinates.length < 2) return;
+    // 检查是否存在必要的尺寸信息
+    if (!coordinates || coordinates.length < 2 || !anno.imageWidth || !anno.imageHeight) return;
+
+    // --- NEW: 核心修改：计算缩放比例 ---
+    const scaleX = currentCanvasWidth / anno.imageWidth;
+    const scaleY = currentCanvasHeight / anno.imageHeight;
+    // ------------------------------------
 
     annotationCtx.lineWidth = 3;
     annotationCtx.strokeStyle = color;
     annotationCtx.fillStyle = `${color}4D`; // 30% 透明度填充
 
-    // 绘制多边形
     annotationCtx.beginPath();
-    annotationCtx.moveTo(coordinates[0].x, coordinates[0].y);
+
+    // CHANGE: 对每个坐标点应用缩放比例
+    const startX = coordinates[0].x * scaleX;
+    const startY = coordinates[0].y * scaleY;
+    annotationCtx.moveTo(startX, startY);
+
     for (let i = 1; i < coordinates.length; i++) {
-      annotationCtx.lineTo(coordinates[i].x, coordinates[i].y);
+      const nextX = coordinates[i].x * scaleX;
+      const nextY = coordinates[i].y * scaleY;
+      annotationCtx.lineTo(nextX, nextY);
     }
+
     annotationCtx.closePath();
     annotationCtx.stroke();
     annotationCtx.fill();
 
-    // 在图形上绘制标题文本
+    // CHANGE: 对文本位置同样应用缩放
     annotationCtx.fillStyle = '#FFFFFF';
     annotationCtx.font = 'bold 16px Arial';
     annotationCtx.textBaseline = 'top';
-    const textX = coordinates[0].x + 10;
-    const textY = coordinates[0].y + 10;
+    const textX = startX + 10; // 在缩放后的坐标基础上偏移
+    const textY = startY + 10;
     annotationCtx.fillText(anno.title, textX, textY);
   });
 };
@@ -191,21 +208,29 @@ const fetchAnnotations = async () => {
         type: "桥墩",
         title: "1#桥墩",
         details: "承重结构，建于2022年，混凝土强度C50。",
-        coordinates: [ { "x": 179.6327, "y": 786.27796 }, { "x": 180.133555, "y": 827.34641 }, { "x": 226.5442404, "y": 828.0141903 }, { "x": 228.213689, "y": 785.7771285 } ]
+        coordinates: [ { "x": 179.6327, "y": 786.27796 }, { "x": 180.133555, "y": 827.34641 }, { "x": 226.5442404, "y": 828.0141903 }, { "x": 228.213689, "y": 785.7771285 } ],
+        imageHeight: 1439,
+        imageWidth: 2559,
       },
       {
         id: "anno_002",
         type: "粱盖",
         title: "粱盖 #B2",
         details: "钢结构，2023年进行过安全检查。",
-        coordinates: [ { "x": 100, "y": 350 }, { "x": 800, "y": 370 }, { "x": 790, "y": 410 }, { "x": 90, "y": 390 } ]
+        coordinates: [ { "x": 100, "y": 350 }, { "x": 800, "y": 370 }, { "x": 790, "y": 410 }, { "x": 90, "y": 390 } ],
+        imageHeight: 1439,
+        imageWidth: 2559,
       },
        {
         id: "anno_003",
         type: "匝道",
-        title: "入口匝道",
+        title: "E匝道",
         details: "通往市中心方向，限速60km/h。",
-        coordinates: [ { "x": 900, "y": 500 }, { "x": 1200, "y": 550 }, { "x": 1180, "y": 600 }, { "x": 880, "y": 540 } ]
+        coordinates: [ { "x": 3.5875912408760513, "y": 870.8029197080291 }, { "x": 45.92335766423371, "y": 868.6131386861313 }, { "x": 97.74817518248189, "y": 867.883211678832 }, { "x": 161.98175182481765, "y": 868.6131386861313 }
+        , { "x": 202.85766423357677, "y": 870.8029197080291 }, { "x": 230.59489051094903, "y": 883.941605839416 }, { "x": 248.8430656934308, "y": 910.2189781021897 }, { "x": 260.5218978102191, "y": 932.8467153284671 }
+        , { "x": 1.9719101123596734, "y": 1005.4550561797753 } ],
+        imageHeight: 1439,
+        imageWidth: 2559,
       }
     ];
 
@@ -277,16 +302,30 @@ const handleCanvasMouseMove = (e) => {
     y: e.clientY - rect.top
   };
 
-  // 查找鼠标悬停在哪个标注上（反向检查以优先处理顶层）
-  const currentHover = annotations.value.slice().reverse().find(anno => 
-    isPointInPolygon(mousePos, anno.coordinates)
-  );
+  // --- CHANGE: 悬停检测也需要使用缩放后的坐标 ---
+  const currentCanvasWidth = annotationCanvas.value.width;
+  const currentCanvasHeight = annotationCanvas.value.height;
+
+  const currentHover = annotations.value.slice().reverse().find(anno => {
+      if (!anno.imageWidth || !anno.imageHeight) return false;
+      
+      const scaleX = currentCanvasWidth / anno.imageWidth;
+      const scaleY = currentCanvasHeight / anno.imageHeight;
+
+      // 将原始坐标转换为当前画布坐标以进行比较
+      const scaledPolygon = anno.coordinates.map(p => ({
+          x: p.x * scaleX,
+          y: p.y * scaleY
+      }));
+      
+      return isPointInPolygon(mousePos, scaledPolygon);
+  });
+  // ----------------------------------------------------
 
   if (currentHover) {
     hoveredAnnotation.value = currentHover;
-    // 将弹出框定位在光标右侧，并进行边界检查
-    popupPosition.value.x = Math.min(mousePos.x + 15, rect.width - 220); // 220 是弹出框的大约宽度
-    popupPosition.value.y = Math.min(mousePos.y + 15, rect.height - 100); // 100 是弹出框的大约高度
+    popupPosition.value.x = Math.min(mousePos.x + 15, rect.width - 220); 
+    popupPosition.value.y = Math.min(mousePos.y + 15, rect.height - 100); 
     canvasCursor.value = 'pointer';
   } else {
     hoveredAnnotation.value = null;
