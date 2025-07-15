@@ -88,6 +88,9 @@ onMounted(() => {
   connectWebSocket();
   fetchAnnotations(); // 组件加载时获取标注
   window.addEventListener('resize', handleResize);
+
+  // 新增：在组件加载时，主动调用切换到默认视角1的指令
+  switchView(currentView.value); 
 });
 
 onUnmounted(() => {
