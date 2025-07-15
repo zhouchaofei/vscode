@@ -18,6 +18,24 @@
         </div>
       </header>
 
+      <div class="top-controls-container">
+        <div class="controls-group camera-controls">
+          <button @click="switchCamera('yongnian')" class="control-btn" :class="{ selected: currentCamera === 'yongnian' }">永年</button>
+          <button @click="switchCamera('feixiang_south')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_south' }">肥乡南</button>
+          <button @click="switchCamera('feixiang_north')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_north' }">肥乡北</button>
+          <button @click="switchCamera('feixiang_liangchang')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_liangchang' }">肥乡梁场</button>
+        </div>
+
+        <div class="controls-group view-controls">
+          <button @click="switchView('view_1')" class="control-btn" :class="{ selected: currentView === 'view_1' }">视角1</button>
+          <button @click="switchView('view_2')" class="control-btn" :class="{ selected: currentView === 'view_2' }">视角2</button>
+          <button @click="switchView('view_3')" class="control-btn" :class="{ selected: currentView === 'view_3' }">视角3</button>
+          <button @click="switchView('view_4')" class="control-btn" :class="{ selected: currentView === 'view_4' }">视角4</button>
+          <button @click="switchView('view_5')" class="control-btn" :class="{ selected: currentView === 'view_5' }">视角5</button>
+          <button @click="switchView('view_6')" class="control-btn" :class="{ selected: currentView === 'view_6' }">视角6</button>
+        </div>
+      </div>
+
       <main class="main-content">
         <div v-if="hoveredAnnotation" class="details-popup" :style="{ top: popupPosition.y + 'px', left: popupPosition.x + 'px' }">
           <h4>{{ hoveredAnnotation.title }}</h4>
@@ -25,21 +43,6 @@
         </div>
       </main>
 
-      <div class="camera-controls">
-        <button @click="switchCamera('yongnian')" :class="{ selected: currentCamera === 'yongnian' }" class="camera-btn">永年</button>
-        <button @click="switchCamera('feixiang_south')" :class="{ selected: currentCamera === 'feixiang_south' }" class="camera-btn">肥乡南</button>
-        <button @click="switchCamera('feixiang_north')" :class="{ selected: currentCamera === 'feixiang_north' }" class="camera-btn">肥乡北</button>
-        <button @click="switchCamera('feixiang_liangchang')" :class="{ selected: currentCamera === 'feixiang_liangchang' }" class="camera-btn">肥乡梁场</button>
-      </div>
-
-      <div class="view-controls">
-        <button @click="switchView('view_1')" class="view-btn">视角1</button>
-        <button @click="switchView('view_2')" class="view-btn">视角2</button>
-        <button @click="switchView('view_3')" class="view-btn">视角3</button>
-        <button @click="switchView('view_4')" class="view-btn">视角4</button>
-        <button @click="switchView('view_5')" class="view-btn">视角5</button>
-        <button @click="switchView('view_6')" class="view-btn">视角6</button>
-      </div>
     </div>
   </div>
 </template>
@@ -59,8 +62,9 @@ const hoveredAnnotation = ref(null); // 保存当前鼠标悬停的标注
 const popupPosition = ref({ x: 0, y: 0 }); // 详情弹出框的位置
 const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointer'
 
-// --- NEW: 摄像头状态 ---
-const currentCamera = ref('yongnian'); // 默认选中'永年'
+// --- 摄像头和视角状态 ---
+const currentCamera = ref('yongnian'); // 默认选中'永年'摄像头
+const currentView = ref('view_1'); // NEW: 默认选中视角1
 
 // 不同标注类型的颜色映射
 const typeColors = {
@@ -237,6 +241,7 @@ const switchCamera = async (cameraId) => {
  */
 const switchView = async (viewId) => {
   console.log(`准备切换到视角: ${viewId}`);
+  currentView.value = viewId; // CHANGE: 更新当前视角状态
 
   // 从 'view_1' 中提取数字索引
   const indexMatch = viewId.match(/_(\d+)$/);
@@ -267,7 +272,7 @@ const switchView = async (viewId) => {
     // 萤石云API成功响应码为'200'
     if (response.ok && result.code === '200') {
       console.log(`[${timestamp}] 视角切换成功 (${response.status}):`, result);
-      alert(`已成功发送指令切换到 "${viewId}"!`);
+      // alert(`已成功发送指令切换到 "${viewId}"!`);
       
       // 成功切换视角后，可以获取新视角的标注
       // await fetchAnnotations(); 
@@ -512,55 +517,39 @@ const processImageData = (data) => {
   line-height: 1.5;
 }
 
-/* --- NEW: 摄像头控件 --- */
-.camera-controls {
+/* --- NEW: 顶部控件容器 --- */
+.top-controls-container {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
+  top: 65px; /* 头部高度(50px) + 间距(15px) */
+  left: 0;
+  width: 100%;
+  padding: 0 20px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  pointer-events: auto;
-}
-.camera-btn {
-  padding: 12px 20px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fff;
-  background-color: rgba(20, 40, 80, 0.7);
-  border: 1px solid rgba(0, 191, 255, 0.6);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(5px);
-  text-align: center;
-  width: 150px;
-}
-.camera-btn:hover {
-  background-color: rgba(0, 191, 255, 0.7);
-  border-color: #fff;
-  transform: translateY(-2px);
-}
-.camera-btn.selected {
-  background-color: #00BFFF;
-  border-color: #fff;
-  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8);
-  color: #0d203e;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  box-sizing: border-box;
 }
 
-
-/* --- 视角控件 --- */
-.view-controls {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 240px; /* 调整宽度 */
+/* --- NEW: 控件组通用样式 --- */
+.controls-group {
+  pointer-events: auto; /* 仅按钮区域可点击 */
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
-  pointer-events: auto; /* 按钮可点击 */
 }
-.view-btn {
+
+/* --- NEW: 摄像头和视角按钮共享样式 --- */
+.camera-controls {
+  grid-template-columns: 1fr 1fr; /* 2列 */
+  width: 280px; /* 根据内容调整宽度 */
+}
+
+.view-controls {
+  grid-template-columns: 1fr 1fr 1fr; /* 3列 */
+  width: 240px;
+}
+
+.control-btn {
   padding: 12px 10px;
   font-size: 1rem;
   font-weight: 600;
@@ -573,12 +562,22 @@ const processImageData = (data) => {
   backdrop-filter: blur(5px);
   text-align: center;
 }
-.view-btn:hover {
+
+.control-btn:hover {
   background-color: rgba(0, 191, 255, 0.7);
   border-color: #fff;
   transform: scale(1.05);
 }
-.view-btn:active {
+
+.control-btn:active {
   transform: scale(0.98);
+}
+
+.control-btn.selected {
+  background-color: #00BFFF;
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8);
+  color: #0d203e;
+  transform: scale(1.05);
 }
 </style>
