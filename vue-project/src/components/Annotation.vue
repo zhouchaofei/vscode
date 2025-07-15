@@ -435,36 +435,38 @@ const processImageData = (data) => {
 }
 
 .background-canvas, .annotation-canvas-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
   height: 100%;
 }
 .background-canvas { z-index: 1; }
-.annotation-canvas-layer { z-index: 3; } /* 在视频之上，UI之下 */ 
+.annotation-canvas-layer { z-index: 3; }
 
 /* --- UI 覆盖层 --- */
 .ui-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
   height: 100%;
-  z-index: 4;
-  pointer-events: none; /* 允许点击穿透到canvas */
-  display: flex;
+  z-index: 4; 
+  pointer-events: none; 
+  display: flex; 
   flex-direction: column;
 }
 
-.main-content {
-  flex-grow: 1;
-  position: relative;
-}
+.main-content { 
+  flex-grow: 1; 
+  position: relative; }
 
 /* --- 头部 --- */
 .app-header {
-  position: relative; height: 50px; width: 100%; color: #fff;
+  position: relative; 
+  height: 50px; 
+  width: 100%; 
+  color: #fff;
   /* CHANGE: 更新背景色为纯色，并增加辉光效果 */
   background-color: #00BFFF;
   box-shadow: 0 4px 15px rgba(0, 191, 255, 0.5);
@@ -472,33 +474,33 @@ const processImageData = (data) => {
   flex-shrink: 0;
 }
 .app-header h1 {
-  position: absolute;
-  left: 50%;
+  position: absolute; 
+  left: 50%; 
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 2.2rem;
+  font-size: 2.2rem; /* 适当调小字体以适应纯色背景 */
   font-weight: 600;
 }
 .connection-status {
-  position: absolute;
-  right: 20px;
+  position: absolute; 
+  right: 20px; 
   top: 50%;
   transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
   font-size: 0.9rem;
 }
 .status-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  width: 12px; 
+  height: 12px; 
+  border-radius: 50%; 
   background-color: #ff5722;
-  box-shadow: 0 0 8px #ff5722;
+  box-shadow: 0 0 8px #ff5722; 
   transition: all 0.3s ease;
 }
 .status-indicator.connected {
-  background-color: #00ff7f;
+  background-color: #00ff7f; 
   box-shadow: 0 0 10px #00ff7f;
 }
 
@@ -557,50 +559,82 @@ const processImageData = (data) => {
 
 /* --- 顶部右侧控件 --- */
 .top-controls-container {
-  position: absolute; top: 65px; right: 20px;
+  position: absolute; 
+  top: 65px; 
+  right: 20px;
   pointer-events: none;
 }
 
 /* --- 控件组通用样式 --- */
 .controls-group {
-  pointer-events: auto; display: grid; gap: 8px;
+  pointer-events: auto; 
+  display: grid; 
+  gap: 8px;
 }
 .camera-controls {
-  grid-template-columns: 1fr 1fr; width: 280px;
+  grid-template-columns: 1fr 1fr; 
+  width: 280px;
 }
 .view-controls {
-  grid-template-columns: 1fr 1fr 1fr; width: 240px;
+  grid-template-columns: 1fr 1fr 1fr; 
+  width: 240px;
 }
 
 /* --- 通用按钮样式 --- */
 .control-btn {
-  padding: 12px 10px; font-size: 1rem; font-weight: 600;
-  color: #fff; background-color: rgba(20, 40, 80, 0.7);
-  border: 1px solid rgba(0, 191, 255, 0.6); border-radius: 8px;
-  cursor: pointer; transition: all 0.2s ease; backdrop-filter: blur(5px);
+  padding: 12px 10px; 
+  font-size: 1rem; 
+  font-weight: 600;
+  color: #fff; 
+  background-color: rgba(20, 40, 80, 0.7);
+  border: 1px solid rgba(0, 191, 255, 0.6); 
+  border-radius: 8px;
+  cursor: pointer; 
+  transition: all 0.2s ease; 
+  backdrop-filter: blur(5px);
   text-align: center;
 }
 .control-btn:hover {
-  background-color: rgba(0, 191, 255, 0.7); border-color: #fff; transform: scale(1.05);
+  background-color: rgba(0, 191, 255, 0.7); 
+  border-color: #fff; 
+  transform: scale(1.05);
 }
-.control-btn:active { transform: scale(0.98); }
+.control-btn:active { 
+  transform: scale(0.98); 
+}
 .control-btn.selected {
-  background-color: #00BFFF; border-color: #fff;
-  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8); color: #0d203e; transform: scale(1.05);
+  background-color: #00BFFF; 
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8); 
+  color: #0d203e; 
+  transform: scale(1.05);
 }
 
 /* --- 详情弹出框 --- */
 .details-popup {
-  position: absolute; width: 250px; padding: 15px;
-  background-color: rgba(10, 40, 90, 0.85); backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 191, 255, 0.6); border-radius: 8px;
+  position: absolute; 
+  width: 250px; 
+  padding: 15px;
+  background-color: rgba(10, 40, 90, 0.85); 
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 191, 255, 0.6); 
+  border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  color: #fff; font-size: 0.9rem; pointer-events: none;
-  transition: opacity 0.2s ease; z-index: 100;
+  color: #fff; 
+  font-size: 0.9rem; 
+  pointer-events: none;
+  transition: opacity 0.2s ease; 
+  z-index: 100;
 }
 .details-popup h4 {
-  margin: 0 0 10px 0; color: #00BFFF; font-size: 1rem;
-  border-bottom: 1px solid rgba(0, 191, 255, 0.3); padding-bottom: 5px;
+  margin: 0 0 10px 0; 
+  color: #00BFFF; 
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(0, 191, 255, 0.3); 
+  padding-bottom: 5px;
 }
-.details-popup p { margin: 0; line-height: 1.5; }
+.details-popup p { 
+  margin: 0; 
+  line-height: 1.5; 
+}
 </style>
