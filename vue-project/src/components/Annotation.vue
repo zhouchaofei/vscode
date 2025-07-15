@@ -28,7 +28,7 @@
             <button @click="switchCamera('yongnian')" class="control-btn" :class="{ selected: currentCamera === 'yongnian' }">永年</button>
             <button @click="switchCamera('feixiang_south')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_south' }">肥乡南</button>
             <button @click="switchCamera('feixiang_north')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_north' }">肥乡北</button>
-            <button @click="switchCamera('feixiang_liangchang')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_liangchang' }">肥乡梁场</button>
+            <button @click="switchCamera('feixiang_liangchang')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_liangchang' }">肥乡梁厂</button>
           </div>
           <div class="drawer-handle">
             <span>摄<br>像<br>头</span>
@@ -447,7 +447,6 @@ const processImageData = (data) => {
 /* --- 头部 --- */
 .app-header {
   position: relative; height: 50px; width: 100%; color: #fff;
-  /* CHANGE: 恢复中心向两侧渐变的背景 */
   background: linear-gradient( to right, 
     rgba(0, 191, 255, 0) 0%, 
     rgba(0, 191, 255, 0.8) 30%, 
@@ -512,7 +511,8 @@ const processImageData = (data) => {
   top: 0;
   left: 100%; /* 关键：定位在父元素(面板)的右侧 */
   width: 35px;
-  height: 120px;
+  /* CHANGE: 高度设置为100%以匹配面板 */
+  height: 100%; 
   background-color: rgba(0, 191, 255, 0.8);
   border-radius: 0 10px 10px 0;
   box-shadow: 0 0 12px rgba(0, 191, 255, 0.7);
@@ -524,7 +524,7 @@ const processImageData = (data) => {
   font-weight: 600;
   font-size: 1rem;
   line-height: 1.5;
-  writing-mode: vertical-rl;
+  /* writing-mode: vertical-rl; */
   text-orientation: mixed;
   white-space: nowrap; /* 防止文字换行 */
   transition: background-color 0.3s;
