@@ -18,14 +18,24 @@
         </div>
       </header>
 
-      <div class="top-controls-container">
-        <div class="controls-group camera-controls">
+      <div 
+        class="drawer-container" 
+        :class="{ 'is-open': isCameraDrawerOpen }"
+        @mouseenter="isCameraDrawerOpen = true"
+        @mouseleave="isCameraDrawerOpen = false"
+      >
+        <div class="drawer-panel controls-group camera-controls">
           <button @click="switchCamera('yongnian')" class="control-btn" :class="{ selected: currentCamera === 'yongnian' }">永年</button>
           <button @click="switchCamera('feixiang_south')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_south' }">肥乡南</button>
           <button @click="switchCamera('feixiang_north')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_north' }">肥乡北</button>
           <button @click="switchCamera('feixiang_liangchang')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_liangchang' }">肥乡梁场</button>
         </div>
+        <div class="drawer-handle">
+          <span>摄<br>像<br>头</span>
+        </div>
+      </div>
 
+      <div class="top-controls-container">
         <div class="controls-group view-controls">
           <button @click="switchView('view_1')" class="control-btn" :class="{ selected: currentView === 'view_1' }">视角1</button>
           <button @click="switchView('view_2')" class="control-btn" :class="{ selected: currentView === 'view_2' }">视角2</button>
@@ -64,7 +74,8 @@ const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointe
 
 // --- 摄像头和视角状态 ---
 const currentCamera = ref('yongnian'); // 默认选中'永年'摄像头
-const currentView = ref('view_1'); // NEW: 默认选中视角1
+const currentView = ref('view_1'); // 默认选中视角1
+const isCameraDrawerOpen = ref(false); // 控制抽屉状态
 
 // 不同标注类型的颜色映射
 const typeColors = {
@@ -244,7 +255,7 @@ const switchCamera = async (cameraId) => {
  */
 const switchView = async (viewId) => {
   console.log(`准备切换到视角: ${viewId}`);
-  currentView.value = viewId; // CHANGE: 更新当前视角状态
+  currentView.value = viewId; // 更新当前视角状态
 
   // 从 'view_1' 中提取数字索引
   const indexMatch = viewId.match(/_(\d+)$/);
@@ -453,12 +464,11 @@ const processImageData = (data) => {
 
 /* --- 头部 --- */
 .app-header {
-  position: relative;
-  height: 50px;
-  width: 100%;
-  color: #fff;
-  background: linear-gradient( to right, rgba(0, 123, 255, 0) 0%, rgba(0, 123, 255, 0.6) 20%, rgba(0, 123, 255, 1) 50%, rgba(0, 123, 255, 0.6) 80%, rgba(0, 123, 255, 0) 100% );
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 191, 255, 0.5);
+  position: relative; height: 50px; width: 100%; color: #fff;
+  /* CHANGE: 更新背景色为纯色，并增加辉光效果 */
+  background-color: #00BFFF;
+  box-shadow: 0 4px 15px rgba(0, 191, 255, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
 }
 .app-header h1 {
@@ -466,7 +476,7 @@ const processImageData = (data) => {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   font-weight: 600;
 }
 .connection-status {
@@ -492,95 +502,105 @@ const processImageData = (data) => {
   box-shadow: 0 0 10px #00ff7f;
 }
 
-/* --- 详情弹出框 --- */
-.details-popup {
+/* --- NEW: 抽屉式面板 --- */
+.drawer-container {
   position: absolute;
-  width: 250px;
-  padding: 15px;
-  background-color: rgba(10, 40, 90, 0.85);
+  top: 65px;
+  left: 0;
+  z-index: 50; /* 确保在最上层 */
+  pointer-events: auto; /* 容器本身可以响应鼠标事件 */
+}
+
+.drawer-panel {
+  padding: 20px;
+  background-color: rgba(10, 40, 90, 0.9);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(0, 191, 255, 0.6);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  color: #fff;
-  font-size: 0.9rem;
-  pointer-events: none; /* 弹出框本身不捕获鼠标事件 */
-  transition: opacity 0.2s ease;
-  z-index: 100;
-}
-.details-popup h4 {
-  margin: 0 0 10px 0;
-  color: #00BFFF;
-  font-size: 1rem;
-  border-bottom: 1px solid rgba(0, 191, 255, 0.3);
-  padding-bottom: 5px;
-}
-.details-popup p {
-  margin: 0;
-  line-height: 1.5;
+  border-left: none; /* 左边框由手柄代替 */
+  border-radius: 0 12px 12px 0;
+  transform: translateX(-100%);
+  transition: transform 0.4s ease-in-out;
 }
 
-/* --- NEW: 顶部控件容器 --- */
-.top-controls-container {
+.drawer-container.is-open .drawer-panel {
+  transform: translateX(0);
+  box-shadow: 10px 0 25px rgba(0, 0, 0, 0.3);
+}
+
+.drawer-handle {
   position: absolute;
-  top: 65px; /* 头部高度(50px) + 间距(15px) */
-  left: 0;
-  width: 100%;
-  padding: 0 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  pointer-events: none;
-  box-sizing: border-box;
-}
-
-/* --- NEW: 控件组通用样式 --- */
-.controls-group {
-  pointer-events: auto; /* 仅按钮区域可点击 */
-  display: grid;
-  gap: 8px;
-}
-
-/* --- NEW: 摄像头和视角按钮共享样式 --- */
-.camera-controls {
-  grid-template-columns: 1fr 1fr; /* 2列 */
-  width: 280px; /* 根据内容调整宽度 */
-}
-
-.view-controls {
-  grid-template-columns: 1fr 1fr 1fr; /* 3列 */
-  width: 240px;
-}
-
-.control-btn {
-  padding: 12px 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fff;
-  background-color: rgba(20, 40, 80, 0.7);
-  border: 1px solid rgba(0, 191, 255, 0.6);
-  border-radius: 8px;
+  top: 0;
+  left: 100%;
+  width: 35px;
+  height: 120px;
+  background-color: rgba(0, 191, 255, 0.8);
+  border-radius: 0 10px 10px 0;
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.7);
   cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.5;
+  writing-mode: vertical-rl; /* 垂直文字 */
+  text-orientation: mixed;
+  letter-spacing: 2px;
+  transition: background-color 0.3s;
+}
+
+.drawer-container.is-open .drawer-handle {
+  background-color: rgba(0, 191, 255, 1);
+}
+
+
+/* --- 顶部右侧控件 --- */
+.top-controls-container {
+  position: absolute; top: 65px; right: 20px;
+  pointer-events: none;
+}
+
+/* --- 控件组通用样式 --- */
+.controls-group {
+  pointer-events: auto; display: grid; gap: 8px;
+}
+.camera-controls {
+  grid-template-columns: 1fr 1fr; width: 280px;
+}
+.view-controls {
+  grid-template-columns: 1fr 1fr 1fr; width: 240px;
+}
+
+/* --- 通用按钮样式 --- */
+.control-btn {
+  padding: 12px 10px; font-size: 1rem; font-weight: 600;
+  color: #fff; background-color: rgba(20, 40, 80, 0.7);
+  border: 1px solid rgba(0, 191, 255, 0.6); border-radius: 8px;
+  cursor: pointer; transition: all 0.2s ease; backdrop-filter: blur(5px);
   text-align: center;
 }
-
 .control-btn:hover {
-  background-color: rgba(0, 191, 255, 0.7);
-  border-color: #fff;
-  transform: scale(1.05);
+  background-color: rgba(0, 191, 255, 0.7); border-color: #fff; transform: scale(1.05);
 }
-
-.control-btn:active {
-  transform: scale(0.98);
-}
-
+.control-btn:active { transform: scale(0.98); }
 .control-btn.selected {
-  background-color: #00BFFF;
-  border-color: #fff;
-  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8);
-  color: #0d203e;
-  transform: scale(1.05);
+  background-color: #00BFFF; border-color: #fff;
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8); color: #0d203e; transform: scale(1.05);
 }
+
+/* --- 详情弹出框 --- */
+.details-popup {
+  position: absolute; width: 250px; padding: 15px;
+  background-color: rgba(10, 40, 90, 0.85); backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 191, 255, 0.6); border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  color: #fff; font-size: 0.9rem; pointer-events: none;
+  transition: opacity 0.2s ease; z-index: 100;
+}
+.details-popup h4 {
+  margin: 0 0 10px 0; color: #00BFFF; font-size: 1rem;
+  border-bottom: 1px solid rgba(0, 191, 255, 0.3); padding-bottom: 5px;
+}
+.details-popup p { margin: 0; line-height: 1.5; }
 </style>
