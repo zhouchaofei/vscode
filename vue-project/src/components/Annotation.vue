@@ -1,6 +1,8 @@
 <template>
   <div class="annotator-container">
-    <canvas ref="videoCanvas" class="background-canvas"></canvas>
+    <div class="video-container">
+      <video ref="videoPlayer" class="video-js vjs-default-skin"></video>
+    </div>
     
     <canvas
       ref="annotationCanvas"
@@ -13,8 +15,8 @@
       <header class="app-header">
         <h1>智慧监管平台</h1>
         <div class="connection-status">
-          <div class="status-indicator" :class="{ connected: isConnected }"></div>
-          <span>{{ connectionStatus }}</span>
+            <div class="status-indicator" :class="{ connected: isVideoPlaying }"></div>
+            <span>{{ videoStatus }}</span>
         </div>
       </header>
 
@@ -59,14 +61,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+
+// --- 新增：导入 Video.js 及其 HLS 插件 ---
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css'; // 导入 Video.js 的 CSS
+
+// HLS 插件在导入时会自动注册
+// import 'videojs-contrib-hls';  // <--- 关键！把这一行删除或注释掉！
 
 // --- Canvas 和状态管理 ---
-const videoCanvas = ref(null);
+// const videoCanvas = ref(null); // 已移除
 const annotationCanvas = ref(null);
-let videoCtx = null;
+// let videoCtx = null; // 已移除
 let annotationCtx = null;
-
 
 const annotations = ref([]); // 保存来自后端的标注数据
 const hoveredAnnotation = ref(null); // 保存当前鼠标悬停的标注
@@ -89,45 +97,134 @@ const typeColors = {
   '涵洞': '#8A2BE2'   // 紫色 (BlueViolet)
 };
 
-// --- WebSocket 和连接状态 ---
-const socket = ref(null);
-const isConnected = ref(false);
-const connectionStatus = ref("未连接");
+// --- 新增：Video.js 播放器状态 ---
+const videoPlayer = ref(null); // 用于 <video> 元素的模板引用
+const player = ref(null);      // 用于持有 Video.js 播放器实例
+const isVideoPlaying = ref(false);
+const videoStatus = ref("播放器准备就绪");
+// --- 新增：初始视频流 URL ---
+const initialStreamUrl = ref("https://open.ys7.com/v3/openlive/33011063992677425735:33010516991327760034_1_1.m3u8?expire=1783780175&id=865721859495178240&t=56c5d646f2000d3068fcd86b3c12aac95db0126db0944127dace5b10b5be4268&ev=100&devProto=gb28181");
 
 // --- 组件生命周期钩子 ---
 onMounted(() => {
-  initCanvas();
-  connectWebSocket();
-  fetchAnnotations(); // 组件加载时获取标注
-  window.addEventListener('resize', handleResize);
-
-  // 新增：在组件加载时，主动调用切换到默认视角1的指令
-  switchView(currentView.value); 
+  // 确保 DOM 已经渲染
+  nextTick(() => {
+    initCanvas();
+    initPlayer(initialStreamUrl.value); // 新增：初始化 Video.js
+    fetchAnnotations(); // 组件加载时获取标注
+    window.addEventListener('resize', handleResize);
+    // 在组件加载时，主动调用切换到默认视角1的指令
+    switchView(currentView.value); 
+  });
+  
 });
 
 onUnmounted(() => {
-  handleDisconnect("组件已卸载");
+  // 新增：销毁播放器以释放资源
+  if (player.value) {
+    player.value.dispose();
+  }
   window.removeEventListener('resize', handleResize);
 });
 
-// --- Canvas 和绘制 ---
-const initCanvas = () => {
-  const container = document.querySelector('.annotator-container');
-  if (!container) return;
-  const { clientWidth: width, clientHeight: height } = container;
+// --- 新增：Video.js 播放器初始化 ---
+/**
+ * 初始化 Video.js 播放器。
+ * 关键：在 options 中直接提供初始的 HLS 源。
+ * @param {string} initialUrl - 第一个要播放的视频流地址
+ */
+const initPlayer = (initialUrl) => {
+  if (!videoPlayer.value) return;
 
-  // 设置两个canvas的尺寸相同
-  [videoCanvas, annotationCanvas].forEach(canvasRef => {
-    if(canvasRef.value) {
-      canvasRef.value.width = width;
-      canvasRef.value.height = height;
+  const options = {
+    autoplay: true,    // 自动播放
+    muted: true,       // 静音以允许在大多数浏览器中自动播放
+    controls: true,    // 显示默认播放器控件
+    preload: 'auto',
+    fluid: true,       // 播放器将占满容器宽度，并保持宽高比
+    responsive: true,
+    sources: [{
+      // 这里使用你提供的 HLS 地址作为默认视频源
+      src: initialUrl,
+      type: 'application/x-mpegURL' // HLS 视频流类型
+    }]
+  };
+
+  player.value = videojs(videoPlayer.value, options, () => {
+    if (!player.value) {
+      console.error("播放器尚未初始化！");
+      return;
     }
+    console.log('Video.js player is ready');
+    player.value.play().catch(error => {
+      console.error("自动播放被浏览器阻止:", error);
+      videoStatus.value = "点击播放以开始";
+    });
+    // 设置初始视频流
+    // const initialStreamUrl = "https://open.ys7.com/v3/openlive/33011063992677425735:33011012991327147072_1_1.m3u8?expire=1783736336&id=865537983230619648&t=65b4a06c2353dc75ffe3cacdf3bec82c97b6b0c08b088414f3f88d566f4d4b1d&ev=100&devProto=gb28181";
+    // setVideoStream(initialStreamUrl);
+  });
+
+  // 播放器事件监听
+  player.value.on('playing', () => {
+    isVideoPlaying.value = true;
+    videoStatus.value = "视频流播放中";
+    console.log('Video stream is playing.');
+  });
+
+  player.value.on('error', function() {
+    const error = player.value.error();
+    isVideoPlaying.value = false;
+    videoStatus.value = `播放错误: ${error.message}`;
+    console.error('Video.js Error:', error);
   });
   
-  videoCtx = videoCanvas.value.getContext('2d');
-  annotationCtx = annotationCanvas.value.getContext('2d');
+  player.value.on('ended', () => {
+    isVideoPlaying.value = false;
+    videoStatus.value = '播放结束';
+  });
   
-  drawAnnotations(); // 窗口大小调整时重绘标注
+  player.value.on('pause', () => {
+    isVideoPlaying.value = false;
+    videoStatus.value = '已暂停';
+  });
+};
+
+/**
+ * 灵活更换视频流的函数。
+ * 这个函数现在可以安全地被随时调用。
+ * @param {string} url - 新的 HLS 视频流地址
+ */
+const setVideoStream = (url) => {
+  if (!player.value) {
+    console.error("播放器尚未初始化！");
+    return;
+  }
+  console.log(`正在更换视频源为: ${url}`);
+  player.value.src({
+    src: url,
+    type: 'application/x-mpegURL' // HLS 流类型
+  });
+  player.value.play().catch(error => {
+      console.error("播放新视频源失败:", error);
+      videoStatus.value = "无法播放新的视频源";
+  });
+};
+
+// --- Canvas 和绘制 ---
+const initCanvas = () => {
+    // 变更：标注画布现在需要匹配视频容器的尺寸
+    const container = document.querySelector('.video-container');
+    if (!container || !annotationCanvas.value) return;
+
+    const { clientWidth: width, clientHeight: height } = container;
+
+    annotationCanvas.value.width = width;
+    annotationCanvas.value.height = height;
+    
+    annotationCtx = annotationCanvas.value.getContext('2d');
+    
+    drawAnnotations(); // 窗口大小调整时重绘标注
 };
 
 // 优化了handleResize，现在只进行重绘，不再重新获取数据
@@ -147,7 +244,7 @@ const drawAnnotations = () => {
   annotations.value.forEach(anno => {
     const color = typeColors[anno.type] || '#FFFFFF'; 
     const coordinates = anno.coordinates;
-    
+
     // 检查是否存在必要的尺寸信息
     if (!coordinates || coordinates.length < 2 || !anno.imageWidth || !anno.imageHeight) return;
 
@@ -220,7 +317,6 @@ const fetchAnnotations = async () => {
       { id: "anno_017", type: "盖梁", title: "1#盖梁", details: "", coordinates: [{ "x": 171.20, "y": 765.02 }, { "x": 171.20, "y": 784.37 }, { "x": 238.68, "y": 781.93 }, { "x": 238.84, "y": 761.61 }], imageHeight: 1439, imageWidth: 2559 },
       { id: "anno_018", type: "涵洞", title: "1-2×2m箱型涵洞CK0+310", details: "", coordinates: [{ "x": 2257.78, "y": 935.50 }, { "x": 2254.28, "y": 974.98 }, { "x": 2371.82, "y": 1009.19 }, { "x": 2374.01, "y": 955.68 }], imageHeight: 1439, imageWidth: 2559 }
     ];
-
     annotations.value = mockData;
     console.log("标注数据加载成功:", annotations.value);
     drawAnnotations(); // 绘制新获取的标注
@@ -237,16 +333,15 @@ const fetchAnnotations = async () => {
 const switchCamera = async (cameraId) => {
   console.log(`指令: 切换到摄像头: ${cameraId}`);
   currentCamera.value = cameraId;
-
   // 此处为未来实现具体摄像头切换逻辑的预留位置。
   // 例如，这可能会关闭当前的WebSocket连接，
   // 然后使用新的URL（与cameraId关联）重新建立连接。
   alert(`已发送指令切换到 "${cameraId}"! (功能待实现)`);
-  
   // 切换摄像头后，可能需要获取与新摄像头关联的标注
+  // TODO: 当准备好后，可在此实现获取新摄像头流URL的逻辑
+  // 并调用 setVideoStream(newUrl);
   // await fetchAnnotationsForCamera(cameraId);
 };
-
 
 /**
  * 通过向后端发送命令来切换视图。
@@ -254,6 +349,7 @@ const switchCamera = async (cameraId) => {
  * CHANGE: 通过向萤石云API发送命令来切换设备预设点（视角）。
  * @param {string} viewId - 要切换到的视图ID (例如 'view_1')。
  */
+// 变更：此函数现在也会更新视频播放器的源
 const switchView = async (viewId) => {
   console.log(`准备切换到视角: ${viewId}`);
   currentView.value = viewId; // 更新当前视角状态
@@ -266,29 +362,25 @@ const switchView = async (viewId) => {
     return;
   }
   const index = parseInt(indexMatch[1], 10);
-
-  // 萤石云 API 参数
+  
+  // 注意：这将调用萤石云API来移动摄像头。
   // 警告: accessToken 通常具有时效性，不应硬编码在前端。
   // 在生产环境中，应由后端服务器管理和提供。
+  // 我们将假设流URL保持不变，因为是流内容本身发生了变化。
+  // 如果每个预设点都有一个*不同*的M3U8 URL，您需要在此处更新它。
   const accessToken = "at.clyk2nli5w0duq3maaab3lr5a6s64kdh-1ovqb7s4pd-07h49dz-jxbkxlnby";
   const deviceSerial = "33011063992677425735:33010516991327760034";
   const channelNo = 1;
-
   const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
 
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST'
-    });
-
+    const response = await fetch(apiUrl, { method: 'POST' });
     const result = await response.json();
     const timestamp = new Date().toLocaleTimeString();
 
     // 萤石云API成功响应码为'200'
     if (response.ok && result.code === '200') {
       console.log(`[${timestamp}] 视角切换成功 (${response.status}):`, result);
-      // alert(`已成功发送指令切换到 "${viewId}"!`);
-      
       // 成功切换视角后，可以获取新视角的标注
       // await fetchAnnotations(); 
     } else {
@@ -296,14 +388,12 @@ const switchView = async (viewId) => {
       console.error(`[${timestamp}] 视角切换API错误 (${response.status}):`, result);
       throw new Error(`API 错误: ${result.msg || '未知错误'}`);
     }
-
   } catch (error) {
     const timestamp = new Date().toLocaleTimeString();
     console.error(`[${timestamp}] 切换到 ${viewId} 的网络请求失败:`, error);
     alert(`指令 "${viewId}" 发送失败: ${error.message}`);
   }
 };
-
 
 // --- 用于详情弹出框的鼠标交互 ---
 /**
@@ -318,7 +408,6 @@ function isPointInPolygon(point, polygon) {
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
         const xi = polygon[i].x, yi = polygon[i].y;
         const xj = polygon[j].x, yj = polygon[j].y;
-
         const intersect = ((yi > y) !== (yj > y))
             && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
         if (intersect) isInside = !isInside;
@@ -356,72 +445,8 @@ const handleCanvasMouseMove = (e) => {
   }
 };
 
-// --- WebSocket 连接逻辑 ---
-const connectWebSocket = () => {
-  if (isConnected.value) return;
-  const serverUrl = 'ws://59.110.65.210:8765';
-  connectionStatus.value = "连接中...";
-  try {
-    const ws = new WebSocket(serverUrl);
-    socket.value = ws;
-    ws.onopen = () => {
-      isConnected.value = true;
-      connectionStatus.value = "已连接";
-      console.log("已连接视频流");
-    };
-    ws.onmessage = (event) => {
-      // 处理传入视频帧的逻辑
-      if (typeof event.data === 'string') {
-        try {
-          const message = JSON.parse(event.data);
-          if (message.type === 'frame' && message.data) {
-            displayFrame(message.data);
-          }
-        } catch(e) { /* 不是JSON消息 */ }
-      } else if (event.data instanceof Blob || event.data instanceof ArrayBuffer) {
-        processImageData(event.data);
-      }
-    };
-    ws.onclose = () => handleDisconnect('连接已断开');
-    ws.onerror = () => handleDisconnect('连接错误');
-  } catch (error) {
-    handleDisconnect('连接失败');
-  }
-};
+// --- 已移除：所有与 WebSocket 相关的功能 (connectWebSocket, handleDisconnect, displayFrame, 等) ---
 
-const handleDisconnect = (statusText) => {
-  isConnected.value = false;
-  connectionStatus.value = statusText;
-  if (socket.value) {
-    socket.value.close();
-    socket.value = null;
-  }
-};
-
-const displayFrame = (base64Data) => {
-  const img = new Image();
-  img.onload = () => {
-    if (videoCtx) {
-      videoCtx.clearRect(0, 0, videoCtx.canvas.width, videoCtx.canvas.height);
-      videoCtx.drawImage(img, 0, 0, videoCtx.canvas.width, videoCtx.canvas.height);
-    }
-  };
-  img.src = 'data:image/jpeg;base64,' + base64Data;
-};
-
-const processImageData = (data) => {
-  const blob = new Blob([data], { type: 'image/jpeg' });
-  const url = URL.createObjectURL(blob);
-  const img = new Image();
-  img.onload = () => {
-    if (videoCtx) {
-      videoCtx.clearRect(0, 0, videoCtx.canvas.width, videoCtx.canvas.height);
-      videoCtx.drawImage(img, 0, 0, videoCtx.canvas.width, videoCtx.canvas.height);
-    }
-    URL.revokeObjectURL(url);
-  };
-  img.src = url;
-};
 </script>
 
 <style scoped>
@@ -431,11 +456,28 @@ const processImageData = (data) => {
   font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.background-canvas, .annotation-canvas-layer {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+/* --- 新增：用于容纳播放器的视频容器 --- */
+.video-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
 }
-.background-canvas { z-index: 1; }
-.annotation-canvas-layer { z-index: 3; }
+
+/* --- 变更：让 Video.js 自己处理尺寸 --- */
+.video-js {
+    width: 100%;
+    height: 100%;
+}
+
+.annotation-canvas-layer {
+  position: absolute; top: 0; left: 0;
+  /* 变更：尺寸现在由 initCanvas 处理，但要确保它在视频之上 */
+  width: 100%; height: 100%;
+  z-index: 3;
+}
 
 .ui-overlay {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -485,7 +527,6 @@ const processImageData = (data) => {
   pointer-events: auto;
   height: 200px; /* 定义一个悬停区域高度 */
 }
-
 .drawer-panel {
   position: absolute;
   top: 0;
@@ -500,18 +541,15 @@ const processImageData = (data) => {
   transition: transform 0.4s ease-in-out;
   overflow: visible; /* 关键：允许子元素(手柄)在外部显示 */
 }
-
 .drawer-panel.is-open {
   transform: translateX(0);
   box-shadow: 10px 0 25px rgba(0, 0, 0, 0.3);
 }
-
 .drawer-handle {
   position: absolute;
   top: 0;
   left: 100%; /* 关键：定位在父元素(面板)的右侧 */
   width: 35px;
-  /* CHANGE: 高度设置为100%以匹配面板 */
   height: 100%; 
   background-color: rgba(0, 191, 255, 0.8);
   border-radius: 0 10px 10px 0;
@@ -524,7 +562,6 @@ const processImageData = (data) => {
   font-weight: 600;
   font-size: 1rem;
   line-height: 1.5;
-  /* writing-mode: vertical-rl; */
   text-orientation: mixed;
   white-space: nowrap; /* 防止文字换行 */
   transition: background-color 0.3s;
@@ -537,7 +574,6 @@ const processImageData = (data) => {
 .top-controls-container {
   position: absolute; top: 65px; right: 20px; pointer-events: none;
 }
-
 .controls-group {
   pointer-events: auto; display: grid; gap: 8px;
 }
@@ -547,7 +583,6 @@ const processImageData = (data) => {
 .view-controls {
   grid-template-columns: 1fr 1fr 1fr; width: 240px;
 }
-
 .control-btn {
   padding: 12px 10px; font-size: 1rem; font-weight: 600;
   color: #fff; background-color: rgba(20, 40, 80, 0.7);
@@ -563,7 +598,6 @@ const processImageData = (data) => {
   background-color: #00BFFF; border-color: #fff;
   box-shadow: 0 0 12px rgba(0, 191, 255, 0.8); color: #0d203e; transform: scale(1.05);
 }
-
 /* --- 详情弹出框 --- */
 .details-popup {
   position: absolute; width: 250px; padding: 15px;
