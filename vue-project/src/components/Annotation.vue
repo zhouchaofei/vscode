@@ -109,8 +109,8 @@ const initialStreamUrl = ref("https://open.ys7.com/v3/openlive/33011063992677425
 onMounted(() => {
   // 确保 DOM 已经渲染
   nextTick(() => {
-    initCanvas();
     initPlayer(initialStreamUrl.value); // 新增：初始化 Video.js
+    initCanvas();
     fetchAnnotations(); // 组件加载时获取标注
     window.addEventListener('resize', handleResize);
     // 在组件加载时，主动调用切换到默认视角1的指令
@@ -141,7 +141,7 @@ const initPlayer = (initialUrl) => {
     muted: true,       // 静音以允许在大多数浏览器中自动播放
     controls: true,    // 显示默认播放器控件
     preload: 'auto',
-    fluid: true,       // 播放器将占满容器宽度，并保持宽高比
+    fluid: false,       // 播放器将占满容器宽度，并保持宽高比
     responsive: true,
     sources: [{
       // 这里使用你提供的 HLS 地址作为默认视频源
@@ -217,6 +217,7 @@ const initCanvas = () => {
     const container = document.querySelector('.video-container');
     if (!container || !annotationCanvas.value) return;
 
+    // Canvas 尺寸直接匹配容器尺寸
     const { clientWidth: width, clientHeight: height } = container;
 
     annotationCanvas.value.width = width;
@@ -228,6 +229,7 @@ const initCanvas = () => {
 };
 
 // 优化了handleResize，现在只进行重绘，不再重新获取数据
+// 窗口大小调整时，重新初始化 Canvas 即可
 const handleResize = () => {
     initCanvas(); // initCanvas 会重设画布大小并调用 drawAnnotations
 }
@@ -248,7 +250,7 @@ const drawAnnotations = () => {
     // 检查是否存在必要的尺寸信息
     if (!coordinates || coordinates.length < 2 || !anno.imageWidth || !anno.imageHeight) return;
 
-    // 核心修改：计算缩放比例
+    // 缩放比例基于 Canvas 尺寸，而 Canvas 尺寸等于容器尺寸
     const scaleX = currentCanvasWidth / anno.imageWidth;
     const scaleY = currentCanvasHeight / anno.imageHeight;
 
@@ -466,10 +468,19 @@ const handleCanvasMouseMove = (e) => {
     z-index: 1;
 }
 
+/* 核心修改：强制 video.js 内部的 video 元素拉伸填充 */
+.video-container :deep(.video-js .vjs-tech) {
+  object-fit: fill;
+}
+
 /* --- 变更：让 Video.js 自己处理尺寸 --- */
 .video-js {
     width: 100%;
     height: 100%;
+}
+
+.video-container :deep(.video-js .vjs-control-bar) {
+  display: none; /* 隐藏 Video.js 的控制栏 */
 }
 
 .annotation-canvas-layer {
