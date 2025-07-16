@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTMP视频流播放器</title>
+    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .content {
+            padding: 40px;
+        }
+        .video-container {
+            margin-bottom: 30px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .video-js {
+            width: 100%;
+            height: 500px;
+        }
+        .controls {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+        .btn {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #2196F3;
+        }
+        .info h3 {
+            margin-top: 0;
+            color: #1976D2;
+        }
+        .info ul {
+            margin-bottom: 0;
+        }
+        .info li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 RTMP视频流播放器</h1>
+            <p>支持多种视频流格式的现代化播放器</p >
+        </div>
+        
+        <div class="content">
+            <div class="video-container">
+                <video-js
+                    id="rtmp-player"
+                    class="video-js vjs-default-skin"
+                    controls
+                    preload="auto"
+                    data-setup="{}"
+                    poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f0f0f0'/%3E%3Ctext x='200' y='150' text-anchor='middle' dy='.3em' font-family='Arial' font-size='20' fill='%23666'%3E点击播放按钮开始播放%3C/text%3E%3C/svg%3E">
+                    <p class="vjs-no-js">
+                        要查看此视频，请启用JavaScript，并考虑升级到
+                        <a href=" " target="_blank">
+                            支持HTML5视频的Web浏览器
+                        </a >。
+                    </p >
+                </video-js>
+            </div>
+            
+            <div class="controls">
+                <div class="input-group">
+                    <label for="rtmp-url">RTMP流地址:</label>
+                    <input type="text" id="rtmp-url" placeholder="rtmp://rtmp02open.ys7.com:1935/v3/openlive/33011063992677425735:33011033991327056374_1_2?expire=1783674266&id=865277642870026240&t=88d773ed3cf6f8e46463eeb734498a0aee98e5251d788ea50f2b2d31c449e6d7&ev=100&devProto=gb28181" value="rtmp://rtmp02open.ys7.com:1935/v3/openlive/33011063992677425735:33011033991327056374_1_2?expire=1783674266&id=865277642870026240&t=88d773ed3cf6f8e46463eeb734498a0aee98e5251d788ea50f2b2d31c449e6d7&ev=100&devProto=gb28181">
+                </div>
+                
+                <button class="btn" onclick="playStream()">▶️ 播放流</button>
+                <button class="btn" onclick="stopStream()">⏹️ 停止播放</button>
+                <button class="btn" onclick="toggleFullscreen()">🔍 全屏</button>
+                
+                <div id="status"></div>
+            </div>
+            
+            <div class="info">
+                <h3>📋 使用说明</h3>
+                <ul>
+                    <li><strong>RTMP流:</strong> 输入完整的RTMP地址，格式如 rtmp://server/app/stream</li>
+                    <li><strong>HLS流:</strong> 支持.m3u8格式的HTTP Live Streaming</li>
+                    <li><strong>HTTP流:</strong> 支持.mp4, .webm等格式的HTTP视频流</li>
+                    <li><strong>WebRTC:</strong> 支持现代浏览器的WebRTC实时流</li>
+                    <li><strong>快捷键:</strong> 空格键暂停/播放，F键全屏，M键静音</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-contrib-hls@5.15.0/dist/videojs-contrib-hls.min.js"></script>
+    <script>
+        let player;
+        
+        // 初始化Video.js播放器
+        document.addEventListener('DOMContentLoaded', function() {
+            player = videojs('rtmp-player', {
+                fluid: true,
+                responsive: true,
+                playbackRates: [0.5, 1, 1.25, 1.5, 2],
+                plugins: {
+                    // 启用HLS支持
+                    hls: {}
+                }
+            });
+            
+            // 播放器事件监听
+            player.on('loadstart', function() {
+                showStatus('正在加载视频流...', 'info');
+            });
+            
+            player.on('canplay', function() {
+                showStatus('视频流加载成功，可以播放', 'success');
+            });
+            
+            player.on('error', function() {
+                const error = player.error();
+                showStatus(`播放错误: ${error.message || '未知错误'}`, 'error');
+            });
+            
+            player.on('ended', function() {
+                showStatus('播放结束', 'info');
+            });
+        });
+        
+        function playStream() {
+            const url = document.getElementById('rtmp-url').value.trim();
+            
+            if (!url) {
+                showStatus('请输入有效的流地址', 'error');
+                return;
+            }
+            
+            try {
+                // 检测流类型并设置相应的源
+                if (url.includes('.m3u8')) {
+                    // HLS流
+                    player.src({
+                        src: url,
+                        type: 'application/x-mpegURL'
+                    });
+                } else if (url.startsWith('rtmp://')) {
+                    // RTMP流 - 需要Flash或转换为HLS
+                    showStatus('RTMP流需要服务器端转换为HLS格式。请确保您的RTMP服务器支持HLS输出。', 'error');
+                    // 尝试转换RTMP为HLS格式
+                    const hlsUrl = url.replace('rtmp://', 'http://').replace('/live/', '/hls/') + '.m3u8';
+                    player.src({
+                        src: hlsUrl,
+                        type: 'application/x-mpegURL'
+                    });
+                } else if (url.startsWith('http')) {
+                    // HTTP流
+                    player.src({
+                        src: url,
+                        type: getVideoType(url)
+                    });
+                } else {
+                    showStatus('不支持的流格式。请使用HTTP、HLS或RTMP格式。', 'error');
+                    return;
+                }
+                
+                player.load();
+                player.play().catch(function(error) {
+                    showStatus(`播放失败: ${error.message}`, 'error');
+                });
+                
+            } catch (error) {
+                showStatus(`设置流源失败: ${error.message}`, 'error');
+            }
+        }
+        
+        function stopStream() {
+            if (player) {
+                player.pause();
+                player.currentTime(0);
+                showStatus('播放已停止', 'info');
+            }
+        }
+        
+        function toggleFullscreen() {
+            if (player) {
+                if (player.isFullscreen()) {
+                    player.exitFullscreen();
+                } else {
+                    player.requestFullscreen();
+                }
+            }
+        }
+        
+        function getVideoType(url) {
+            const extension = url.split('.').pop().toLowerCase();
+            switch (extension) {
+                case 'mp4':
+                    return 'video/mp4';
+                case 'webm':
+                    return 'video/webm';
+                case 'ogg':
+                    return 'video/ogg';
+                case 'm3u8':
+                    return 'application/x-mpegURL';
+                default:
+                    return 'video/mp4';
+            }
+        }
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            
+            // 自动清除成功消息
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                    statusDiv.className = '';
+                }, 3000);
+            }
+        }
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (player && document.activeElement.tagName !== 'INPUT') {
+                switch(e.code) {
+                    case 'Space':
+                        e.preventDefault();
+                        if (player.paused()) {
+                            player.play();
+                        } else {
+                            player.pause();
+                        }
+                        break;
+                    case 'KeyF':
+                        e.preventDefault();
+                        toggleFullscreen();
+                        break;
+                    case 'KeyM':
+                        e.preventDefault();
+                        player.muted(!player.muted());
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
