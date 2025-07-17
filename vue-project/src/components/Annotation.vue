@@ -1,10 +1,7 @@
 <template>
   <div class="annotator-container">
-    <div class="video-container">
-      <video 
-        ref="videoPlayer" 
-        class="video-js vjs-default-skin"
-      ></video>
+    <div ref="videoContainer" class="video-container">
+      <!-- 这里不再使用 ref="videoPlayer"，我们会动态创建视频元素 -->
     </div>
     
     <canvas
@@ -37,6 +34,7 @@
               @click="switchCamera(camera.id)" 
               class="control-btn" 
               :class="{ selected: currentCameraId === camera.id }"
+              :disabled="isLoading"
             >
               {{ camera.name }}
             </button>
@@ -56,7 +54,7 @@
             @click="switchView(view.id)" 
             class="control-btn" 
             :class="{ selected: currentViewId === view.id }"
-            :disabled="!view.enabled"
+            :disabled="!view.enabled || isLoading"
           >
             {{ view.name }}
           </button>
@@ -149,13 +147,15 @@ const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointe
 const currentCameraId = ref('yn'); // 默认选中'永年'摄像头
 const currentViewId = ref('view1'); // 默认选中视角1
 const isCameraDrawerOpen = ref(false); // 控制抽屉状态
+const isLoading = ref(false); // 加载状态标记
 
 // --- Video.js 播放器状态 ---
-const videoPlayer = ref(null); // 用于 <video> 元素的模板引用
+const videoContainer = ref(null); // 视频容器的引用
+const videoPlayer = ref(null);    // 视频元素的引用
 const player = ref(null);      // 用于持有 Video.js 播放器实例
 const isVideoPlaying = ref(false);
 const videoStatus = ref("播放器准备就绪");
-const isPlayerReady = ref(false); // CHANGE: 新增状态锁，标记播放器是否准备就绪
+const isPlayerReady = ref(false); // 状态锁，标记播放器是否准备就绪
 const annotationDelayTimer = ref(null);
 
 // --- Computed Properties ---
@@ -174,15 +174,16 @@ const views = computed(() => {
 });
 
 // --- 组件生命周期钩子 ---
-// CHANGE: onMounted 现在是 async 函数
+// onMounted 现在是 async 函数
 onMounted(async () => {
   // 确保 DOM 已经渲染
   await nextTick();
   
   initCanvas();
   window.addEventListener('resize', handleResize);
-  // CHANGE: 等待播放器初始化完成后，再执行后续逻辑
+  // 等待播放器初始化完成后，再执行后续逻辑
   try {
+    isLoading.value = true;
     await initPlayer(currentCamera.value.url);
     console.log("播放器初始化流程完成，现在开始加载默认视角数据。");
     // 初始加载：切换到默认摄像头和视角
@@ -190,6 +191,8 @@ onMounted(async () => {
   } catch (error) {
     console.error("在 onMounted 期间初始化播放器失败:", error);
     videoStatus.value = "播放器初始化失败";
+    } finally {
+      isLoading.value = false;
   }
 });
 
@@ -206,74 +209,96 @@ onUnmounted(() => {
 
 // --- Video.js 播放器初始化 ---
 /**
- *【核心修改】此函数现在负责销毁旧播放器和创建新播放器
- * CHANGE: initPlayer 现在返回一个 Promise
- * 初始化 Video.js 播放器。
- * 关键：在 options 中直接提供初始的 HLS 源。
- * @param {string} initialUrl - 第一个要播放的视频流地址
- * @returns {Promise<void>} - 当播放器准备好时 resolve 的 Promise
+ * 修复版的初始化 Video.js 播放器函数
+ * 动态创建视频元素而不是尝试重用
  */
 const initPlayer = (initialUrl) => {
   return new Promise((resolve, reject) => {
-    if (!videoPlayer.value) {
-      return reject(new Error("Video player DOM element could not be found by Vue."));
-    }
-
-    const options = {
-      autoplay: true,    // 自动播放
-      muted: true,       // 静音以允许在大多数浏览器中自动播放
-      controls: true,    // 显示默认播放器控件
-      preload: 'auto',
-      responsive: true,
-      sources: [{ 
-        src: initialUrl, 
-        type: 'application/x-mpegURL' 
-      }]
-    };
-
-    // 如果播放器已存在，先销毁
+    isPlayerReady.value = false;
+    videoStatus.value = "正在初始化播放器...";
+    
+    // 先清除旧播放器实例
     if (player.value) {
-      player.value.dispose();
+      try {
+        player.value.dispose();
+        player.value = null;
+      } catch (e) {
+        console.warn("销毁旧播放器时发生错误:", e);
+      }
     }
+    
+    // 使用 nextTick 确保 DOM 已更新
+    nextTick(() => {
+      // 检查视频容器是否存在
+      if (!videoContainer.value) {
+        return reject(new Error("Video container not found in DOM"));
+      }
+      
+      // 创建全新的视频元素
+      const videoElement = document.createElement('video');
+      videoElement.className = 'video-js vjs-default-skin';
+      videoElement.id = 'video-player-' + Date.now(); // 唯一ID
+      
+      // 清空容器并添加新元素
+      videoContainer.value.innerHTML = '';
+      videoContainer.value.appendChild(videoElement);
+      
+      // 保存新的引用
+      videoPlayer.value = videoElement;
+      
+      try {
+        // 创建播放器配置
+        const options = {
+          autoplay: true,
+          muted: true,
+          controls: true,
+          preload: 'auto',
+          responsive: true,
+          sources: [{ 
+            src: initialUrl, 
+            type: 'application/x-mpegURL' 
+          }]
+        };
 
-    player.value = videojs(videoPlayer.value, options, function() {
-      // 'this' is the player instance
-      console.log('Video.js播放器已创建并准备就绪');
-      isPlayerReady.value = true; // CHANGE: 设置播放器就绪状态
+        // 创建新的播放器实例
+        player.value = videojs(videoElement, options, function() {
+          console.log('Video.js 播放器已创建并准备就绪');
+          isPlayerReady.value = true;
 
-      this.play().catch(error => {
-        console.error("自动播放被浏览器阻止:", error);
-        videoStatus.value = "点击播放以开始";
-      });
-
-      // 绑定事件监听器
-      this.on('playing', () => { 
-        isVideoPlaying.value = true; 
-        videoStatus.value = "视频流播放中"; 
-        console.log("视频流开始播放");
-      });
-      this.on('error', (e) => {
-        const error = this.error() || e;
-        isVideoPlaying.value = false;
-        videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
-        console.error('Video.js Error:', error);
-      });
-      this.on('ended', () => { 
-        isVideoPlaying.value = false; 
-        videoStatus.value = '播放结束'; 
-      });
-      this.on('pause', () => { 
-        isVideoPlaying.value = false; 
-        videoStatus.value = '已暂停'; 
-      });
-      resolve(); // 播放器就绪，Promise完成
-    });
-
-    player.value.on('error', (e) => {
-        if (!isPlayerReady.value) {
-            console.error("播放器初始化期间发生错误:", player.value.error() || e);
-            reject(player.value.error());
-        }
+          // 设置各种事件监听器
+          this.on('playing', () => { 
+            isVideoPlaying.value = true; 
+            videoStatus.value = "视频流播放中"; 
+          });
+          
+          this.on('error', (e) => {
+            const error = this.error() || e;
+            isVideoPlaying.value = false;
+            videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
+            console.error('Video.js Error:', error);
+          });
+          
+          this.on('ended', () => { 
+            isVideoPlaying.value = false; 
+            videoStatus.value = '播放结束'; 
+          });
+          
+          this.on('pause', () => { 
+            isVideoPlaying.value = false; 
+            videoStatus.value = '已暂停'; 
+          });
+          
+          // 尝试播放
+          this.play().catch(error => {
+            console.warn("自动播放被浏览器阻止:", error);
+          });
+          
+          resolve();
+        });
+      } catch (error) {
+        console.error("创建播放器实例失败:", error);
+        reject(error);
+      }
     });
   });
 };
@@ -283,35 +308,35 @@ const initPlayer = (initialUrl) => {
  * 这个函数现在可以安全地被随时调用。
  * @param {string} url - 新的 HLS 视频流地址
  */
-const setVideoStream = (url) => {
-  if (!player.value || !isPlayerReady.value) {
-    console.error("播放器尚未准备就绪，无法更换视频源！");
-    return;
-  }
+// const setVideoStream = (url) => {
+//   if (!player.value || !isPlayerReady.value) {
+//     console.error("播放器尚未准备就绪，无法更换视频源！");
+//     return;
+//   }
   
-  console.log(`正在重置播放器并加载新视频源: ${url}`);
-  try {
-    // 1. 重置播放器。这是最关键的一步，它会清除所有旧的状态、错误和数据。
-    player.value.pause();
-    player.value.reset();
+//   console.log(`正在重置播放器并加载新视频源: ${url}`);
+//   try {
+//     // 1. 重置播放器。这是最关键的一步，它会清除所有旧的状态、错误和数据。
+//     player.value.pause();
+//     player.value.reset();
 
-    // 2. 设置新的视频源。
-    player.value.src({
-      src: url,
-      type: 'application/x-mpegURL'
-    });
+//     // 2. 设置新的视频源。
+//     player.value.src({
+//       src: url,
+//       type: 'application/x-mpegURL'
+//     });
 
-    // 3. 加载新的源。播放器将根据初始配置中的 autoplay:true 选项在加载完成后自动播放。
-    player.value.load();
-    player.value.play().catch(error => {
-      console.error("播放新视频源失败:", error);
-      videoStatus.value = "无法播放新的视频源";
-    });
-  } catch (e) {
-      console.error("设置视频源时发生严重错误:", e);
-      videoStatus.value = "设置视频源时出错";
-  }
-};
+//     // 3. 加载新的源。播放器将根据初始配置中的 autoplay:true 选项在加载完成后自动播放。
+//     player.value.load();
+//     player.value.play().catch(error => {
+//       console.error("播放新视频源失败:", error);
+//       videoStatus.value = "无法播放新的视频源";
+//     });
+//   } catch (e) {
+//       console.error("设置视频源时发生严重错误:", e);
+//       videoStatus.value = "设置视频源时出错";
+//   }
+// };
 
 // --- Canvas 和绘制 ---
 const initCanvas = () => {
@@ -390,114 +415,129 @@ const drawAnnotations = () => {
 // --- 后端数据与交互 ---
 const fetchAnnotations = async (location, view) => {
   console.log(`正在从后台获取标注数据: ${location}, view: ${view}`);
-  annotations.value = []; // 清空之前的标注
   const url = `http://59.110.65.210:8081/label?location=${location}&view=${view}`;
   try {
     const response = await fetch(url, { method: 'GET' });
     if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
     
     const data = await response.json();
-    annotations.value = data;
-    console.log("标注数据加载成功:", annotations.value);
-    // drawAnnotations();
-    return annotations.value; // 返回加载的标注数据
+    console.log("标注数据加载成功:", data);
+    return data; // 返回加载的标注数据
   } catch (error) {
     console.error("获取标注数据失败:", error);
-    alert(`无法加载标注数据: ${error.message}`);
     return [];
   }
 };
 
 /**
- * 【核心修改】switchCamera 现在负责销毁和重建的完整流程
+ * 切换摄像头 - 完全销毁和重建播放器
  */
 const switchCamera = async (cameraId) => {
-  // CHANGE: 增加 isPlayerReady 检查
-  if (!isPlayerReady.value || currentCameraId.value === cameraId) {
-    console.log(`播放器未就绪或摄像头未改变，取消切换。`);
+  if (isLoading.value || currentCameraId.value === cameraId) {
+    console.log(`播放器正在加载或摄像头未改变，取消切换。`);
     return;
   }
 
-  console.log(`开始切换到摄像头: ${cameraId}`);
-  currentCameraId.value = cameraId;
-  const defaultView = 'view1';
-  currentViewId.value = defaultView;
+  try {
+    isLoading.value = true;
+    console.log(`开始切换到摄像头: ${cameraId}`);
+    currentCameraId.value = cameraId;
+    currentViewId.value = 'view1'; // 重置为默认视角
+    
+    // 清除所有标注
+    annotations.value = [];
+    drawAnnotations();
+    
+    // 更新状态
+    isVideoPlaying.value = false;
+    videoStatus.value = "正在切换摄像头...";
 
-  // 更新视频流
-  const newUrl = currentCamera.value.url;
-  setVideoStream(newUrl);
-
-  // 切换到新摄像头的默认视图
-  await switchView(defaultView, true);
+    // 完全重新初始化播放器
+    await initPlayer(cameras.value[cameraId].url);
+    
+    // 切换到默认视角并加载标注
+    await switchView('view1', true);
+    
+    console.log(`摄像头切换到 ${cameraId} 完成`);
+  } catch (error) {
+    console.error("摄像头切换失败:", error);
+    videoStatus.value = "摄像头切换失败";
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 /**
- * 通过向后端发送命令来切换视图。
- * 这通常会触发视频流的更改和一套新的标注。
- * CHANGE: 通过向萤石云API发送命令来切换设备预设点（视角）。
- * @param {string} viewId - 要切换到的视图ID (例如 'view1')。
+ * 修复版的切换视角函数
+ * @param {string} viewId - 要切换到的视角ID
+ * @param {boolean} forceExecution - 即使系统正在加载也强制执行
  */
-// 此函数现在也会更新视频播放器的源
-const switchView = async (viewId, isCameraSwitch = false) => {
-  // CHANGE: 增加 isPlayerReady 检查
-  if (!isPlayerReady.value) {
-    console.warn("播放器未就绪，无法切换视角。");
+const switchView = async (viewId, forceExecution = false) => {
+  // 如果系统正在加载且不是强制执行，则直接返回
+  if (isLoading.value && !forceExecution) {
+    console.warn("系统正在加载中，请稍后再试。");
     return;
   }
-
-  console.log(`准备切换到视角: ${viewId}`);
-  currentViewId.value = viewId; // 更新当前视角状态
-
-  if (annotationDelayTimer.value) {
-    clearTimeout(annotationDelayTimer.value);
-  }
-
-  annotations.value = [];
-  drawAnnotations();
-
-  // 预设切换逻辑 (API 调用)
-  const indexMatch = viewId.match(/(\d+)$/);
-  if (!indexMatch) {
-    console.error(`无效的视角ID格式: ${viewId}`);
-    return;
-  }
-  const index = parseInt(indexMatch[1], 10);
-  
-  // 注意：这将调用萤石云API来移动摄像头。
-  // 警告: accessToken 通常具有时效性，不应硬编码在前端。
-  // 在生产环境中，应由后端服务器管理和提供。
-  // 我们将假设流URL保持不变，因为是流内容本身发生了变化。
-  // 如果每个预设点都有一个*不同*的M3U8 URL，您需要在此处更新它。
-  const accessToken = "at.4zp9f112a1yqew826m38jxep7pzs23hh-8dx62y4kqh-0gfatka-mtf9dfjlw";
-  const deviceSerial = currentCamera.value.deviceSerial;
-  const channelNo = 1;
-  const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
 
   try {
+    // 只有当不是强制执行时才设置加载状态
+    // 这避免了在初始化或摄像头切换期间的重复加载状态
+    if (!forceExecution) {
+      isLoading.value = true;
+    }
+    isLoading.value = true;
+    console.log(`准备切换到视角: ${viewId}`);
+    currentViewId.value = viewId; // 更新当前视角状态
+
+    if (annotationDelayTimer.value) {
+      clearTimeout(annotationDelayTimer.value);
+    }
+
+    // 清除当前标注
+    annotations.value = [];
+    drawAnnotations();
+
+    // 预设点切换逻辑
+    const indexMatch = viewId.match(/(\d+)$/);
+    if (!indexMatch) {
+      throw new Error(`无效的视角ID格式: ${viewId}`);
+    }
+    
+    const index = parseInt(indexMatch[1], 10);
+    const accessToken = "at.4zp9f112a1yqew826m38jxep7pzs23hh-8dx62y4kqh-0gfatka-mtf9dfjlw";
+    const deviceSerial = currentCamera.value.deviceSerial;
+    const channelNo = 1;
+    const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
+
+    // 发送视角切换指令
     const response = await fetch(apiUrl, { method: 'POST' });
     const result = await response.json();
-    const timestamp = new Date().toLocaleTimeString();
 
     // 萤石云API成功响应码为'200'
     if (!response.ok || result.code !== '200') {
-      // 处理API返回的业务错误
-      console.error(`[${timestamp}] 视角切换API错误 (${response.status}):`, result);
       throw new Error(`API 错误: ${result.msg || '未知错误'}`);
     }
 
     console.log(`视角 ${viewId} 切换指令发送成功。`);
-    // console.log(`[${timestamp}] 视角${viewId}切换成功 (${response.status}):`, result);
+    
+    // 获取新标注数据
     const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
-
+    
+    // 延迟显示标注（给摄像头移动时间）
+    const delayTime = 10000; // 10秒延迟
+    console.log(`将在${delayTime/1000}秒后显示新标注。`);
+    
     annotationDelayTimer.value = setTimeout(() => {
-      console.log("20秒延迟结束，正在显示新标注。");
+      console.log("延迟结束，正在显示新标注。");
       annotations.value = newAnnotations;
       drawAnnotations();
-    }, 2000);
+    }, delayTime);
+    
   } catch (error) {
-    const timestamp = new Date().toLocaleTimeString();
-    console.error(`[${timestamp}] 切换到 ${viewId} 的网络请求失败:`, error);
-    alert(`指令 "${viewId}" 发送失败: ${error.message}`);
+    console.error(`切换到视角 ${viewId} 失败:`, error);
+    videoStatus.value = `视角切换失败: ${error.message}`;
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -569,20 +609,19 @@ const handleCanvasMouseMove = (e) => {
     z-index: 1;
 }
 
+/* --- 让 Video.js 自己处理尺寸 --- */
+.video-container :deep(.video-js) {
+    width: 100%;
+    height: 100%;
+}
+
 /* video.js 内部的 video 元素拉伸填充 */
 .video-container :deep(.video-js .vjs-tech) {
   object-fit: fill;
 }
 
-/* --- 让 Video.js 自己处理尺寸 --- */
-.video-js {
-    width: 100%;
-    height: 100%;
-}
-
 .video-container :deep(.video-js .vjs-control-bar) {
-  /* display: none;  */
-  /* 隐藏 Video.js 的控制栏 */
+  display: none; /* 隐藏 Video.js 的控制栏 */
 }
 
 .annotation-canvas-layer {
