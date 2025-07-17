@@ -524,7 +524,7 @@ const switchView = async (viewId, forceExecution = false) => {
     const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
     
     // 延迟显示标注（给摄像头移动时间）
-    const delayTime = 10000; // 10秒延迟
+    const delayTime = 20000; // 20秒延迟
     console.log(`将在${delayTime/1000}秒后显示新标注。`);
     
     annotationDelayTimer.value = setTimeout(() => {
