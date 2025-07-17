@@ -401,8 +401,6 @@ const fetchAnnotations = async (location, view) => {
 
 /**
  * 【核心修改】switchCamera 现在负责销毁和重建的完整流程
- * 切换摄像头
- * @param {string} cameraId - 要切换到的摄像头ID
  */
 const switchCamera = async (cameraId, isInitialLoad = false) => {
   if (!isInitialLoad && currentCameraId.value === cameraId) {
@@ -411,8 +409,6 @@ const switchCamera = async (cameraId, isInitialLoad = false) => {
 
   console.log(`开始切换到摄像头: ${cameraId}`);
   currentCameraId.value = cameraId;
-
-  // 切换摄像头时，总是重置为 view1
   const defaultView = 'view1';
   currentViewId.value = defaultView;
   isPlayerReady.value = false;
@@ -439,9 +435,7 @@ const switchCamera = async (cameraId, isInitialLoad = false) => {
   // 6. 现在可以安全地在新元素上初始化播放器了
   const newUrl = cameras.value[cameraId].url;
   try {
-    // videoStatus.value = `正在加载 ${currentCamera.value.name}...`;
     await initPlayer(newUrl);
-    // 播放器成功初始化后，再调用switchView移动摄像头到默认位置并处理标注
     // 7. 播放器就绪后，设置默认视角
     await switchView(defaultView);
   } catch (error) {
