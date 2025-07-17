@@ -292,6 +292,7 @@ const setVideoStream = (url) => {
   console.log(`正在重置播放器并加载新视频源: ${url}`);
   try {
     // 1. 重置播放器。这是最关键的一步，它会清除所有旧的状态、错误和数据。
+    player.value.pause();
     player.value.reset();
 
     // 2. 设置新的视频源。
@@ -302,7 +303,10 @@ const setVideoStream = (url) => {
 
     // 3. 加载新的源。播放器将根据初始配置中的 autoplay:true 选项在加载完成后自动播放。
     player.value.load();
-
+    player.value.play().catch(error => {
+      console.error("播放新视频源失败:", error);
+      videoStatus.value = "无法播放新的视频源";
+    });
   } catch (e) {
       console.error("设置视频源时发生严重错误:", e);
       videoStatus.value = "设置视频源时出错";
@@ -577,7 +581,8 @@ const handleCanvasMouseMove = (e) => {
 }
 
 .video-container :deep(.video-js .vjs-control-bar) {
-  display: none; /* 隐藏 Video.js 的控制栏 */
+  /* display: none;  */
+  /* 隐藏 Video.js 的控制栏 */
 }
 
 .annotation-canvas-layer {
