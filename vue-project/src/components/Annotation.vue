@@ -27,10 +27,16 @@
       >
         <div class="drawer-panel" :class="{ 'is-open': isCameraDrawerOpen }">
           <div class="controls-group camera-controls">
-            <button @click="switchCamera('yongnian')" class="control-btn" :class="{ selected: currentCamera === 'yongnian' }">永年</button>
-            <button @click="switchCamera('feixiang_south')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_south' }">肥乡南</button>
-            <button @click="switchCamera('feixiang_north')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_north' }">肥乡北</button>
-            <button @click="switchCamera('feixiang_liangchang')" class="control-btn" :class="{ selected: currentCamera === 'feixiang_liangchang' }">肥乡梁厂</button>
+            <!-- 动态生成摄像头按钮 -->
+            <button 
+              v-for="camera in cameras" 
+              :key="camera.id"
+              @click="switchCamera(camera.id)" 
+              class="control-btn" 
+              :class="{ selected: currentCameraId === camera.id }"
+            >
+              {{ camera.name }}
+            </button>
           </div>
           <div class="drawer-handle">
             <span>摄<br>像<br>头</span>
@@ -40,12 +46,17 @@
 
       <div class="top-controls-container">
         <div class="controls-group view-controls">
-          <button @click="switchView('view_1')" class="control-btn" :class="{ selected: currentView === 'view_1' }">视角1</button>
-          <button @click="switchView('view_2')" class="control-btn" :class="{ selected: currentView === 'view_2' }">视角2</button>
-          <button @click="switchView('view_3')" class="control-btn" :class="{ selected: currentView === 'view_3' }">视角3</button>
-          <button @click="switchView('view_4')" class="control-btn" :class="{ selected: currentView === 'view_4' }">视角4</button>
-          <button @click="switchView('view_5')" class="control-btn" :class="{ selected: currentView === 'view_5' }">视角5</button>
-          <button @click="switchView('view_6')" class="control-btn" :class="{ selected: currentView === 'view_6' }">视角6</button>
+          <!-- 动态生成视图按钮 -->
+          <button 
+            v-for="view in views" 
+            :key="view.id"
+            @click="switchView(view.id)" 
+            class="control-btn" 
+            :class="{ selected: currentViewId === view.id }"
+            :disabled="!view.enabled"
+          >
+            {{ view.name }}
+          </button>
         </div>
       </div>
 
@@ -61,30 +72,43 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 
-// --- 新增：导入 Video.js 及其 HLS 插件 ---
+// --- 导入 Video.js 及其 HLS 插件 ---
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css'; // 导入 Video.js 的 CSS
 
-// HLS 插件在导入时会自动注册
-// import 'videojs-contrib-hls';  // <--- 关键！把这一行删除或注释掉！
-
-// --- Canvas 和状态管理 ---
-// const videoCanvas = ref(null); // 已移除
-const annotationCanvas = ref(null);
-// let videoCtx = null; // 已移除
-let annotationCtx = null;
-
-const annotations = ref([]); // 保存来自后端的标注数据
-const hoveredAnnotation = ref(null); // 保存当前鼠标悬停的标注
-const popupPosition = ref({ x: 0, y: 0 }); // 详情弹出框的位置
-const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointer'
-
-// --- 摄像头和视角状态 ---
-const currentCamera = ref('yongnian'); // 默认选中'永年'摄像头
-const currentView = ref('view_1'); // 默认选中视角1
-const isCameraDrawerOpen = ref(false); // 控制抽屉状态
+// --- 配置Configuration ---
+const cameras = ref({
+  yn: { 
+    id: 'yn', 
+    name: '永年', 
+    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010516991327760034_1_1.m3u8?expire=1783839126&id=865969116245139456&t=041a0c22eee09600f9928249aec5625ec46b6bbfc78e805813fff17561347d91&ev=100&devProto=gb28181', 
+    viewCount: 3, 
+    deviceSerial: '33011063992677425735:33010516991327760034' 
+  },
+  fx_n: { 
+    id: 'fx_n', 
+    name: '肥乡北', 
+    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010084991327588111_1_1.m3u8?expire=1783839201&id=865969431971373056&t=7cc28dde7d721171e7d1d482f643c2438c5bb4b1c39f23b2a68e1bac9363758d&ev=100&devProto=gb28181', 
+    viewCount: 3, 
+    deviceSerial: '33011063992677425735:33010084991327588111' 
+  },
+  fx_s: { 
+    id: 'fx_s', 
+    name: '肥乡南', 
+    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011012991327147072_1_1.m3u8?expire=1783839181&id=865969347674099712&t=402c3fd77bd2c00d25295f63150285f372139bfb4581931825b46ca393bffcdd&ev=100&devProto=gb28181', 
+    viewCount: 3, 
+    deviceSerial: '33011063992677425735:33011012991327147072' 
+  },
+  fx_lc: { 
+    id: 'fx_lc', 
+    name: '肥乡梁厂', 
+    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011033991327056374_1_1.m3u8?expire=1783839161&id=865969264091918336&t=a65166c636992ea20b0f7fc48a6803036e40b0187379097b10650231ec5461fc&ev=100&devProto=gb28181', 
+    viewCount: 1, 
+    deviceSerial: '33011063992677425735:33011033991327056374' 
+  }
+});
 
 // 不同标注类型的颜色映射
 const typeColors = {
@@ -97,37 +121,65 @@ const typeColors = {
   '涵洞': '#8A2BE2'   // 紫色 (BlueViolet)
 };
 
-// --- 新增：Video.js 播放器状态 ---
+// --- 状态管理 ---
+// --- Canvas 和状态管理 ---
+const annotationCanvas = ref(null);
+let annotationCtx = null;
+
+const annotations = ref([]); // 保存来自后端的标注数据
+const hoveredAnnotation = ref(null); // 保存当前鼠标悬停的标注
+const popupPosition = ref({ x: 0, y: 0 }); // 详情弹出框的位置
+const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointer'
+
+// --- 摄像头和视角状态 ---
+const currentCameraId = ref('yn'); // 默认选中'永年'摄像头
+const currentViewId = ref('view1'); // 默认选中视角1
+const isCameraDrawerOpen = ref(false); // 控制抽屉状态
+
+// --- Video.js 播放器状态 ---
 const videoPlayer = ref(null); // 用于 <video> 元素的模板引用
 const player = ref(null);      // 用于持有 Video.js 播放器实例
 const isVideoPlaying = ref(false);
 const videoStatus = ref("播放器准备就绪");
-// --- 新增：初始视频流 URL ---
-const initialStreamUrl = ref("https://open.ys7.com/v3/openlive/33011063992677425735:33010516991327760034_1_1.m3u8?expire=1783780175&id=865721859495178240&t=56c5d646f2000d3068fcd86b3c12aac95db0126db0944127dace5b10b5be4268&ev=100&devProto=gb28181");
+
+// --- Computed Properties ---
+const currentCamera = computed(() => cameras.value[currentCameraId.value]);
+
+const views = computed(() => {
+  const viewCount = currentCamera.value.viewCount;
+  return Array.from({ length: 6 }, (_, i) => {
+    const viewNum = i + 1;
+    return {
+      id: `view${viewNum}`,
+      name: `视角${viewNum}`,
+      enabled: viewNum <= viewCount
+    };
+  });
+});
 
 // --- 组件生命周期钩子 ---
 onMounted(() => {
   // 确保 DOM 已经渲染
   nextTick(() => {
-    initPlayer(initialStreamUrl.value); // 新增：初始化 Video.js
+    initPlayer(currentCamera.value.url); // 初始化 Video.js
     initCanvas();
-    fetchAnnotations(); // 组件加载时获取标注
+    // fetchAnnotations(); // 组件加载时获取标注
     window.addEventListener('resize', handleResize);
-    // 在组件加载时，主动调用切换到默认视角1的指令
-    switchView(currentView.value); 
+    // 初始加载：切换到默认摄像头和视角
+    switchCamera(currentCameraId.value, true);
   });
   
 });
 
 onUnmounted(() => {
-  // 新增：销毁播放器以释放资源
+  // 销毁播放器以释放资源
   if (player.value) {
     player.value.dispose();
   }
   window.removeEventListener('resize', handleResize);
 });
 
-// --- 新增：Video.js 播放器初始化 ---
+// --- Video.js 播放器初始化 ---
 /**
  * 初始化 Video.js 播放器。
  * 关键：在 options 中直接提供初始的 HLS 源。
@@ -144,7 +196,6 @@ const initPlayer = (initialUrl) => {
     fluid: false,       // 播放器将占满容器宽度，并保持宽高比
     responsive: true,
     sources: [{
-      // 这里使用你提供的 HLS 地址作为默认视频源
       src: initialUrl,
       type: 'application/x-mpegURL' // HLS 视频流类型
     }]
@@ -155,14 +206,11 @@ const initPlayer = (initialUrl) => {
       console.error("播放器尚未初始化！");
       return;
     }
-    console.log('Video.js player is ready');
+    console.log('Video.js播放器准备就绪');
     player.value.play().catch(error => {
       console.error("自动播放被浏览器阻止:", error);
       videoStatus.value = "点击播放以开始";
     });
-    // 设置初始视频流
-    // const initialStreamUrl = "https://open.ys7.com/v3/openlive/33011063992677425735:33011012991327147072_1_1.m3u8?expire=1783736336&id=865537983230619648&t=65b4a06c2353dc75ffe3cacdf3bec82c97b6b0c08b088414f3f88d566f4d4b1d&ev=100&devProto=gb28181";
-    // setVideoStream(initialStreamUrl);
   });
 
   // 播放器事件监听
@@ -175,7 +223,7 @@ const initPlayer = (initialUrl) => {
   player.value.on('error', function() {
     const error = player.value.error();
     isVideoPlaying.value = false;
-    videoStatus.value = `播放错误: ${error.message}`;
+    videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
     console.error('Video.js Error:', error);
   });
   
@@ -232,7 +280,7 @@ const initCanvas = () => {
 // 窗口大小调整时，重新初始化 Canvas 即可
 const handleResize = () => {
     initCanvas(); // initCanvas 会重设画布大小并调用 drawAnnotations
-}
+};
 
 // 将 `annotations` ref 中存储的所有标注绘制到画布上。
 const drawAnnotations = () => {
@@ -286,81 +334,60 @@ const drawAnnotations = () => {
 
 
 // --- 后端数据与交互 ---
-const fetchAnnotations = async () => {
-  console.log("正在从后台获取标注数据...");
+const fetchAnnotations = async (location, view) => {
+  console.log(`正在从后台获取标注数据: ${location}, view: ${view}`);
+  annotations.value = []; // 清空之前的标注
+  const url = `http://59.110.65.210:8081/label?location=${location}&view=${view}`;
   try {
-    // 这里是你进行真实API调用的地方。
-    // const response = await fetch('/api/get_annotations_for_view', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ viewId: 'current_view' }) // 如果需要，可以发送当前视图的上下文
-    // });
-    // if (!response.ok) throw new Error('网络响应失败');
-    // const data = await response.json();
-
-    // 为演示目的，此处使用模拟数据 (MOCK DATA)
-    const mockData = [
-      { id: "anno_001", type: "方向", title: "北京方向", details: "", coordinates: [{ "x": 803.06, "y": 934.55 }, { "x": 861.69, "y": 887.43 }, { "x": 848.08, "y": 883.76 }, { "x": 879.5, "y": 874.86 }, { "x": 876.88, "y": 894.76 }, { "x": 867.13, "y": 889.75 }, { "x": 808.12, "y": 938.86 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_002", type: "方向", title: "香港方向", details: "", coordinates: [{ "x": 767.34, "y": 816.66 }, { "x": 730.54, "y": 829.86 }, { "x": 726.02, "y": 824.30 }, { "x": 710.40, "y": 843.40 }, { "x": 738.87, "y": 843.05 }, { "x": 734.01, "y": 836.80 }, { "x": 772.55, "y": 822.91 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_003", type: "匝道", title: "E匝道", details: "", coordinates: [{ "x": 3.58, "y": 870.80 }, { "x": 45.92, "y": 868.61 }, { "x": 97.74, "y": 867.88 }, { "x": 161.98, "y": 868.61 }, { "x": 202.85, "y": 870.80 }, { "x": 230.59, "y": 883.94 }, { "x": 248.84, "y": 910.21 }, { "x": 260.52, "y": 932.84 }, { "x": 1.97, "y": 1005.45 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_004", type: "匝道", title: "B匝道", details: "", coordinates: [{ "x": 1582.38, "y": 1268.53 }, { "x": 1930.46, "y": 1287.76 }, { "x": 2195.84, "y": 1299.30 }, { "x": 2517.0, "y": 1287.76 }, { "x": 2558.0, "y": 1282.17 }, { "x": 2558.0, "y": 1168.53 }, { "x": 2449.69, "y": 1180.07 }, { "x": 2295.84, "y": 1178.15 }, { "x": 2151.61, "y": 1176.23 }, { "x": 1917.0, "y": 1174.30 }, { "x": 1638.15, "y": 1168.53 }, { "x": 1451.61, "y": 1147.38 }, { "x": 1251.61, "y": 1089.69 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_005", type: "桥墩", title: "1#桥墩", details: "", coordinates: [{ "x": 179.63, "y": 786.27 }, { "x": 180.13, "y": 827.34 }, { "x": 226.54, "y": 828.01 }, { "x": 228.21, "y": 785.77 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_006", type: "桥墩", title: "2#桥墩", details: "", coordinates: [{ "x": 394.25, "y": 800.78 }, { "x": 392.28, "y": 845.93 }, { "x": 433.66, "y": 842.32 }, { "x": 433.82, "y": 796.34 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_007", type: "盖梁", title: "2#盖梁", details: "", coordinates: [{ "x": 375.86, "y": 769.74 }, { "x": 376.35, "y": 795.03 }, { "x": 442.69, "y": 791.91 }, { "x": 442.20, "y": 764.98 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_008", type: "桥墩", title: "5#桥墩", details: "", coordinates: [{ "x": 1098.36, "y": 802.10 }, { "x": 1096.57, "y": 869.09 }, { "x": 1116.41, "y": 864.37 }, { "x": 1118.19, "y": 798.84 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_009", type: "桥墩", title: "6#桥墩", details: "", coordinates: [{ "x": 1346.67, "y": 820.42 }, { "x": 1345.21, "y": 869.09 }, { "x": 1365.11, "y": 879.57 }, { "x": 1366.56, "y": 814.45 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_010", type: "桥墩", title: "7#桥墩", details: "", coordinates: [{ "x": 1504.15, "y": 832.40 }, { "x": 1502.77, "y": 881.80 }, { "x": 1544.88, "y": 876.94 }, { "x": 1545.23, "y": 824.26 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_011", type: "盖梁", title: "7#盖梁", details: "", coordinates: [{ "x": 1499.48, "y": 812.82 }, { "x": 1497.22, "y": 830.67 }, { "x": 1552.51, "y": 821.49 }, { "x": 1550.95, "y": 805.02 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_012", type: "桥墩", title: "8#桥墩", details: "", coordinates: [{ "x": 1668.13, "y": 856.60 }, { "x": 1667.92, "y": 896.43 }, { "x": 1714.25, "y": 892.45 }, { "x": 1711.32, "y": 848.84 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_013", type: "盖梁", title: "8#盖梁", details: "", coordinates: [{ "x": 1660.58, "y": 836.26 }, { "x": 1658.70, "y": 854.71 }, { "x": 1724.52, "y": 845.91 }, { "x": 1721.17, "y": 827.25 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_014", type: "桥墩", title: "9#桥墩", details: "", coordinates: [{ "x": 1832.95, "y": 856.91 }, { "x": 1830.44, "y": 903.77 }, { "x": 1891.44, "y": 904.08 }, { "x": 1893.65, "y": 850.31 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_015", type: "桥墩", title: "10#桥墩", details: "", coordinates: [{ "x": 1994.0, "y": 875.66 }, { "x": 1993.0, "y": 911.0 }, { "x": 2097.33, "y": 913.0 }, { "x": 2097.33, "y": 864.0 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_016", type: "桥台", title: "11#桥台", details: "", coordinates: [{ "x": 2118.60, "y": 895.27 }, { "x": 2118.21, "y": 930.54 }, { "x": 2250.0, "y": 930.15 }, { "x": 2248.06, "y": 885.97 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_017", type: "盖梁", title: "1#盖梁", details: "", coordinates: [{ "x": 171.20, "y": 765.02 }, { "x": 171.20, "y": 784.37 }, { "x": 238.68, "y": 781.93 }, { "x": 238.84, "y": 761.61 }], imageHeight: 1439, imageWidth: 2559 },
-      { id: "anno_018", type: "涵洞", title: "1-2×2m箱型涵洞CK0+310", details: "", coordinates: [{ "x": 2257.78, "y": 935.50 }, { "x": 2254.28, "y": 974.98 }, { "x": 2371.82, "y": 1009.19 }, { "x": 2374.01, "y": 955.68 }], imageHeight: 1439, imageWidth: 2559 }
-    ];
-    annotations.value = mockData;
+    const response = await fetch(url, { method: 'GET' });
+    if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
+    
+    const data = await response.json();
+    annotations.value = data;
     console.log("标注数据加载成功:", annotations.value);
-    drawAnnotations(); // 绘制新获取的标注
+    drawAnnotations();
   } catch (error) {
     console.error("获取标注数据失败:", error);
-    alert("无法加载标注数据，请检查后台连接。");
+    alert(`无法加载标注数据: ${error.message}`);
   }
 };
 
 /**
- * NEW: 切换摄像头的预留函数
+ * 切换摄像头的预留函数
  * @param {string} cameraId - 要切换到的摄像头ID
  */
-const switchCamera = async (cameraId) => {
-  console.log(`指令: 切换到摄像头: ${cameraId}`);
-  currentCamera.value = cameraId;
-  // 此处为未来实现具体摄像头切换逻辑的预留位置。
-  // 例如，这可能会关闭当前的WebSocket连接，
-  // 然后使用新的URL（与cameraId关联）重新建立连接。
-  alert(`已发送指令切换到 "${cameraId}"! (功能待实现)`);
-  // 切换摄像头后，可能需要获取与新摄像头关联的标注
-  // TODO: 当准备好后，可在此实现获取新摄像头流URL的逻辑
-  // 并调用 setVideoStream(newUrl);
-  // await fetchAnnotationsForCamera(cameraId);
+const switchCamera = async (cameraId, isInitialLoad = false) => {
+  console.log(`切换到摄像头: ${cameraId}`);
+  currentCameraId.value = cameraId;
+
+  // 切换摄像头时，总是重置为 view1
+  const defaultView = 'view1';
+  currentViewId.value = defaultView;
+
+  // 更新视频流
+  const newUrl = currentCamera.value.url;
+  setVideoStream(newUrl);
+
+  // 切换到新摄像头的默认视图
+  await switchView(defaultView, true);
 };
 
 /**
  * 通过向后端发送命令来切换视图。
  * 这通常会触发视频流的更改和一套新的标注。
  * CHANGE: 通过向萤石云API发送命令来切换设备预设点（视角）。
- * @param {string} viewId - 要切换到的视图ID (例如 'view_1')。
+ * @param {string} viewId - 要切换到的视图ID (例如 'view1')。
  */
-// 变更：此函数现在也会更新视频播放器的源
-const switchView = async (viewId) => {
+// 此函数现在也会更新视频播放器的源
+const switchView = async (viewId, isCameraSwitch = false) => {
   console.log(`准备切换到视角: ${viewId}`);
-  currentView.value = viewId; // 更新当前视角状态
+  currentViewId.value = viewId; // 更新当前视角状态
 
-  // 从 'view_1' 中提取数字索引
-  const indexMatch = viewId.match(/_(\d+)$/);
+  // 预设切换逻辑 (API 调用)
+  const indexMatch = viewId.match(/(\d+)$/);
   if (!indexMatch) {
     console.error(`无效的视角ID格式: ${viewId}`);
-    alert(`视角ID "${viewId}" 格式不正确。`);
+    // alert(`视角ID "${viewId}" 格式不正确。`);
     return;
   }
   const index = parseInt(indexMatch[1], 10);
@@ -370,8 +397,8 @@ const switchView = async (viewId) => {
   // 在生产环境中，应由后端服务器管理和提供。
   // 我们将假设流URL保持不变，因为是流内容本身发生了变化。
   // 如果每个预设点都有一个*不同*的M3U8 URL，您需要在此处更新它。
-  const accessToken = "at.clyk2nli5w0duq3maaab3lr5a6s64kdh-1ovqb7s4pd-07h49dz-jxbkxlnby";
-  const deviceSerial = "33011063992677425735:33010516991327760034";
+  const accessToken = "at.4zp9f112a1yqew826m38jxep7pzs23hh-8dx62y4kqh-0gfatka-mtf9dfjlw";
+  const deviceSerial = currentCamera.value.deviceSerial;
   const channelNo = 1;
   const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
 
@@ -382,9 +409,9 @@ const switchView = async (viewId) => {
 
     // 萤石云API成功响应码为'200'
     if (response.ok && result.code === '200') {
-      console.log(`[${timestamp}] 视角切换成功 (${response.status}):`, result);
+      console.log(`[${timestamp}] 视角${viewId}切换成功 (${response.status}):`, result);
       // 成功切换视角后，可以获取新视角的标注
-      // await fetchAnnotations(); 
+      await fetchAnnotations(currentCameraId.value, viewId);
     } else {
       // 处理API返回的业务错误
       console.error(`[${timestamp}] 视角切换API错误 (${response.status}):`, result);
@@ -438,17 +465,14 @@ const handleCanvasMouseMove = (e) => {
 
   if (currentHover) {
     hoveredAnnotation.value = currentHover;
-    popupPosition.value.x = Math.min(mousePos.x + 15, rect.width - 220); 
-    popupPosition.value.y = Math.min(mousePos.y + 15, rect.height - 100); 
+    popupPosition.value.x = Math.min(mousePos.x + 15, rect.width - 260); 
+    popupPosition.value.y = Math.min(mousePos.y + 15, rect.height - 110); 
     canvasCursor.value = 'pointer';
   } else {
     hoveredAnnotation.value = null;
     canvasCursor.value = 'default';
   }
 };
-
-// --- 已移除：所有与 WebSocket 相关的功能 (connectWebSocket, handleDisconnect, displayFrame, 等) ---
-
 </script>
 
 <style scoped>
@@ -458,7 +482,7 @@ const handleCanvasMouseMove = (e) => {
   font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* --- 新增：用于容纳播放器的视频容器 --- */
+/* --- 用于容纳播放器的视频容器 --- */
 .video-container {
     position: absolute;
     top: 0;
@@ -468,12 +492,12 @@ const handleCanvasMouseMove = (e) => {
     z-index: 1;
 }
 
-/* 核心修改：强制 video.js 内部的 video 元素拉伸填充 */
+/* video.js 内部的 video 元素拉伸填充 */
 .video-container :deep(.video-js .vjs-tech) {
   object-fit: fill;
 }
 
-/* --- 变更：让 Video.js 自己处理尺寸 --- */
+/* --- 让 Video.js 自己处理尺寸 --- */
 .video-js {
     width: 100%;
     height: 100%;
@@ -484,18 +508,31 @@ const handleCanvasMouseMove = (e) => {
 }
 
 .annotation-canvas-layer {
-  position: absolute; top: 0; left: 0;
+  position: absolute; 
+  top: 0; 
+  left: 0;
   /* 变更：尺寸现在由 initCanvas 处理，但要确保它在视频之上 */
-  width: 100%; height: 100%;
+  width: 100%; 
+  height: 100%;
   z-index: 3;
 }
 
 .ui-overlay {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  z-index: 4; pointer-events: none; display: flex; flex-direction: column;
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%;
+  z-index: 4; 
+  pointer-events: none; 
+  display: flex; 
+  flex-direction: column;
 }
 
-.main-content { flex-grow: 1; position: relative; }
+.main-content { 
+  flex-grow: 1; 
+  position: relative; 
+}
 
 /* --- 头部 --- */
 .app-header {
@@ -511,22 +548,34 @@ const handleCanvasMouseMove = (e) => {
   flex-shrink: 0;
 }
 .app-header h1 {
-  position: absolute; left: 50%; top: 50%;
+  position: absolute; 
+  left: 50%; 
+  top: 50%;
   transform: translate(-50%, -50%);
   font-size: 2.5rem;
   font-weight: 600;
 }
 .connection-status {
-  position: absolute; right: 20px; top: 50%;
+  position: absolute; 
+  right: 20px; 
+  top: 50%;
   transform: translateY(-50%);
-  display: flex; align-items: center; gap: 8px; font-size: 0.9rem;
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-size: 0.9rem;
 }
 .status-indicator {
-  width: 12px; height: 12px; border-radius: 50%; background-color: #ff5722;
-  box-shadow: 0 0 8px #ff5722; transition: all 0.3s ease;
+  width: 12px; 
+  height: 12px; 
+  border-radius: 50%; 
+  background-color: #ff5722;
+  box-shadow: 0 0 8px #ff5722; 
+  transition: all 0.3s ease;
 }
 .status-indicator.connected {
-  background-color: #00ff7f; box-shadow: 0 0 10px #00ff7f;
+  background-color: #00ff7f; 
+  box-shadow: 0 0 10px #00ff7f;
 }
 
 /* --- 抽屉式面板 --- */
@@ -583,44 +632,89 @@ const handleCanvasMouseMove = (e) => {
 
 /* --- 顶部右侧控件 --- */
 .top-controls-container {
-  position: absolute; top: 65px; right: 20px; pointer-events: none;
+  position: absolute; 
+  top: 65px; 
+  right: 20px; 
+  pointer-events: none;
 }
 .controls-group {
-  pointer-events: auto; display: grid; gap: 8px;
+  pointer-events: auto; 
+  display: grid; 
+  gap: 8px;
 }
 .camera-controls {
-  grid-template-columns: 1fr 1fr; width: 280px;
+  grid-template-columns: 1fr 1fr; 
+  width: 280px;
 }
 .view-controls {
-  grid-template-columns: 1fr 1fr 1fr; width: 240px;
+  grid-template-columns: 1fr 1fr 1fr; 
+  width: 240px;
 }
 .control-btn {
-  padding: 12px 10px; font-size: 1rem; font-weight: 600;
-  color: #fff; background-color: rgba(20, 40, 80, 0.7);
-  border: 1px solid rgba(0, 191, 255, 0.6); border-radius: 8px;
-  cursor: pointer; transition: all 0.2s ease; backdrop-filter: blur(5px);
+  padding: 12px 10px; 
+  font-size: 1rem; 
+  font-weight: 600;
+  color: #fff; 
+  background-color: rgba(20, 40, 80, 0.7);
+  border: 1px solid rgba(0, 191, 255, 0.6); 
+  border-radius: 8px;
+  cursor: pointer; 
+  transition: all 0.2s ease; 
+  backdrop-filter: blur(5px);
   text-align: center;
 }
 .control-btn:hover {
-  background-color: rgba(0, 191, 255, 0.7); border-color: #fff; transform: scale(1.05);
+  background-color: rgba(0, 191, 255, 0.7); 
+  border-color: #fff; 
+  transform: scale(1.05);
 }
 .control-btn:active { transform: scale(0.98); }
 .control-btn.selected {
-  background-color: #00BFFF; border-color: #fff;
-  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8); color: #0d203e; transform: scale(1.05);
+  background-color: #00BFFF; 
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(0, 191, 255, 0.8); 
+  color: #0d203e; 
+  transform: scale(1.05);
 }
+
+/* 用于禁用状态的按钮样式 */
+.control-btn:disabled {
+  background-color: rgba(50, 60, 80, 0.5);
+  border-color: rgba(100, 110, 130, 0.5);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
+  transform: none;
+}
+.control-btn:disabled:hover {
+  background-color: rgba(50, 60, 80, 0.5);
+  transform: none;
+}
+
 /* --- 详情弹出框 --- */
 .details-popup {
-  position: absolute; width: 250px; padding: 15px;
-  background-color: rgba(10, 40, 90, 0.85); backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 191, 255, 0.6); border-radius: 8px;
+  position: absolute; 
+  width: 250px; 
+  padding: 15px;
+  background-color: rgba(10, 40, 90, 0.85); 
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 191, 255, 0.6); 
+  border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  color: #fff; font-size: 0.9rem; pointer-events: none;
-  transition: opacity 0.2s ease; z-index: 100;
+  color: #fff; 
+  font-size: 0.9rem; 
+  pointer-events: none;
+  transition: opacity 0.2s ease; 
+  z-index: 100;
 }
 .details-popup h4 {
-  margin: 0 0 10px 0; color: #00BFFF; font-size: 1rem;
-  border-bottom: 1px solid rgba(0, 191, 255, 0.3); padding-bottom: 5px;
+  margin: 0 0 10px 0; 
+  color: #00BFFF; 
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(0, 191, 255, 0.3); 
+  padding-bottom: 5px;
 }
-.details-popup p { margin: 0; line-height: 1.5; }
+.details-popup p { 
+  margin: 0; 
+  line-height: 1.5; 
+}
 </style>
