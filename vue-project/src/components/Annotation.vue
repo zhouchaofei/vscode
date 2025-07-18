@@ -1,7 +1,7 @@
 <template>
-  <div class="annotator-container">
+  <div class="annotator-container" @click="handleGlobalClick">
     <div ref="videoContainer" class="video-container">
-      <!-- 这里不再使用 ref="videoPlayer"，我们会动态创建视频元素 -->
+      <!-- 动态创建视频元素 -->
     </div>
     
     <canvas
@@ -20,11 +20,7 @@
         </div>
       </header>
 
-      <div 
-        class="drawer-container"
-        @mouseenter="isCameraDrawerOpen = true"
-        @mouseleave="isCameraDrawerOpen = false"
-      >
+      <div class="drawer-container">
         <div class="drawer-panel" :class="{ 'is-open': isCameraDrawerOpen }">
           <div class="controls-group camera-controls">
             <!-- 动态生成摄像头按钮 -->
@@ -39,7 +35,7 @@
               {{ camera.name }}
             </button>
           </div>
-          <div class="drawer-handle">
+          <div class="drawer-handle" @click.stop="toggleCameraDrawer">
             <span>摄<br>像<br>头</span>
           </div>
         </div>
@@ -67,7 +63,14 @@
           <p>{{ hoveredAnnotation.details }}</p>
         </div>
       </main>
+    </div>
 
+    <!-- 新增：视角切换加载蒙层 -->
+    <div class="loading-overlay" v-show="isViewSwitching">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">视角切换中，请稍候...</div>
+      </div>
     </div>
   </div>
 </template>
@@ -118,6 +121,7 @@ const typeColors = {
   '箱梁': '#FFA500',      // 橙色 (Orange)
   '桥墩': '#FFD700',      // 金色 (Gold)
   '桥台': '#F0E68C',      // 卡其色 (Khaki)
+  '预制梁': '#FF6347',    // 新增：番茄红 (Tomato)
   
   // 交通与方向 (醒目的颜色)
   '方向': '#FF4500',      // 橙红色 (OrangeRed)
@@ -148,6 +152,7 @@ const currentCameraId = ref('yn'); // 默认选中'永年'摄像头
 const currentViewId = ref('view1'); // 默认选中视角1
 const isCameraDrawerOpen = ref(false); // 控制抽屉状态
 const isLoading = ref(false); // 加载状态标记
+const isViewSwitching = ref(false); // 新增：视角切换蒙层状态
 
 // --- Video.js 播放器状态 ---
 const videoContainer = ref(null); // 视频容器的引用
@@ -157,6 +162,7 @@ const isVideoPlaying = ref(false);
 const videoStatus = ref("播放器准备就绪");
 const isPlayerReady = ref(false); // 状态锁，标记播放器是否准备就绪
 const annotationDelayTimer = ref(null);
+const overlayTimer = ref(null); // 新增：用于控制蒙层显示时长的计时器
 
 // --- Computed Properties ---
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
@@ -181,6 +187,7 @@ onMounted(async () => {
   
   initCanvas();
   window.addEventListener('resize', handleResize);
+
   // 等待播放器初始化完成后，再执行后续逻辑
   try {
     isLoading.value = true;
@@ -191,8 +198,8 @@ onMounted(async () => {
   } catch (error) {
     console.error("在 onMounted 期间初始化播放器失败:", error);
     videoStatus.value = "播放器初始化失败";
-    } finally {
-      isLoading.value = false;
+  } finally {
+    isLoading.value = false;
   }
 });
 
@@ -204,8 +211,32 @@ onUnmounted(() => {
   if (annotationDelayTimer.value) {
     clearTimeout(annotationDelayTimer.value);
   }
+  if (overlayTimer.value) {
+    clearTimeout(overlayTimer.value);
+  }
   window.removeEventListener('resize', handleResize);
 });
+
+// --- 摄像头面板交互 ---
+// 新增：切换摄像头抽屉的显示状态
+const toggleCameraDrawer = () => {
+  isCameraDrawerOpen.value = !isCameraDrawerOpen.value;
+};
+
+// 新增：处理全局点击事件，检测点击是否在面板外
+const handleGlobalClick = (event) => {
+  if (isCameraDrawerOpen.value) {
+    // 检查点击是否在抽屉面板内
+    const panel = document.querySelector('.drawer-panel');
+    const handle = document.querySelector('.drawer-handle');
+    
+    if (panel && handle && 
+        !panel.contains(event.target) && 
+        !handle.contains(event.target)) {
+      isCameraDrawerOpen.value = false;
+    }
+  }
+};
 
 // --- Video.js 播放器初始化 ---
 /**
@@ -302,41 +333,6 @@ const initPlayer = (initialUrl) => {
     });
   });
 };
-
-/**
- * 灵活更换视频流的函数。
- * 这个函数现在可以安全地被随时调用。
- * @param {string} url - 新的 HLS 视频流地址
- */
-// const setVideoStream = (url) => {
-//   if (!player.value || !isPlayerReady.value) {
-//     console.error("播放器尚未准备就绪，无法更换视频源！");
-//     return;
-//   }
-  
-//   console.log(`正在重置播放器并加载新视频源: ${url}`);
-//   try {
-//     // 1. 重置播放器。这是最关键的一步，它会清除所有旧的状态、错误和数据。
-//     player.value.pause();
-//     player.value.reset();
-
-//     // 2. 设置新的视频源。
-//     player.value.src({
-//       src: url,
-//       type: 'application/x-mpegURL'
-//     });
-
-//     // 3. 加载新的源。播放器将根据初始配置中的 autoplay:true 选项在加载完成后自动播放。
-//     player.value.load();
-//     player.value.play().catch(error => {
-//       console.error("播放新视频源失败:", error);
-//       videoStatus.value = "无法播放新的视频源";
-//     });
-//   } catch (e) {
-//       console.error("设置视频源时发生严重错误:", e);
-//       videoStatus.value = "设置视频源时出错";
-//   }
-// };
 
 // --- Canvas 和绘制 ---
 const initCanvas = () => {
@@ -439,6 +435,9 @@ const switchCamera = async (cameraId) => {
   }
 
   try {
+    // 选择摄像头后关闭面板
+    isCameraDrawerOpen.value = false;
+
     isLoading.value = true;
     console.log(`开始切换到摄像头: ${cameraId}`);
     currentCameraId.value = cameraId;
@@ -485,12 +484,18 @@ const switchView = async (viewId, forceExecution = false) => {
     if (!forceExecution) {
       isLoading.value = true;
     }
-    isLoading.value = true;
+
+    // 显示视角切换蒙层
+    isViewSwitching.value = true;
+    
     console.log(`准备切换到视角: ${viewId}`);
     currentViewId.value = viewId; // 更新当前视角状态
 
     if (annotationDelayTimer.value) {
       clearTimeout(annotationDelayTimer.value);
+    }
+    if (overlayTimer.value) {
+      clearTimeout(overlayTimer.value);
     }
 
     // 清除当前标注
@@ -526,16 +531,19 @@ const switchView = async (viewId, forceExecution = false) => {
     // 延迟显示标注（给摄像头移动时间）
     const delayTime = 20000; // 20秒延迟
     console.log(`将在${delayTime/1000}秒后显示新标注。`);
-    
+
+    // 设置定时器以显示标注和隐藏蒙层
     annotationDelayTimer.value = setTimeout(() => {
       console.log("延迟结束，正在显示新标注。");
       annotations.value = newAnnotations;
       drawAnnotations();
+      isViewSwitching.value = false; // 隐藏蒙层
     }, delayTime);
     
   } catch (error) {
     console.error(`切换到视角 ${viewId} 失败:`, error);
     videoStatus.value = `视角切换失败: ${error.message}`;
+    isViewSwitching.value = false; // 出错时也要隐藏蒙层
   } finally {
     isLoading.value = false;
   }
@@ -702,7 +710,6 @@ const handleCanvasMouseMove = (e) => {
   left: 0;
   z-index: 50;
   pointer-events: auto;
-  height: 200px; /* 定义一个悬停区域高度 */
 }
 .drawer-panel {
   position: absolute;
@@ -743,7 +750,7 @@ const handleCanvasMouseMove = (e) => {
   white-space: nowrap; /* 防止文字换行 */
   transition: background-color 0.3s;
 }
-.drawer-container:hover .drawer-handle {
+.drawer-container:hover {
   background-color: rgba(0, 191, 255, 1);
 }
 
@@ -833,5 +840,55 @@ const handleCanvasMouseMove = (e) => {
 .details-popup p { 
   margin: 0; 
   line-height: 1.5; 
+}
+
+/* --- 加载蒙层样式 --- */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000; /* 确保在所有元素之上 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(3px);
+}
+
+.loading-content {
+  text-align: center;
+  color: white;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
+}
+
+.loading-spinner:after {
+  content: " ";
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border-radius: 50%;
+  border: 6px solid #00BFFF;
+  border-color: #00BFFF transparent #00BFFF transparent;
+  animation: loading-spinner 1.2s linear infinite;
+}
+
+.loading-text {
+  font-size: 20px;
+  font-weight: 500;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes loading-spinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
