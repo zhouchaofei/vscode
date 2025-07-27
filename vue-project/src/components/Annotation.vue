@@ -60,7 +60,7 @@
       <main class="main-content">
         <div v-if="hoveredAnnotation" class="details-popup" :style="{ top: popupPosition.y + 'px', left: popupPosition.x + 'px' }">
           <h4>{{ hoveredAnnotation.title }}</h4>
-          <p>{{ hoveredAnnotation.details }}</p>
+          <p v-html="hoveredAnnotation.details.replace(/\|/g, '<br>')"></p>
         </div>
       </main>
     </div>
@@ -121,17 +121,21 @@ const typeColors = {
   '箱梁': '#FFA500',      // 橙色 (Orange)
   '桥墩': '#FFD700',      // 金色 (Gold)
   '桥台': '#F0E68C',      // 卡其色 (Khaki)
-  '预制梁': '#FF6347',    // 新增：番茄红 (Tomato)
-  
-  // 交通与方向 (醒目的颜色)
+  '预制梁': '#FF6347',    // 番茄红 (Tomato)
+  '跨': '#CD853F',        // 新增: 秘鲁色 (Peru)
+
+  // 交通与设施 (醒目的颜色)
   '方向': '#FF4500',      // 橙红色 (OrangeRed)
   '匝道': '#1E90FF',      // 道奇蓝 (DodgerBlue)
   '通道': '#32CD32',      // 酸橙绿 (LimeGreen)
+  '收费站': '#9370DB',    // 新增: 中紫色 (MediumPurple)
 
   // 支撑与细节部件 (冷色/中性色)
   '支座': '#00FFFF',      // 青色 (Aqua/Cyan)
   '挡块': '#B0C4DE',      // 亮钢蓝 (LightSteelBlue)
   '涵洞': '#9932CC',      // 暗兰花紫 (DarkOrchid)
+  '台座': '#D2B48C',      // 新增: 黄褐色 (Tan)
+  '路肩墙': '#708090',    // 新增: 石板灰 (SlateGray)
 
   // 其他
   '其他': '#FFFFFF'       // 白色 (White)
