@@ -73,7 +73,7 @@
         </div>
 
         <div v-if="shouldShowPersonnelInfo" class="static-info-box personnel-info">
-          <h4>施工人员总数: {{ personnelData.total }}人;</h4>
+          <p>施工人员总数: {{ personnelData.total }}人;</p>
           <p>无安全帽佩戴提醒: {{ personnelData.safetyAlerts }}次.</p>
         </div>
       </main>
