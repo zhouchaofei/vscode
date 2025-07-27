@@ -62,10 +62,24 @@
           <h4>{{ hoveredAnnotation.title }}</h4>
           <p v-html="hoveredAnnotation.details.replace(/\|/g, '<br>')"></p>
         </div>
+
+        <!-- 新增：固定位置的信息框 -->
+        <div v-if="shouldShowMachineryInfo" class="static-info-box machinery-info">
+          <h4>施工机械数量:</h4>
+          <p>挖土机: {{ machineryData.excavators }}台;<br>
+             推土机: {{ machineryData.bulldozers }}台;<br>
+             压路机: {{ machineryData.rollers }}台;<br>
+             吊车: {{ machineryData.cranes }}台.</p>
+        </div>
+
+        <div v-if="shouldShowPersonnelInfo" class="static-info-box personnel-info">
+          <h4>施工人员总数: {{ personnelData.total }}人;</h4>
+          <p>无安全帽佩戴提醒: {{ personnelData.safetyAlerts }}次.</p>
+        </div>
       </main>
     </div>
 
-    <!-- 新增：视角切换加载蒙层 -->
+    <!-- 视角切换加载蒙层 -->
     <div class="loading-overlay" v-show="isViewSwitching">
       <div class="loading-content">
         <div class="loading-spinner"></div>
@@ -112,6 +126,34 @@ const cameras = ref({
     viewCount: 1, 
     deviceSerial: '33011063992677425735:33011033991327056374' 
   }
+});
+
+// 新增：静态的机械数据（写死）
+const machineryData = ref({
+  yn: {  // 永年
+    excavators: 3,  // 挖土机
+    bulldozers: 2,  // 推土机
+    rollers: 1,     // 压路机
+    cranes: 2       // 吊车
+  },
+  fx_n: {  // 肥乡北
+    excavators: 2,
+    bulldozers: 1,
+    rollers: 2,
+    cranes: 1
+  },
+  fx_s: {  // 肥乡南
+    excavators: 4,
+    bulldozers: 2,
+    rollers: 3,
+    cranes: 2
+  }
+});
+
+// 新增：静态的人员数据（写死）
+const personnelData = ref({
+  total: 24,           // 施工人员总数
+  safetyAlerts: 3      // 无安全帽佩戴提醒次数
 });
 
 // 不同标注类型的颜色映射
@@ -166,10 +208,30 @@ const isVideoPlaying = ref(false);
 const videoStatus = ref("播放器准备就绪");
 const isPlayerReady = ref(false); // 状态锁，标记播放器是否准备就绪
 const annotationDelayTimer = ref(null);
-const overlayTimer = ref(null); // 新增：用于控制蒙层显示时长的计时器
+const overlayTimer = ref(null); // 用于控制蒙层显示时长的计时器
 
 // --- Computed Properties ---
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
+
+// 获取当前机械数据
+const currentMachineryData = computed(() => {
+  return machineryData.value[currentCameraId.value] || {
+    excavators: 0,
+    bulldozers: 0,
+    rollers: 0,
+    cranes: 0
+  };
+});
+
+// 决定是否显示机械信息框
+const shouldShowMachineryInfo = computed(() => {
+  return ['yn', 'fx_n', 'fx_s'].includes(currentCameraId.value);
+});
+
+// 决定是否显示人员信息框
+const shouldShowPersonnelInfo = computed(() => {
+  return currentCameraId.value === 'fx_lc';
+});
 
 const views = computed(() => {
   const viewCount = currentCamera.value.viewCount;
@@ -222,12 +284,12 @@ onUnmounted(() => {
 });
 
 // --- 摄像头面板交互 ---
-// 新增：切换摄像头抽屉的显示状态
+// 切换摄像头抽屉的显示状态
 const toggleCameraDrawer = () => {
   isCameraDrawerOpen.value = !isCameraDrawerOpen.value;
 };
 
-// 新增：处理全局点击事件，检测点击是否在面板外
+// 处理全局点击事件，检测点击是否在面板外
 const handleGlobalClick = (event) => {
   if (isCameraDrawerOpen.value) {
     // 检查点击是否在抽屉面板内
@@ -844,6 +906,41 @@ const handleCanvasMouseMove = (e) => {
 .details-popup p { 
   margin: 0; 
   line-height: 1.5; 
+}
+
+/* --- 新增：固定信息框样式 --- */
+.static-info-box {
+  position: absolute;
+  width: 250px;
+  padding: 15px;
+  background-color: rgba(10, 40, 90, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 191, 255, 0.6);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 100;
+}
+.static-info-box h4 {
+  margin: 0 0 10px 0;
+  color: #00BFFF;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(0, 191, 255, 0.3);
+  padding-bottom: 5px;
+}
+.static-info-box p {
+  margin: 0;
+  line-height: 1.5;
+}
+.machinery-info {
+  top: 70px;
+  right: 20px;
+}
+.personnel-info {
+  top: 70px;
+  right: 20px;
 }
 
 /* --- 加载蒙层样式 --- */
