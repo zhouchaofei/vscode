@@ -144,100 +144,172 @@ export default defineComponent({
     // 永年北互通数据
     const yongnianData = ref([
       {
-        name: 'A匝道',
-        processes: [
-          { name: '挖台阶', completed: 280, total: 350, percentage: 80 },
-          { name: '粉煤灰', completed: 250, total: 350, percentage: 71 },
-          { name: '水泥稳定碎石', completed: 220, total: 350, percentage: 63 },
-          { name: '沥青砼底面层', completed: 200, total: 350, percentage: 57 },
-          { name: '沥青砼表面层', completed: 150, total: 350, percentage: 43 }
+        "name": "AK0+851.73A匝道跨线桥",
+        "processes": [
+            { "name": "预制梁", "completed": 20, "total": 30, "percentage": 67 },
+            { "name": "现浇段", "completed": 0, "total": 6, "percentage": 0 },
+            { "name": "桥墩", "completed": 29, "total": 35, "percentage": 83 },
+            { "name": "盖梁", "completed": 6, "total": 12, "percentage": 50 },
+            { "name": "桩", "completed": 43, "total": 43, "percentage": 100 },
+            { "name": "护栏", "completed": 0, "total": 330, "percentage": 0 },
+            { "name": "水泥桥面铺装", "completed": 0, "total": 330, "percentage": 0 },
+            { "name": "沥青桥面铺装", "completed": 0, "total": 330, "percentage": 0 }
         ]
       },
       {
-        name: '通道',
-        processes: [
-          { name: '基础开挖', completed: 150, total: 180, percentage: 83 },
-          { name: '底板浇筑', completed: 130, total: 180, percentage: 72 },
-          { name: '侧墙施工', completed: 100, total: 180, percentage: 56 },
-          { name: '顶板施工', completed: 80, total: 180, percentage: 44 }
+        "name": "A匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 100 },
+        { "name": "粉煤灰", "percentage": 40 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
-        name: '桥梁',
-        processes: [
-          { name: '桩基施工', completed: 400, total: 450, percentage: 89 },
-          { name: '承台施工', completed: 380, total: 450, percentage: 84 },
-          { name: '墩柱施工', completed: 320, total: 450, percentage: 71 },
-          { name: '上部结构', completed: 250, total: 450, percentage: 56 }
+        "name": "B匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 100 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
-        name: '通道2',
-        processes: [
-          { name: '基础开挖', completed: 160, total: 190, percentage: 84 },
-          { name: '底板浇筑', completed: 140, total: 190, percentage: 74 },
-          { name: '侧墙施工', completed: 110, total: 190, percentage: 58 },
-          { name: '顶板施工', completed: 90, total: 190, percentage: 47 }
+        "name": "C匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 100 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
-        name: '桥梁2',
-        processes: [
-          { name: '桩基施工', completed: 410, total: 460, percentage: 89 },
-          { name: '承台施工', completed: 390, total: 460, percentage: 85 },
-          { name: '墩柱施工', completed: 330, total: 460, percentage: 72 },
-          { name: '上部结构', completed: 260, total: 460, percentage: 57 }
+        "name": "D匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 100 },
+        { "name": "粉煤灰", "percentage": 30 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
-      }
+      },
+      {
+        "name": "E匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 100 },
+        { "name": "粉煤灰", "percentage": 25 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
+        ]
+      },
     ]);
 
     // 肥乡西互通数据
     const feixiangData = ref([
       {
-        name: 'B匝道',
-        processes: [
-          { name: '挖台阶', completed: 300, total: 380, percentage: 79 },
-          { name: '粉煤灰', completed: 270, total: 380, percentage: 71 },
-          { name: '水泥稳定碎石', completed: 240, total: 380, percentage: 63 },
-          { name: '沥青砼底面层', completed: 210, total: 380, percentage: 55 },
-          { name: '沥青砼表面层', completed: 180, total: 380, percentage: 47 }
+        "name": "A匝道1号跨线桥",
+        "processes": [
+            { "name": "预制梁", "completed": 2, "total": 30, "percentage": 7 },
+            { "name": "桥墩", "completed": 15, "total": 15, "percentage": 100 },
+            { "name": "盖梁", "completed": 2, "total": 5, "percentage": 40 },
+            { "name": "桩", "completed": 21, "total": 21, "percentage": 100 },
+            { "name": "护栏", "completed": 0, "total": 330, "percentage": 0 },
+            { "name": "水泥桥面铺装", "completed": 0, "total": 330, "percentage": 0 },
+            { "name": "沥青桥面铺装", "completed": 0, "total": 330, "percentage": 0 }
         ]
       },
       {
-        name: '涵洞',
-        processes: [
-          { name: '基础开挖', completed: 180, total: 200, percentage: 90 },
-          { name: '底板浇筑', completed: 160, total: 200, percentage: 80 },
-          { name: '侧墙施工', completed: 140, total: 200, percentage: 70 },
-          { name: '顶板施工', completed: 120, total: 200, percentage: 60 }
+        "name": "A匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 70 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
-        name: '立交桥',
-        processes: [
-          { name: '桩基施工', completed: 420, total: 480, percentage: 88 },
-          { name: '承台施工', completed: 390, total: 480, percentage: 81 },
-          { name: '墩柱施工', completed: 350, total: 480, percentage: 73 },
-          { name: '上部结构', completed: 280, total: 480, percentage: 58 }
+        "name": "B匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 90 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
-        name: 'C匝道',
-        processes: [
-          { name: '挖台阶', completed: 320, total: 390, percentage: 82 },
-          { name: '粉煤灰', completed: 290, total: 390, percentage: 74 },
-          { name: '水泥稳定碎石', completed: 260, total: 390, percentage: 67 },
-          { name: '沥青砼底面层', completed: 230, total: 390, percentage: 59 },
-          { name: '沥青砼表面层', completed: 190, total: 390, percentage: 49 }
+        "name": "C匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 90 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
-        name: '跨线桥',
-        processes: [
-          { name: '桩基施工', completed: 430, total: 490, percentage: 88 },
-          { name: '承台施工', completed: 400, total: 490, percentage: 82 },
-          { name: '墩柱施工', completed: 360, total: 490, percentage: 73 },
-          { name: '上部结构', completed: 290, total: 490, percentage: 59 }
+        "name": "D匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 90 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
+        ]
+      },
+      {
+        "name": "E匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 80 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
+        ]
+      },
+      {
+        "name": "F匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 90 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
+        ]
+      },
+      {
+        "name": "G匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 90 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
+        ]
+      },
+      {
+        "name": "H匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 70 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
+        ]
+      },
+      {
+        "name": "I匝道",
+        "processes": [
+        { "name": "挖台阶", "percentage": 60 },
+        { "name": "粉煤灰", "percentage": 0 },
+        { "name": "水泥稳定碎石", "percentage": 0 },
+        { "name": "沥青砼底面层", "percentage": 0 },
+        { "name": "沥青砼表面层", "percentage": 0 }
         ]
       }
     ]);
