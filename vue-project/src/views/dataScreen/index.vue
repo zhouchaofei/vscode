@@ -116,10 +116,10 @@ import AgeRatioChart from "./components/SimpleAgeRatioChart.vue";
 import AnnualUseChart from "./components/SimpleAnnualUseChart.vue";
 import ChinaMapChart from "./components/SimpleChinaMapChart.vue";
 import HotPlateChart from "./components/SimpleHotPlateChart.vue";
-import MaleFemaleRatioChart from "./components/SimpleMaleFemaleRatioChart.vue";
-import OverNext30Chart from "./components/SimpleOverNext30Chart.vue";
+import MaleFemaleRatioChart from "./components/WorkingMaleFemaleRatioChart.vue";
+import OverNext30Chart from "./components/WorkingOverNext30Chart.vue";
 import PlatformSourceChart from "./components/SimplePlatformSourceChart.vue";
-import RealTimeAccessChart from "./components/SimpleRealTimeAccessChart.vue";
+import RealTimeAccessChart from "./components/WorkingRealTimeAccessChart.vue";
 import dayjs from "dayjs";
 
 // Remove router functionality for now since we're not using router
