@@ -316,10 +316,10 @@ export default defineComponent({
 
     // 摄像头数据
     const cameras = ref([
-      { id: 1, name: '永年', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010516991327760034_1_1.m3u8?expire=1783839126&id=865969116245139456&t=041a0c22eee09600f9928249aec5625ec46b6bbfc78e805813fff17561347d91&ev=100&devProto=gb28181', view: 'view1' },
-      { id: 2, name: '肥乡北', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010084991327588111_1_1.m3u8?expire=1783839201&id=865969431971373056&t=7cc28dde7d721171e7d1d482f643c2438c5bb4b1c39f23b2a68e1bac9363758d&ev=100&devProto=gb28181', view: 'view1' },
-      { id: 3, name: '肥乡南', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011012991327147072_1_1.m3u8?expire=1783839181&id=865969347674099712&t=402c3fd77bd2c00d25295f63150285f372139bfb4581931825b46ca393bffcdd&ev=100&devProto=gb28181', view: 'view1' },
-      { id: 4, name: '肥乡梁厂', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011033991327056374_1_1.m3u8?expire=1783839161&id=865969264091918336&t=a65166c636992ea20b0f7fc48a6803036e40b0187379097b10650231ec5461fc&ev=100&devProto=gb28181', view: 'view1' }
+      { id: 1, name: '永年', english: 'yn', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010516991327760034_1_1.m3u8?expire=1783839126&id=865969116245139456&t=041a0c22eee09600f9928249aec5625ec46b6bbfc78e805813fff17561347d91&ev=100&devProto=gb28181', view: 'view1' },
+      { id: 2, name: '肥乡北', english: 'fx_n', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010084991327588111_1_1.m3u8?expire=1783839201&id=865969431971373056&t=7cc28dde7d721171e7d1d482f643c2438c5bb4b1c39f23b2a68e1bac9363758d&ev=100&devProto=gb28181', view: 'view1' },
+      { id: 3, name: '肥乡南', english: 'fx_s', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011012991327147072_1_1.m3u8?expire=1783839181&id=865969347674099712&t=402c3fd77bd2c00d25295f63150285f372139bfb4581931825b46ca393bffcdd&ev=100&devProto=gb28181', view: 'view1' },
+      { id: 4, name: '肥乡梁厂', english: 'fx_lc', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011033991327056374_1_1.m3u8?expire=1783839161&id=865969264091918336&t=a65166c636992ea20b0f7fc48a6803036e40b0187379097b10650231ec5461fc&ev=100&devProto=gb28181', view: 'view1' }
     ]);
 
     let timerId = null;
@@ -368,7 +368,7 @@ export default defineComponent({
     // 打开标注页面
     const openAnnotation = (camera) => {
       // 确保使用绝对路径，并传递必要的参数
-      const url = `/annotation?cameraId=${camera.id}&cameraName=${encodeURIComponent(camera.name)}&view=${camera.view}`;
+      const url = `/annotation?cameraId=${camera.id}&cameraName=${encodeURIComponent(camera.english)}&view=${camera.view}`;
       window.open(url, '_blank');
     };
 

@@ -92,6 +92,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
+import { useRoute } from 'vue-router';
 
 // --- 导入 Video.js 及其 HLS 插件 ---
 import videojs from 'video.js';
@@ -194,6 +195,8 @@ const hoveredAnnotation = ref(null); // 保存当前鼠标悬停的标注
 const popupPosition = ref({ x: 0, y: 0 }); // 详情弹出框的位置
 const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointer'
 
+const route = useRoute();
+
 // --- 摄像头和视角状态 ---
 const currentCameraId = ref('yn'); // 默认选中'永年'摄像头
 const currentViewId = ref('view1'); // 默认选中视角1
@@ -251,6 +254,13 @@ const views = computed(() => {
 onMounted(async () => {
   // 确保 DOM 已经渲染
   await nextTick();
+  
+  // 从URL获取参数
+  currentCameraId.value = route.query.cameraName;
+  currentViewId.value = route.query.view;
+  // currentCamera.value = cameras.value[currentCameraId.value];
+  console.log(`从URL获取的摄像头名称: ${currentCameraId.value}, 视角: ${currentViewId.value}`);
+  console.log(`当前摄像头数据:`, currentCamera.value);
   
   initCanvas();
   window.addEventListener('resize', handleResize);

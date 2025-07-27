@@ -1,17 +1,11 @@
 <template>
-  <DataScreen />
+  <router-view />
 </template>
 
 <script>
-import { defineComponent } from 'vue';
-import DataScreen from './DataScreen.vue';
-
-export default defineComponent({
-  name: 'App',
-  components: {
-    DataScreen
-  }
-});
+export default {
+  name: 'App'
+}
 </script>
 
 <style>
