@@ -63,15 +63,16 @@
           <p v-html="hoveredAnnotation.details.replace(/\|/g, '<br>')"></p>
         </div>
 
-        <!-- 新增：固定位置的信息框 -->
+        <!-- 机械数量统计框 - 修正后确保在每个视角都显示 -->
         <div v-if="shouldShowMachineryInfo" class="static-info-box machinery-info">
           <h4>施工机械数量:</h4>
-          <p>挖土机: {{ machineryData.excavators }}台;<br>
-             推土机: {{ machineryData.bulldozers }}台;<br>
-             压路机: {{ machineryData.rollers }}台;<br>
-             吊车: {{ machineryData.cranes }}台.</p>
+          <p>挖土机: {{ currentMachineryData.excavators }}台;<br>
+             推土机: {{ currentMachineryData.bulldozers }}台;<br>
+             压路机: {{ currentMachineryData.rollers }}台;<br>
+             吊车: {{ currentMachineryData.cranes }}台.</p>
         </div>
 
+        <!-- 梁厂的人员统计框 -->
         <div v-if="shouldShowPersonnelInfo" class="static-info-box personnel-info">
           <p>施工人员总数: {{ personnelData.total }}人;</p>
           <p>无安全帽佩戴提醒: {{ personnelData.safetyAlerts }}次.</p>
