@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "china",
+      "properties": {
+        "name": "China"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[73.557692, 39.371622], [135.094711, 53.560415], [121.640625, 23.563987], [73.557692, 39.371622]]]
+      }
+    }
+  ]
+}
