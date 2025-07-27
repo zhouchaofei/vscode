@@ -513,7 +513,7 @@ const switchView = async (viewId, forceExecution = false) => {
     }
     
     const index = parseInt(indexMatch[1], 10);
-    const accessToken = "at.4zp9f112a1yqew826m38jxep7pzs23hh-8dx62y4kqh-0gfatka-mtf9dfjlw";
+    const accessToken = "at.clyk2nli5ca2q6ci1mjfaxnlc5ta6jhh-5mo44wo80f-111mhjh-qbpvdn0vj";
     const deviceSerial = currentCamera.value.deviceSerial;
     const channelNo = 1;
     const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
