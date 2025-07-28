@@ -133,22 +133,22 @@ const cameras = ref({
 // 新增：静态的机械数据（写死）
 const machineryData = ref({
   yn: {  // 永年
-    excavators: 3,  // 挖土机
-    bulldozers: 2,  // 推土机
-    rollers: 1,     // 压路机
-    cranes: 2       // 吊车
+    excavators: 1,  // 挖土机
+    bulldozers: 1,  // 推土机
+    rollers: 0,     // 压路机
+    cranes: 0       // 吊车
   },
   fx_n: {  // 肥乡北
-    excavators: 2,
-    bulldozers: 1,
-    rollers: 2,
-    cranes: 1
+    excavators: 1,
+    bulldozers: 0,
+    rollers: 0,
+    cranes: 0
   },
   fx_s: {  // 肥乡南
-    excavators: 4,
-    bulldozers: 2,
-    rollers: 3,
-    cranes: 2
+    excavators: 2,
+    bulldozers: 1,
+    rollers: 0,
+    cranes: 0
   }
 });
 
