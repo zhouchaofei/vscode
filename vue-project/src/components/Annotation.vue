@@ -154,8 +154,8 @@ const machineryData = ref({
 
 // 新增：静态的人员数据（写死）
 const personnelData = ref({
-  total: 24,           // 施工人员总数
-  safetyAlerts: 3      // 无安全帽佩戴提醒次数
+  total: 0,           // 施工人员总数
+  safetyAlerts: 0      // 无安全帽佩戴提醒次数
 });
 
 // 不同标注类型的颜色映射

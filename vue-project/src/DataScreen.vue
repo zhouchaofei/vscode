@@ -137,8 +137,8 @@ export default defineComponent({
   setup() {
     const time = ref('');
     const warningData = ref({
-      helmetMissing: 15,
-      unauthorizedEntry: 8
+      helmetMissing: 0,
+      unauthorizedEntry: 0
     });
 
     // 永年北互通数据
