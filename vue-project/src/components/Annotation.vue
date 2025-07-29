@@ -13,7 +13,7 @@
 
     <div class="ui-overlay">
       <header class="app-header">
-        <h1>智慧监管平台</h1>
+        <h1>互通施工关键流程的智慧管理平台</h1>
         <div class="connection-status">
             <div class="status-indicator" :class="{ connected: isVideoPlaying }"></div>
             <span>{{ videoStatus }}</span>
@@ -147,8 +147,8 @@ const machineryData = ref({
   fx_s: {  // 肥乡南
     excavators: 2,
     bulldozers: 1,
-    rollers: 0,
-    cranes: 0
+    rollers: 1,
+    cranes: 1
   }
 });
 

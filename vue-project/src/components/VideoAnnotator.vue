@@ -9,7 +9,7 @@
 
     <div class="ui-overlay">
       <header class="app-header">
-        <h1>智慧监管平台</h1>
+        <h1>互通施工关键流程的智慧管理平台</h1>
         <div class="connection-status">
           <div class="status-indicator" :class="{ connected: isConnected }"></div>
           <span>{{ connectionStatus }}</span>
