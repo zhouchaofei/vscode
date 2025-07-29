@@ -7,7 +7,7 @@
       </div>
       <div class="header-ct">
         <div class="header-title">
-          <span class="title-text">智慧监管平台</span>
+          <span class="title-text">互通施工关键流程的智慧管理平台</span>
           <!-- 标题装饰线条 -->
           <div class="header-title-decoration">
             <div class="line-left"></div>
