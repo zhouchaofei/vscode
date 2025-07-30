@@ -62,21 +62,6 @@
           <h4>{{ hoveredAnnotation.title }}</h4>
           <p v-html="hoveredAnnotation.details.replace(/\|/g, '<br>')"></p>
         </div>
-
-        <!-- 机械数量统计框 - 修正后确保在每个视角都显示 -->
-        <div v-if="shouldShowMachineryInfo" class="static-info-box machinery-info">
-          <h4>施工机械数量:</h4>
-          <p>挖土机: {{ currentMachineryData.excavators }}台;<br>
-             推土机: {{ currentMachineryData.bulldozers }}台;<br>
-             压路机: {{ currentMachineryData.rollers }}台;<br>
-             吊车: {{ currentMachineryData.cranes }}台.</p>
-        </div>
-
-        <!-- 梁厂的人员统计框 -->
-        <div v-if="shouldShowPersonnelInfo" class="static-info-box personnel-info">
-          <p>施工人员总数: {{ personnelData.total }}人;</p>
-          <p>无安全帽佩戴提醒: {{ personnelData.safetyAlerts }}次.</p>
-        </div>
       </main>
     </div>
 
@@ -127,28 +112,6 @@ const cameras = ref({
     url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011033991327056374_1_1.m3u8?expire=1783839161&id=865969264091918336&t=a65166c636992ea20b0f7fc48a6803036e40b0187379097b10650231ec5461fc&ev=100&devProto=gb28181', 
     viewCount: 1, 
     deviceSerial: '33011063992677425735:33011033991327056374' 
-  }
-});
-
-// 新增：静态的机械数据（写死）
-const machineryData = ref({
-  yn: {  // 永年
-    excavators: 1,  // 挖土机
-    bulldozers: 1,  // 推土机
-    rollers: 0,     // 压路机
-    cranes: 0       // 吊车
-  },
-  fx_n: {  // 肥乡北
-    excavators: 1,
-    bulldozers: 0,
-    rollers: 0,
-    cranes: 0
-  },
-  fx_s: {  // 肥乡南
-    excavators: 2,
-    bulldozers: 1,
-    rollers: 1,
-    cranes: 1
   }
 });
 
@@ -216,26 +179,6 @@ const overlayTimer = ref(null); // 用于控制蒙层显示时长的计时器
 
 // --- Computed Properties ---
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
-
-// 获取当前机械数据
-const currentMachineryData = computed(() => {
-  return machineryData.value[currentCameraId.value] || {
-    excavators: 0,
-    bulldozers: 0,
-    rollers: 0,
-    cranes: 0
-  };
-});
-
-// 决定是否显示机械信息框
-const shouldShowMachineryInfo = computed(() => {
-  return ['yn', 'fx_n', 'fx_s'].includes(currentCameraId.value);
-});
-
-// 决定是否显示人员信息框
-const shouldShowPersonnelInfo = computed(() => {
-  return currentCameraId.value === 'fx_lc';
-});
 
 const views = computed(() => {
   const viewCount = currentCamera.value.viewCount;
@@ -917,41 +860,6 @@ const handleCanvasMouseMove = (e) => {
 .details-popup p { 
   margin: 0; 
   line-height: 1.5; 
-}
-
-/* --- 新增：固定信息框样式 --- */
-.static-info-box {
-  position: absolute;
-  width: 250px;
-  padding: 15px;
-  background-color: rgba(10, 40, 90, 0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 191, 255, 0.6);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  color: #fff;
-  font-size: 0.9rem;
-  pointer-events: none;
-  z-index: 100;
-}
-.static-info-box h4 {
-  margin: 0 0 10px 0;
-  color: #00BFFF;
-  font-size: 1rem;
-  border-bottom: 1px solid rgba(0, 191, 255, 0.3);
-  padding-bottom: 5px;
-}
-.static-info-box p {
-  margin: 0;
-  line-height: 1.5;
-}
-.machinery-info {
-  top: 70px;
-  right: 20px;
-}
-.personnel-info {
-  top: 70px;
-  right: 20px;
 }
 
 /* --- 加载蒙层样式 --- */
