@@ -3,6 +3,7 @@
     <!-- 1. 背景和带动画效果的头部 -->
     <div class="screen-header">
       <div class="header-lf">
+        <span class="header-screening" @click="openVideoPlayback">视频回放</span>
         <span class="header-screening" v-show="false">首页</span>
       </div>
       <div class="header-ct">
@@ -372,6 +373,12 @@ export default defineComponent({
       window.open(url, '_blank');
     };
 
+    // 打开视频回放页面
+    const openVideoPlayback = () => {
+      const url = `/videoplayback`;
+      window.open(url, '_blank');
+    };
+
     onMounted(() => {
       updateTime();
       timerId = setInterval(updateTime, 1000);
@@ -397,7 +404,8 @@ export default defineComponent({
       feixiangData,
       cameras,
       warningData,
-      openAnnotation
+      openAnnotation,
+      openVideoPlayback
     };
   }
 });
@@ -438,6 +446,16 @@ export default defineComponent({
     span {
       font-size: 18px;
       color: #c0c9d2;
+    }
+  }
+
+  .header-lf {
+    .header-screening {
+      cursor: pointer;
+      margin-right: 20px;
+      &:hover {
+        color: #fff;
+      }
     }
   }
 

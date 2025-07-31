@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DataScreen from './DataScreen.vue'
-import Annotation from './components/Annotation.vue'
+import Annotation from '../components/Annotation.vue'
+import DataScreen from '../views/DataScreen.vue'
+import VideoPlayback from '../views/VideoPlayback.vue'
 
 const routes = [
   {
@@ -12,6 +13,11 @@ const routes = [
     path: '/annotation',
     name: 'Annotation',
     component: Annotation
+  },
+  {
+    path: '/videoplayback',
+    name: 'VideoPlayback',
+    component: VideoPlayback
   }
 ]
 

@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import router from './router'
+import router from './router/router'
 import 'video.js/dist/video-js.css'
 import './styles/index.scss'
 
