@@ -136,6 +136,10 @@ import 'video.js/dist/video-js.css';
 export default defineComponent({
   name: 'DataScreen',
   setup() {
+    // --- EZVIZ API Configuration ---
+    const appKey = 'd4baaab8baf24baa9541f1bbe64b2200';
+    const appSecret = 'f42fb82edaed28c57b2045d882f0208e';
+    
     const time = ref('');
     const warningData = ref({
       helmetMissing: 0,
@@ -160,51 +164,51 @@ export default defineComponent({
       {
         "name": "A匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 100 },
-        { "name": "粉煤灰", "percentage": 40 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 100 },
+            { "name": "粉煤灰", "percentage": 40 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "B匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 100 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 100 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "C匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 100 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 100 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "D匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 100 },
-        { "name": "粉煤灰", "percentage": 30 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 100 },
+            { "name": "粉煤灰", "percentage": 30 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "E匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 100 },
-        { "name": "粉煤灰", "percentage": 25 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 100 },
+            { "name": "粉煤灰", "percentage": 25 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
     ]);
@@ -226,101 +230,102 @@ export default defineComponent({
       {
         "name": "A匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 70 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 70 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "B匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 90 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 90 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "C匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 90 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 90 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "D匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 90 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 90 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "E匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 80 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 80 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "F匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 90 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 90 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "G匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 90 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 90 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "H匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 70 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 70 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       },
       {
         "name": "I匝道",
         "processes": [
-        { "name": "挖台阶", "percentage": 60 },
-        { "name": "粉煤灰", "percentage": 0 },
-        { "name": "水泥稳定碎石", "percentage": 0 },
-        { "name": "沥青砼底面层", "percentage": 0 },
-        { "name": "沥青砼表面层", "percentage": 0 }
+            { "name": "挖台阶", "percentage": 60 },
+            { "name": "粉煤灰", "percentage": 0 },
+            { "name": "水泥稳定碎石", "percentage": 0 },
+            { "name": "沥青砼底面层", "percentage": 0 },
+            { "name": "沥青砼表面层", "percentage": 0 }
         ]
       }
     ]);
 
     // 摄像头数据
+    // --- MODIFIED: Camera data now includes deviceSerial and an empty URL ---
     const cameras = ref([
-      { id: 1, name: '永年', english: 'yn', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010516991327760034_1_1.m3u8?expire=1785056784&id=871076346149744640&t=412ee180bec4d1aca2b7ef12d2db019a3e83fd0d2e081841a341fc63e85779b6&ev=100&devProto=gb28181', view: 'view1' },
-      { id: 2, name: '肥乡北', english: 'fx_n', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010084991327588111_1_1.m3u8?expire=1785056677&id=871075898005135360&t=ba71f2658e238296dd941b8aa1ea209c6421bcae00cbb51a6ae4e812949fa54d&ev=100&devProto=gb28181', view: 'view1' },
-      { id: 3, name: '肥乡南', english: 'fx_s', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011012991327147072_1_1.m3u8?expire=1785056764&id=871076262762782720&t=6b84346d8d9a10e6f666beb7df2ecf4986af440a0d4d0bfc8095cb6452710300&ev=100&devProto=gb28181', view: 'view1' },
-      { id: 4, name: '肥乡梁厂', english: 'fx_lc', url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011033991327056374_1_1.m3u8?expire=1785056744&id=871076179174502400&t=890a081235cc516225389e6b9ee03f45fe715add4df031a2913cb42525446ee3&ev=100&devProto=gb28181', view: 'view1' }
+      { id: 1, name: '永年', english: 'yn', deviceSerial: '33011063992677425735:33010516991327760034', url: '', view: 'view1' },
+      { id: 2, name: '肥乡北', english: 'fx_n', deviceSerial: '33011063992677425735:33010084991327588111', url: '', view: 'view1' },
+      { id: 3, name: '肥乡南', english: 'fx_s', deviceSerial: '33011063992677425735:33011012991327147072', url: '', view: 'view1' },
+      { id: 4, name: '肥乡梁厂', english: 'fx_lc', deviceSerial: '33011063992677425735:33011033991327056374', url: '', view: 'view1' }
     ]);
 
     let timerId = null;
@@ -338,9 +343,97 @@ export default defineComponent({
       time.value = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     };
 
+    // --- NEW: Function to get a valid accessToken ---
+    const getValidAccessToken = async () => {
+      const tokenInfo = JSON.parse(localStorage.getItem('ys7TokenInfo'));
+
+      // Check if a valid, unexpired token exists
+      if (tokenInfo && tokenInfo.accessToken && tokenInfo.expireTime > Date.now()) {
+        console.log("Using cached accessToken.");
+        return tokenInfo.accessToken;
+      }
+      
+      console.log("正在获取新的 accessToken...");
+      const url = 'https://open.ys7.com/api/lapp/token/get';
+      const params = new URLSearchParams();
+      params.append('appKey', appKey);
+      params.append('appSecret', appSecret);
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: params
+        });
+        
+        const data = await response.json();
+
+        if (data.code === '200') {
+          const { accessToken, expireTime } = data.data;
+          // Store the new token and its expiry time
+          localStorage.setItem('ys7TokenInfo', JSON.stringify({ accessToken, expireTime }));
+          console.log("成功获取并存储新的 accessToken");
+          return accessToken;
+        } else {
+          // Handle API error
+          console.error(`Error fetching accessToken: ${data.msg} (Code: ${data.code})`);
+          throw new Error(`API Error: ${data.msg}`);
+        }
+      } catch (error) {
+        console.error("Network or fetch error while getting accessToken:", error);
+        throw error;
+      }
+    };
+    
+    // --- NEW: Function to fetch all camera URLs ---
+    const fetchAllCameraUrls = async (token) => {
+      console.log("正在获取摄像头 URLs...");
+      const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
+      
+      const promises = cameras.value.map(async (camera) => {
+        const params = new URLSearchParams();
+        params.append('accessToken', token);
+        params.append('deviceSerial', camera.deviceSerial);
+        params.append('channelNo', 1);
+        params.append('protocol', 2);
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params
+          });
+          const data = await response.json();
+          if (data.code === '200' && data.data) {
+            // Update the camera's URL
+            camera.url = data.data.url;
+            console.log(`URL for ${camera.name} updated.`);
+          } else {
+             console.error(`Failed to get URL for ${camera.name}: ${data.msg} (Code: ${data.code})`);
+          }
+        } catch(error) {
+           console.error(`Network error while fetching URL for ${camera.name}:`, error);
+        }
+      });
+      
+      // Wait for all requests to complete
+      await Promise.all(promises);
+      console.log("All camera URL fetch requests completed.");
+    };
+
     // 初始化视频播放器
     const initVideoPlayers = () => {
       cameras.value.forEach((camera, index) => {
+        // Only initialize if a URL was successfully fetched
+        if (!camera.url) {
+            console.warn(`Skipping video player for ${camera.name} as URL is missing.`);
+            return;
+        }
+
         const videoOptions = {
           // controls: true,
           autoplay: true,
@@ -359,6 +452,7 @@ export default defineComponent({
         videoElement.className = 'video-js vjs-default-skin';
         const videoContainer = document.getElementById(`video-container-${index}`);
         if (videoContainer) {
+          videoContainer.innerHTML = ''; // Clear previous player if any
           videoContainer.appendChild(videoElement);
           const player = videojs(videoElement, videoOptions);
           players.push(player);
@@ -367,10 +461,17 @@ export default defineComponent({
     };
 
     // 打开标注页面
+    // --- MODIFIED: Pass accessToken and cameraName to annotation page ---
     const openAnnotation = (camera) => {
-      // 确保使用绝对路径，并传递必要的参数
-      const url = `/annotation?cameraId=${camera.id}&cameraName=${encodeURIComponent(camera.english)}&view=${camera.view}`;
-      window.open(url, '_blank');
+        const tokenInfo = JSON.parse(localStorage.getItem('ys7TokenInfo'));
+        if (!tokenInfo || !tokenInfo.accessToken) {
+            alert("Access Token not available. Please refresh the page.");
+            return;
+        }
+
+        // Pass the token and identifiers. Annotation.vue will fetch its own URLs.
+        const url = `/annotation?accessToken=${tokenInfo.accessToken}&cameraName=${encodeURIComponent(camera.english)}&view=${camera.view}`;
+        window.open(url, '_blank');
     };
 
     // 打开视频回放页面
@@ -379,14 +480,27 @@ export default defineComponent({
       window.open(url, '_blank');
     };
 
-    onMounted(() => {
+    // --- MODIFIED: Updated onMounted lifecycle hook ---
+    onMounted(async () => {
       updateTime();
       timerId = setInterval(updateTime, 1000);
       
-      // 初始化视频播放
-      setTimeout(() => {
-        initVideoPlayers();
-      }, 100);
+      try {
+        // 1. Get a valid token
+        const accessToken = await getValidAccessToken();
+        
+        // 2. Fetch all camera URLs using the token
+        await fetchAllCameraUrls(accessToken);
+        
+        // 3. Initialize video players with the new URLs
+        // Use a timeout to ensure the DOM is ready
+        setTimeout(() => {
+            initVideoPlayers();
+        }, 100);
+
+      } catch (error) {
+        alert("Failed to initialize camera streams. Please check the console for details.");
+      }
     });
 
     onBeforeUnmount(() => {

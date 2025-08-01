@@ -84,38 +84,15 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css'; // 导入 Video.js 的 CSS
 
 // --- 配置Configuration ---
+// --- MODIFIED: Configuration includes deviceSerial, URL is now empty ---
 const cameras = ref({
-  yn: { 
-    id: 'yn', 
-    name: '永年', 
-    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010516991327760034_1_1.m3u8?expire=1785056784&id=871076346149744640&t=412ee180bec4d1aca2b7ef12d2db019a3e83fd0d2e081841a341fc63e85779b6&ev=100&devProto=gb28181', 
-    viewCount: 3, 
-    deviceSerial: '33011063992677425735:33010516991327760034' 
-  },
-  fx_n: { 
-    id: 'fx_n', 
-    name: '肥乡北', 
-    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33010084991327588111_1_1.m3u8?expire=1785056677&id=871075898005135360&t=ba71f2658e238296dd941b8aa1ea209c6421bcae00cbb51a6ae4e812949fa54d&ev=100&devProto=gb28181', 
-    viewCount: 3, 
-    deviceSerial: '33011063992677425735:33010084991327588111' 
-  },
-  fx_s: { 
-    id: 'fx_s', 
-    name: '肥乡南', 
-    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011012991327147072_1_1.m3u8?expire=1785056764&id=871076262762782720&t=6b84346d8d9a10e6f666beb7df2ecf4986af440a0d4d0bfc8095cb6452710300&ev=100&devProto=gb28181', 
-    viewCount: 3, 
-    deviceSerial: '33011063992677425735:33011012991327147072' 
-  },
-  fx_lc: { 
-    id: 'fx_lc', 
-    name: '肥乡梁厂', 
-    url: 'https://open.ys7.com/v3/openlive/33011063992677425735:33011033991327056374_1_1.m3u8?expire=1785056744&id=871076179174502400&t=890a081235cc516225389e6b9ee03f45fe715add4df031a2913cb42525446ee3&ev=100&devProto=gb28181', 
-    viewCount: 1, 
-    deviceSerial: '33011063992677425735:33011033991327056374' 
-  }
+  yn: { id: 'yn', name: '永年', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010516991327760034' },
+  fx_n: { id: 'fx_n', name: '肥乡北', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010084991327588111' },
+  fx_s: { id: 'fx_s', name: '肥乡南', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33011012991327147072' },
+  fx_lc: { id: 'fx_lc', name: '肥乡梁厂', url: '', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
 });
 
-// 新增：静态的人员数据（写死）
+// 新增：静态的人员数据（假数据）
 const personnelData = ref({
   total: 0,           // 施工人员总数
   safetyAlerts: 0      // 无安全帽佩戴提醒次数
@@ -141,7 +118,7 @@ const typeColors = {
   '支座': '#00FFFF',      // 青色 (Aqua/Cyan)
   '挡块': '#B0C4DE',      // 亮钢蓝 (LightSteelBlue)
   '涵洞': '#9932CC',      // 暗兰花紫 (DarkOrchid)
-  '台座': '#D2B48C',      // 新增: 黄褐色 (Tan)
+  '台座': '#FF0000',      // 红色 (Red)
   '路肩墙': '#708090',    // 新增: 石板灰 (SlateGray)
 
   // 其他
@@ -159,9 +136,10 @@ const popupPosition = ref({ x: 0, y: 0 }); // 详情弹出框的位置
 const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointer'
 
 const route = useRoute();
+const accessToken = ref(''); // --- NEW: To store the token from URL
 
 // --- 摄像头和视角状态 ---
-const currentCameraId = ref('yn'); // 默认选中'永年'摄像头
+const currentCameraId = ref(''); // Default is now empty, will be set from URL
 const currentViewId = ref('view1'); // 默认选中视角1
 const isCameraDrawerOpen = ref(false); // 控制抽屉状态
 const isLoading = ref(false); // 加载状态标记
@@ -169,7 +147,7 @@ const isViewSwitching = ref(false); // 新增：视角切换蒙层状态
 
 // --- Video.js 播放器状态 ---
 const videoContainer = ref(null); // 视频容器的引用
-const videoPlayer = ref(null);    // 视频元素的引用
+// const videoPlayer = ref(null);    // 视频元素的引用
 const player = ref(null);      // 用于持有 Video.js 播放器实例
 const isVideoPlaying = ref(false);
 const videoStatus = ref("播放器准备就绪");
@@ -181,6 +159,7 @@ const overlayTimer = ref(null); // 用于控制蒙层显示时长的计时器
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
 
 const views = computed(() => {
+  if (!currentCamera.value) return [];
   const viewCount = currentCamera.value.viewCount;
   return Array.from({ length: 6 }, (_, i) => {
     const viewNum = i + 1;
@@ -194,16 +173,22 @@ const views = computed(() => {
 
 // --- 组件生命周期钩子 ---
 // onMounted 现在是 async 函数
+// --- MODIFIED: onMounted to handle incoming accessToken and fetch data ---
 onMounted(async () => {
   // 确保 DOM 已经渲染
   await nextTick();
   
-  // 从URL获取参数
+  // 1. Get token and camera identifiers from the URL query
+  accessToken.value = route.query.accessToken;
   currentCameraId.value = route.query.cameraName;
-  currentViewId.value = route.query.view;
-  // currentCamera.value = cameras.value[currentCameraId.value];
-  console.log(`从URL获取的摄像头名称: ${currentCameraId.value}, 视角: ${currentViewId.value}`);
-  console.log(`当前摄像头数据:`, currentCamera.value);
+  currentViewId.value = route.query.view || 'view1';
+
+  if (!accessToken.value || !currentCameraId.value) {
+    videoStatus.value = "错误：缺少访问令牌或摄像头信息。";
+    console.error("Missing accessToken or cameraName in URL query parameters.");
+    alert("无法加载视频，缺少必要参数。");
+    return;
+  }
   
   initCanvas();
   window.addEventListener('resize', handleResize);
@@ -211,13 +196,24 @@ onMounted(async () => {
   // 等待播放器初始化完成后，再执行后续逻辑
   try {
     isLoading.value = true;
-    await initPlayer(currentCamera.value.url);
-    console.log("播放器初始化流程完成，现在开始加载默认视角数据。");
-    // 初始加载：切换到默认摄像头和视角
-    await switchView(currentViewId.value, true);
+    
+    // 2. Fetch URLs for ALL cameras using the provided token
+    await fetchAllCameraUrls(accessToken.value);
+    
+    const initialCamera = cameras.value[currentCameraId.value];
+    if (!initialCamera || !initialCamera.url) {
+        throw new Error(`无法获取摄像头 ${initialCamera.name} 的播放地址。`);
+    }
+
+    // 3. Initialize the player with the fetched URL
+    await initPlayer(initialCamera.url);
+    
+    console.log("播放器初始化完成，加载默认视角数据。");
+    await switchView(currentViewId.value, true); // `true` forces execution
+
   } catch (error) {
-    console.error("在 onMounted 期间初始化播放器失败:", error);
-    videoStatus.value = "播放器初始化失败";
+    console.error("在 onMounted 期间发生错误:", error);
+    videoStatus.value = `初始化失败: ${error.message}`;
   } finally {
     isLoading.value = false;
   }
@@ -258,24 +254,54 @@ const handleGlobalClick = (event) => {
   }
 };
 
+// --- NEW: Function to fetch all camera URLs (similar to DataScreen) ---
+const fetchAllCameraUrls = async (token) => {
+    console.log("Annotation page fetching camera URLs...");
+    const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
+    
+    // Create an array of promises
+    const promises = Object.values(cameras.value).map(async (camera) => {
+      const params = new URLSearchParams();
+      params.append('accessToken', token);
+      params.append('deviceSerial', camera.deviceSerial);
+      params.append('channelNo', 1);
+      params.append('protocol', 2);
+
+    try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params
+        });
+        const data = await response.json();
+        if (data.code === '200' && data.data) {
+          camera.url = data.data.url;
+        } else {
+          console.error(`Failed to get URL for ${camera.name}: ${data.msg}`);
+        }
+    } catch (error) {
+        console.error(`Network error fetching URL for ${camera.name}:`, error);
+    }
+    });
+
+    await Promise.all(promises);
+    console.log("All camera URL fetch requests completed for annotation page.");
+};
+
 // --- Video.js 播放器初始化 ---
 /**
  * 修复版的初始化 Video.js 播放器函数
  * 动态创建视频元素而不是尝试重用
  */
-const initPlayer = (initialUrl) => {
+const initPlayer = (url) => {
   return new Promise((resolve, reject) => {
     isPlayerReady.value = false;
     videoStatus.value = "正在初始化播放器...";
     
     // 先清除旧播放器实例
     if (player.value) {
-      try {
-        player.value.dispose();
-        player.value = null;
-      } catch (e) {
-        console.warn("销毁旧播放器时发生错误:", e);
-      }
+      player.value.dispose();
+      player.value = null;
     }
     
     // 使用 nextTick 确保 DOM 已更新
@@ -295,7 +321,7 @@ const initPlayer = (initialUrl) => {
       videoContainer.value.appendChild(videoElement);
       
       // 保存新的引用
-      videoPlayer.value = videoElement;
+      // videoPlayer.value = videoElement;
       
       try {
         // 创建播放器配置
@@ -306,7 +332,7 @@ const initPlayer = (initialUrl) => {
           preload: 'auto',
           responsive: true,
           sources: [{ 
-            src: initialUrl, 
+            src: url, 
             type: 'application/x-mpegURL' 
           }]
         };
@@ -314,7 +340,7 @@ const initPlayer = (initialUrl) => {
         // 创建新的播放器实例
         player.value = videojs(videoElement, options, function() {
           console.log('Video.js 播放器已创建并准备就绪');
-          isPlayerReady.value = true;
+          // isPlayerReady.value = true;
 
           // 设置各种事件监听器
           this.on('playing', () => { 
@@ -468,11 +494,16 @@ const switchCamera = async (cameraId) => {
     drawAnnotations();
     
     // 更新状态
-    isVideoPlaying.value = false;
+    // isVideoPlaying.value = false;
     videoStatus.value = "正在切换摄像头...";
 
+    const newCamera = cameras.value[cameraId];
+    if (!newCamera.url) {
+        throw new Error(`URL for ${newCamera.name} is not available.`);
+    }
+
     // 完全重新初始化播放器
-    await initPlayer(cameras.value[cameraId].url);
+    await initPlayer(newCamera.url);
     
     // 切换到默认视角并加载标注
     await switchView('view1', true);
@@ -491,6 +522,7 @@ const switchCamera = async (cameraId) => {
  * @param {string} viewId - 要切换到的视角ID
  * @param {boolean} forceExecution - 即使系统正在加载也强制执行
  */
+// --- MODIFIED: switchView now uses the accessToken from the component's state ---
 const switchView = async (viewId, forceExecution = false) => {
   // 如果系统正在加载且不是强制执行，则直接返回
   if (isLoading.value && !forceExecution) {
@@ -529,10 +561,10 @@ const switchView = async (viewId, forceExecution = false) => {
     }
     
     const index = parseInt(indexMatch[1], 10);
-    const accessToken = "at.6gz3gid25e93u8bm2m1zbx7le0wc0en9-2vf26ugcvn-1niw9oh-cifftv8lw";
+    // const accessToken = "at.6gz3gid25e93u8bm2m1zbx7le0wc0en9-2vf26ugcvn-1niw9oh-cifftv8lw";
     const deviceSerial = currentCamera.value.deviceSerial;
     const channelNo = 1;
-    const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
+    const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken.value}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
 
     // 发送视角切换指令
     const response = await fetch(apiUrl, { method: 'POST' });
@@ -549,7 +581,7 @@ const switchView = async (viewId, forceExecution = false) => {
     const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
     
     // 延迟显示标注（给摄像头移动时间）
-    const delayTime = 20000; // 20秒延迟
+    const delayTime = 2000; // 20秒延迟
     console.log(`将在${delayTime/1000}秒后显示新标注。`);
 
     // 设置定时器以显示标注和隐藏蒙层
