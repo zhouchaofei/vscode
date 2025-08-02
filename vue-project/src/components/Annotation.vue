@@ -60,7 +60,7 @@
       <main class="main-content">
         <div v-if="hoveredAnnotation" class="details-popup" :style="{ top: popupPosition.y + 'px', left: popupPosition.x + 'px' }">
           <h4>{{ hoveredAnnotation.title }}</h4>
-          <p v-html="hoveredAnnotation.details.replace(/\|/g, '<br>')"></p>
+          <p v-html="formattedPopupDetails"></p>
         </div>
       </main>
     </div>
@@ -169,6 +169,33 @@ const views = computed(() => {
       enabled: viewNum <= viewCount
     };
   });
+});
+
+// --- MODIFIED: A new, robust method for highlighting ---
+const formattedPopupDetails = computed(() => {
+  if (!hoveredAnnotation.value || !hoveredAnnotation.value.details) {
+    return '';
+  }
+
+  // Split the details string into an array of lines.
+  // This regex handles various forms of <br> tags like <br>, <br/>, </br> and surrounding spaces.
+  const lines = hoveredAnnotation.value.details.split(/\s*<\/?br.*?>\s*/);
+
+  const processedLines = lines.map(line => {
+    const trimmedLine = line.trim();
+    // Check if the line is a date line
+    if (trimmedLine.startsWith('开始日期:') || trimmedLine.startsWith('结束日期:')) {
+      // If it is, wrap it in a yellow span
+      return `<span style="color: yellow;">${trimmedLine}</span>`;
+    } else {
+      // Otherwise, return the line as is
+      return trimmedLine;
+    }
+  });
+
+  // Join the processed lines back together with standard <br> tags.
+  // Filter out any empty lines that might result from the split.
+  return processedLines.filter(line => line).join('<br>');
 });
 
 // --- 组件生命周期钩子 ---
@@ -412,6 +439,9 @@ const drawAnnotations = () => {
   
   annotationCtx.clearRect(0, 0, currentCanvasWidth, currentCanvasHeight);
 
+  // 为“台座”类型创建一个独立的计数器
+  let taizuoCounter = 1;
+
   annotations.value.forEach(anno => {
     const color = typeColors[anno.type] || '#FFFFFF'; 
     const coordinates = anno.coordinates;
@@ -443,13 +473,21 @@ const drawAnnotations = () => {
     annotationCtx.stroke();
     annotationCtx.fill();
 
+    // --- 文本绘制逻辑修改 ---
+    let labelText = anno.title; // 默认使用原始标题
+    // 如果类型是'台座'，则使用计数器生成新标题
+    if (anno.type === '台座') {
+      labelText = `台座${taizuoCounter}`;
+      taizuoCounter++; // 递增计数器
+    }
+
     // 对文本位置同样应用缩放
     annotationCtx.fillStyle = '#FFFFFF';
     annotationCtx.font = 'bold 16px Arial';
     annotationCtx.textBaseline = 'top';
     const textX = startX + 10; // 在缩放后的坐标基础上偏移
     const textY = startY + 10;
-    annotationCtx.fillText(anno.title, textX, textY);
+    annotationCtx.fillText(labelText, textX, textY);
   });
 };
 
