@@ -4,11 +4,11 @@ import DataScreen from '../views/DataScreen.vue'
 import VideoPlayback from '../views/VideoPlayback.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'DataScreen',
-    component: DataScreen
-  },
+  // {
+  //   path: '/',
+  //   name: 'DataScreen',
+  //   component: DataScreen
+  // },
   {
     path: '/annotation',
     name: 'Annotation',
@@ -18,6 +18,14 @@ const routes = [
     path: '/videoplayback',
     name: 'VideoPlayback',
     component: VideoPlayback
+  },
+  {
+    path: '/',
+    name: 'dataScreen',
+    component: () => import('@/views/dataScreen/index.vue'),
+    meta: {
+      title: '互通施工关键流程的智慧管理平台'
+    }
   }
 ]
 
