@@ -7,12 +7,12 @@
         </div>
         <div class="header-ct">
           <div class="header-ct-title">
-            <span>智慧旅游可视化大数据展示平台</span>
-            <div class="header-ct-warning">平台高峰预警信息（2条）</div>
+            <span>互通施工关键流程的智慧管理平台</span>
+            <!-- <div class="header-ct-warning">平台高峰预警信息（2条）</div> -->
           </div>
         </div>
         <div class="header-ri">
-          <span class="header-download">统计报告</span>
+          <span class="header-download">视频回放</span>
           <span class="header-time">当前时间：{{ time }}</span>
         </div>
       </div>
@@ -20,7 +20,7 @@
         <div class="dataScreen-lf">
           <div class="dataScreen-top">
             <div class="dataScreen-main-title">
-              <span>实时游客统计</span>
+              <span>工程完成度</span>
               <img src="./images/dataScreen-title.png" alt="" />
             </div>
             <div class="dataScreen-main-chart">
@@ -48,7 +48,7 @@
         </div>
         <div class="dataScreen-ct">
           <div class="dataScreen-map">
-            <div class="dataScreen-map-title">景区实时客流量</div>
+            <div class="dataScreen-map-title">摄像头实时画面</div>
             <!-- <vue3-seamless-scroll
 							:list="alarmData"
 							class="dataScreen-alarm"
@@ -63,7 +63,7 @@
 								</div>
 							</div>
 						</vue3-seamless-scroll> -->
-            <ChinaMapChart />
+            <HandanMapChart />
           </div>
           <div class="dataScreen-cb">
             <div class="dataScreen-main-title">
@@ -115,7 +115,7 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import AgeRatioChart from "./components/AgeRatioChart.vue";
 import AnnualUseChart from "./components/AnnualUseChart.vue";
-import ChinaMapChart from "./components/ChinaMapChart.vue";
+import HandanMapChart from "./components/HandanMapChart.vue";
 import HotPlateChart from "./components/HotPlateChart.vue";
 import MaleFemaleRatioChart from "./components/MaleFemaleRatioChart.vue";
 import OverNext30Chart from "./components/OverNext30Chart.vue";

@@ -47,22 +47,22 @@
           letter-spacing: 4px;
           background: url("./images/dataScreen-header-center-bg.png") no-repeat;
           background-size: 100% 100%;
-          .header-ct-warning {
-            position: absolute;
-            bottom: -42px;
-            left: 50%;
-            width: 622px;
-            height: 44px;
-            font-family: YouSheBiaoTiHei;
-            font-size: 14px;
-            line-height: 44px;
-            color: #ffffff;
-            text-align: center;
-            letter-spacing: 1px;
-            background: url("./images/dataScreen-header-warn-bg.png") no-repeat;
-            background-size: 100% 100%;
-            transform: translateX(-50%);
-          }
+          // .header-ct-warning {
+          //   position: absolute;
+          //   bottom: -42px;
+          //   left: 50%;
+          //   width: 622px;
+          //   height: 44px;
+          //   font-family: YouSheBiaoTiHei;
+          //   font-size: 14px;
+          //   line-height: 44px;
+          //   color: #ffffff;
+          //   text-align: center;
+          //   letter-spacing: 1px;
+          //   background: url("./images/dataScreen-header-warn-bg.png") no-repeat;
+          //   background-size: 100% 100%;
+          //   transform: translateX(-50%);
+          // }
         }
       }
       .header-screening,
@@ -154,7 +154,7 @@
           box-sizing: border-box;
           flex: 1;
           width: 100%;
-          margin-top: 78px;
+          margin-top: 40px;
           .dataScreen-map-title {
             position: absolute;
             top: 10px;
