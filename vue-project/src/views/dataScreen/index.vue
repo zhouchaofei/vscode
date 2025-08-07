@@ -24,9 +24,12 @@
               <img src="./images/dataScreen-title.png" alt="" />
             </div>
             <div class="dataScreen-main-chart-container">
-              <div class="pie-chart-item" v-for="i in 8" :key="i">
-                <AgeRatioChart />
+              <div class="pie-chart-item" v-for="item in constructionData" :key="item.cons">
+                <AgeRatioChart :chartData="item" />
               </div>
+              <!-- <div class="pie-chart-item" v-for="i in 8" :key="i">
+                <AgeRatioChart />
+              </div> -->
             </div>
           </div>
         </div>
@@ -92,6 +95,131 @@ import dayjs from "dayjs";
 
 const router = useRouter();
 const dataScreenRef = ref<HTMLElement | null>(null);
+
+const jsonData = [
+    {
+        "location": "yn",
+        "cons": "Z",
+        "start_date_plan": "2025-05-01",
+        "end_date_plan": "2025-06-08",
+        "current_date": "2025-08-06",
+        "duration_cons": "97",
+        "duration_plan": "39",
+        "duration_percent": "248%",
+        "total_count": "35",
+        "state_count": "29",
+        "complete_percent": "82%",
+        "un_complete_percent": "18%",
+        "countOfUnfinished": "6"
+    },
+    {
+        "location": "yn",
+        "cons": "GL",
+        "start_date_plan": "2025-05-15",
+        "end_date_plan": "2025-08-11",
+        "current_date": "2025-08-06",
+        "duration_cons": "83",
+        "duration_plan": "89",
+        "duration_percent": "93%",
+        "total_count": "12",
+        "state_count": "7",
+        "complete_percent": "58%",
+        "un_complete_percent": "42%",
+        "countOfUnfinished": "5"
+    },
+    {
+        "location": "yn",
+        "cons": "YZL_5",
+        "start_date_plan": "2025-05-05",
+        "end_date_plan": "2025-06-17",
+        "current_date": "2025-08-06",
+        "duration_cons": "93",
+        "duration_plan": "44",
+        "duration_percent": "211%",
+        "total_count": "35",
+        "state_count": "21",
+        "complete_percent": "60%",
+        "un_complete_percent": "40%",
+        "countOfUnfinished": "14"
+    },
+    {
+        "location": "yn",
+        "cons": "YZL_6",
+        "start_date_plan": "2025-06-19",
+        "end_date_plan": "2025-08-26",
+        "current_date": "2025-08-06",
+        "duration_cons": "48",
+        "duration_plan": "69",
+        "duration_percent": "69%",
+        "total_count": "35",
+        "state_count": "0",
+        "complete_percent": "0%",
+        "un_complete_percent": "100%",
+        "countOfUnfinished": "35"
+    },
+    {
+        "location": "yn",
+        "cons": "ZD_1",
+        "start_date_plan": "2025-05-05",
+        "end_date_plan": "2025-08-31",
+        "current_date": "2025-08-06",
+        "duration_cons": "93",
+        "duration_plan": "119",
+        "duration_percent": "78%",
+        "total_count": "5",
+        "state_count": "5",
+        "complete_percent": "100%",
+        "un_complete_percent": "0%",
+        "countOfUnfinished": "0"
+    },
+    {
+        "location": "yn",
+        "cons": "ZD_4",
+        "start_date_plan": "2025-10-07",
+        "end_date_plan": "2025-11-28",
+        "current_date": "2025-08-06",
+        "duration_cons": "-62",
+        "duration_plan": "71",
+        "duration_percent": "-87%",
+        "total_count": "5",
+        "state_count": "0",
+        "complete_percent": "0%",
+        "un_complete_percent": "100%",
+        "countOfUnfinished": "5"
+    },
+    {
+        "location": "yn",
+        "cons": "TD",
+        "start_date_plan": "2025-04-05",
+        "end_date_plan": "2025-08-11",
+        "current_date": "2025-08-06",
+        "duration_cons": "123",
+        "duration_plan": "129",
+        "duration_percent": "95%",
+        "total_count": "4",
+        "state_count": "4",
+        "complete_percent": "100%",
+        "un_complete_percent": "0%",
+        "countOfUnfinished": "0"
+    },
+    {
+        "location": "yn",
+        "cons": "HD",
+        "start_date_plan": "2025-04-05",
+        "end_date_plan": "2025-08-11",
+        "current_date": "2025-08-06",
+        "duration_cons": "123",
+        "duration_plan": "129",
+        "duration_percent": "95%",
+        "total_count": "3",
+        "state_count": "2",
+        "complete_percent": "66%",
+        "un_complete_percent": "34%",
+        "countOfUnfinished": "1"
+    }
+];
+// 将 JSON 数据存到一个响应式引用中
+const constructionData = ref(jsonData);
 
 onMounted(() => {
   if (dataScreenRef.value) {
