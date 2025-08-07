@@ -8,99 +8,73 @@
         <div class="header-ct">
           <div class="header-ct-title">
             <span>互通施工关键流程的智慧管理平台</span>
-            <!-- <div class="header-ct-warning">平台高峰预警信息（2条）</div> -->
           </div>
         </div>
         <div class="header-ri">
-          <span class="header-download">视频回放</span>
+          <span class="header-download">录像回放</span>
           <span class="header-time">当前时间：{{ time }}</span>
         </div>
       </div>
       <div class="dataScreen-main">
+
         <div class="dataScreen-lf">
-          <div class="dataScreen-top">
+          <div class="dataScreen-lf-container">
             <div class="dataScreen-main-title">
               <span>工程完成度</span>
               <img src="./images/dataScreen-title.png" alt="" />
             </div>
-            <div class="dataScreen-main-chart">
-              <RealTimeAccessChart />
-            </div>
-          </div>
-          <div class="dataScreen-center">
-            <div class="dataScreen-main-title">
-              <span>男女比例</span>
-              <img src="./images/dataScreen-title.png" alt="" />
-            </div>
-            <div class="dataScreen-main-chart">
-              <MaleFemaleRatioChart />
-            </div>
-          </div>
-          <div class="dataScreen-bottom">
-            <div class="dataScreen-main-title">
-              <span>年龄比例</span>
-              <img src="./images/dataScreen-title.png" alt="" />
-            </div>
-            <div class="dataScreen-main-chart">
-              <AgeRatioChart />
+            <div class="dataScreen-main-chart-container">
+              <div class="pie-chart-item" v-for="i in 8" :key="i">
+                <AgeRatioChart />
+              </div>
             </div>
           </div>
         </div>
+
         <div class="dataScreen-ct">
           <div class="dataScreen-map">
             <div class="dataScreen-map-title">摄像头实时画面</div>
-            <!-- <vue3-seamless-scroll
-							:list="alarmData"
-							class="dataScreen-alarm"
-							:step="0.5"
-							:hover="true"
-							:limitScrollNum="3"
-						>
-							<div class="dataScreen-alarm">
-								<div class="map-item" v-for="item in alarmData" :key="item.id">
-									<img src="./images/dataScreen-alarm.png" alt="" />
-									<span class="map-alarm sle">{{ item.label }} 预警：{{ item.warnMsg }}</span>
-								</div>
-							</div>
-						</vue3-seamless-scroll> -->
             <HandanMapChart />
           </div>
           <div class="dataScreen-cb">
-            <div class="dataScreen-main-title">
-              <span>未来30天游客量趋势图</span>
-              <img src="./images/dataScreen-title.png" alt="" />
-            </div>
-            <div class="dataScreen-main-chart">
-              <OverNext30Chart />
-            </div>
+              <div class="cb-item">
+                <div class="dataScreen-main-title">
+                  <span>施工进度查询</span>
+                  <img src="./images/dataScreen-title.png" alt="" />
+                </div>
+                <div class="dataScreen-main-chart">
+                  <div class="table-placeholder">施工进度查询 表格</div>
+                </div>
+              </div>
+              <div class="cb-item">
+                <div class="dataScreen-main-title">
+                  <span>安全事件查询</span>
+                  <img src="./images/dataScreen-title.png" alt="" />
+                </div>
+                <div class="dataScreen-main-chart">
+                   <div class="table-placeholder">安全事件查询 表格</div>
+                </div>
+              </div>
           </div>
         </div>
+
         <div class="dataScreen-rg">
-          <div class="dataScreen-top">
+          <div class="dataScreen-rg-top">
             <div class="dataScreen-main-title">
-              <span>热门景区排行</span>
+              <span>安全预警</span>
               <img src="./images/dataScreen-title.png" alt="" />
             </div>
             <div class="dataScreen-main-chart">
-              <HotPlateChart />
+              <div class="table-placeholder">安全预警 表格</div>
             </div>
           </div>
-          <div class="dataScreen-center">
+          <div class="dataScreen-rg-bottom">
             <div class="dataScreen-main-title">
-              <span>年度游客量对比</span>
+              <span>施工进度延期预警</span>
               <img src="./images/dataScreen-title.png" alt="" />
             </div>
             <div class="dataScreen-main-chart">
-              <AnnualUseChart />
-            </div>
-          </div>
-          <div class="dataScreen-bottom">
-            <div class="dataScreen-main-title">
-              <span>预约渠道数据统计</span>
-              <img src="./images/dataScreen-title.png" alt="" />
-            </div>
-            <div class="dataScreen-main-chart">
-              <PlatformSourceChart />
+              <div class="table-placeholder">施工进度延期预警 表格</div>
             </div>
           </div>
         </div>
@@ -111,16 +85,9 @@
 
 <script setup lang="ts" name="dataScreen">
 import { ref, onMounted, onBeforeUnmount } from "vue";
-// import { HOME_URL } from "@/config";
 import { useRouter } from "vue-router";
 import AgeRatioChart from "./components/AgeRatioChart.vue";
-import AnnualUseChart from "./components/AnnualUseChart.vue";
 import HandanMapChart from "./components/HandanMapChart.vue";
-import HotPlateChart from "./components/HotPlateChart.vue";
-import MaleFemaleRatioChart from "./components/MaleFemaleRatioChart.vue";
-import OverNext30Chart from "./components/OverNext30Chart.vue";
-import PlatformSourceChart from "./components/PlatformSourceChart.vue";
-import RealTimeAccessChart from "./components/RealTimeAccessChart.vue";
 import dayjs from "dayjs";
 
 const router = useRouter();
@@ -163,4 +130,20 @@ onBeforeUnmount(() => {
 </script>
 <style lang="scss" scoped>
 @use "./index.scss";
+
+// Additional styles for placeholders
+.table-placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+  font-size: 16px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px dashed #05e8fe;
+  border-radius: 4px;
+  padding: 10px;
+  box-sizing: border-box;
+}
 </style>

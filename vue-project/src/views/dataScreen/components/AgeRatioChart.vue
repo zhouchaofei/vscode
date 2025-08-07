@@ -1,5 +1,5 @@
 <template>
-  <!-- 年龄比例 -->
+  <!-- 完成和未完成数量比例 -->
   <div class="echarts">
     <ECharts :option="option" :resize="false" />
   </div>
@@ -15,16 +15,23 @@ interface ChartProp {
   percentage: string;
 }
 
+// 1. 数据已更新为两个分类：“30岁以下” 和 “30岁以上”
 let data: ChartProp[] = [
-  { value: 200, name: "10岁以下", percentage: "16%" },
-  { value: 110, name: "10 - 18岁", percentage: "8%" },
-  { value: 150, name: "18 - 30岁", percentage: "12%" },
-  { value: 310, name: "30 - 40岁", percentage: "24%" },
-  { value: 250, name: "40 - 60岁", percentage: "20%" },
-  { value: 260, name: "60岁以上", percentage: "20%" }
+  { value: 460, name: "30岁以下", percentage: "36%" },
+  { value: 820, name: "30岁以上", percentage: "64%" }
 ];
 
-const colors = ["#F6C95C", "#EF7D33", "#1F9393", "#184EA1", "#81C8EF", "#9270CA"];
+const colors = ["#F6C95C", "#184EA1"];
+// let data: ChartProp[] = [
+//   { value: 200, name: "10岁以下", percentage: "16%" },
+//   { value: 110, name: "10 - 18岁", percentage: "8%" },
+//   { value: 150, name: "18 - 30岁", percentage: "12%" },
+//   { value: 310, name: "30 - 40岁", percentage: "24%" },
+//   { value: 250, name: "40 - 60岁", percentage: "20%" },
+//   { value: 260, name: "60岁以上", percentage: "20%" }
+// ];
+
+// const colors = ["#F6C95C", "#EF7D33", "#1F9393", "#184EA1", "#81C8EF", "#9270CA"];
 
 const option: ECOption = {
   color: colors,
@@ -33,21 +40,21 @@ const option: ECOption = {
     trigger: "item",
     formatter: "{b} <br/>占比：{d}%"
   },
-  legend: {
-    orient: "vertical",
-    right: "20px",
-    top: "15px",
-    itemGap: 15,
-    itemWidth: 14,
-    formatter: function (name: string) {
-      let text = "";
-      data.forEach((val: ChartProp) => {
-        if (val.name === name) text = " " + name + "　 " + val.percentage;
-      });
-      return text;
-    },
-    textStyle: { color: "#fff" }
-  },
+  // legend: {
+  //   orient: "vertical",
+  //   right: "20px",
+  //   top: "15px",
+  //   itemGap: 15,
+  //   itemWidth: 14,
+  //   formatter: function (name: string) {
+  //     let text = "";
+  //     data.forEach((val: ChartProp) => {
+  //       if (val.name === name) text = " " + name + "　 " + val.percentage;
+  //     });
+  //     return text;
+  //   },
+  //   textStyle: { color: "#fff" }
+  // },
   grid: { top: "bottom", left: 10, bottom: 10 },
   series: [
     {
@@ -104,7 +111,7 @@ const option: ECOption = {
           name: "",
           label: {
             show: true,
-            formatter: "{a|本日总数}",
+            formatter: "{a|总数量}",
             rich: {
               a: {
                 align: "center",
