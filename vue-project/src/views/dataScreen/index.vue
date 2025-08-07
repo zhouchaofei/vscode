@@ -19,20 +19,28 @@
 
         <div class="dataScreen-lf">
           <div class="dataScreen-lf-container">
-            <div class="dataScreen-main-title">
-              <span>工程完成度</span>
-              <img src="./images/dataScreen-title.png" alt="" />
+            <div class="lf-header">
+              <div class="dataScreen-main-title">
+                <span>工程完成度</span>
+                <img src="./images/dataScreen-title.png" alt="" />
+              </div>
+              <div class="location-filter">
+                <select v-model="selectedLocation">
+                  <option value="yn">永年</option>
+                  <option value="fx_n">肥乡北</option>
+                  <option value="fx_s">肥乡南</option>
+                </select>
+              </div>
             </div>
             <div class="dataScreen-main-chart-container">
-              <div class="pie-chart-item" v-for="item in constructionData" :key="item.cons">
+              <div v-if="loading" class="loading-text">加载中...</div>
+              <div v-else class="pie-chart-item" v-for="item in constructionData" :key="item.cons">
                 <AgeRatioChart :chartData="item" />
               </div>
-              <!-- <div class="pie-chart-item" v-for="i in 8" :key="i">
-                <AgeRatioChart />
-              </div> -->
             </div>
           </div>
         </div>
+
 
         <div class="dataScreen-ct">
           <div class="dataScreen-map">
@@ -87,7 +95,7 @@
 </template>
 
 <script setup lang="ts" name="dataScreen">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, watch } from "vue";
 import { useRouter } from "vue-router";
 import AgeRatioChart from "./components/AgeRatioChart.vue";
 import HandanMapChart from "./components/HandanMapChart.vue";
@@ -95,6 +103,40 @@ import dayjs from "dayjs";
 
 const router = useRouter();
 const dataScreenRef = ref<HTMLElement | null>(null);
+
+// ======================= 2. 添加数据获取逻辑 =======================
+
+// 用于存储图表数据的响应式变量，初始为空数组
+const constructionData = ref<any[]>([]);
+// 默认选中的地点
+const selectedLocation = ref('yn');
+// 加载状态
+const loading = ref(false);
+
+// 定义获取数据的函数
+const fetchData = async () => {
+  loading.value = true;
+  constructionData.value = []; // 清空旧数据
+  try {
+    const response = await fetch(`http://10.1.40.6:6000/data?location=${selectedLocation.value}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    constructionData.value = data;
+  } catch (error) {
+    console.error("获取数据失败:", error);
+    // 在这里可以添加一些用户友好的错误提示
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 监听 selectedLocation 的变化，并在变化时重新获取数据
+watch(selectedLocation, () => {
+  fetchData();
+});
+// ========================================================
 
 const jsonData = [
     {
@@ -219,9 +261,11 @@ const jsonData = [
     }
 ];
 // 将 JSON 数据存到一个响应式引用中
-const constructionData = ref(jsonData);
+constructionData.value = jsonData
 
 onMounted(() => {
+  // 页面加载时获取默认数据
+  // fetchData();
   if (dataScreenRef.value) {
     dataScreenRef.value.style.transform = `scale(${getScale()}) translate(-50%, -50%)`;
     dataScreenRef.value.style.width = `1920px`;
@@ -258,6 +302,64 @@ onBeforeUnmount(() => {
 </script>
 <style lang="scss" scoped>
 @use "./index.scss";
+
+// ======================= 3. 添加筛选框样式 =======================
+.lf-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  // padding-right: 20px;
+  padding: 0 30px; // 增加右边距
+}
+
+.location-filter select {
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #fff;
+  border: 1px solid #05e8fe;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 18px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease; // 添加过渡
+}
+// .location-filter select {
+//   background-color: rgba(0, 0, 0, 0.5); // 背景更深
+//   color: #e0e0e0; // 柔和字体色
+//   border: 1px solid #05e8fe;
+//   border-radius: 5px; // 更圆角
+//   padding: 6px 12px; // 更大内边距
+//   font-size: 16px; // 更大字体
+//   outline: none;
+//   cursor: pointer;
+//   transition: all 0.3s ease; // 添加过渡
+// }
+
+.location-filter select:hover {
+  border-color: #fff;
+  box-shadow: 0 0 10px rgba(5, 232, 254, 0.5);
+}
+
+.location-filter option {
+  background-color: #0d2a42;
+  color: #fff;
+}
+
+.dataScreen-main-title {
+  position: static; /* 覆盖原来的 absolute 定位 */
+}
+
+.loading-text {
+  color: #fff;
+  width: 100%;
+  text-align: center;
+  margin-top: 50px;
+}
+// ==========================================================
 
 // Additional styles for placeholders
 .table-placeholder {
