@@ -4,7 +4,7 @@
       <ECharts :option="option" :resize="false" />
     </div>
     <div class="info-panel" v-if="props.chartData">
-      <p>未完成数量: {{ props.chartData.countOfUnfinished }}</p>
+      <p>未完成数量: {{ props.chartData.uncomplete_count }}</p>
       <p>{{ consNameMap[props.chartData.cons] || props.chartData.cons }}已开展时长: {{ props.chartData.duration_percent }}</p>
       <p>计划完工日期: {{ props.chartData.end_date_plan }}</p>
     </div>
@@ -34,7 +34,7 @@ const props = defineProps<{
     cons: string;
     complete_percent: string;
     un_complete_percent: string;
-    countOfUnfinished: string;
+    uncomplete_count: string;
     duration_percent: string;
     end_date_plan: string;
   };

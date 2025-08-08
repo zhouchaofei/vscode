@@ -11,7 +11,7 @@
           </div>
         </div>
         <div class="header-ri">
-          <span class="header-download">录像回放</span>
+          <span class="header-download" @click="openVideoPlayback">录像回放</span>
           <span class="header-time">当前时间：{{ time }}</span>
         </div>
       </div>
@@ -70,13 +70,15 @@
                     <thead>
                       <tr>
                         <th>工序</th>
-                        <th>时间</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="(item, index) in progressData" :key="index">
-                        <td>{{ item.event }}</td>
-                        <td>{{ item.time }}</td>
+                        <td>{{ item.state }}</td>
+                        <td>{{ item.start_date }}</td>
+                        <td>{{ item.end_date }}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -123,7 +125,7 @@
         <div class="dataScreen-rg">
           <div class="dataScreen-rg-top">
             <div class="dataScreen-main-title">
-              <span>安全预警</span>
+              <span>安全事件预警</span>
               <img src="./images/dataScreen-title.png" alt="" />
             </div>
             <div class="dataScreen-main-chart">
@@ -149,7 +151,7 @@
           </div>
           <div class="dataScreen-rg-bottom">
             <div class="dataScreen-main-title">
-              <span>施工进度延期预警</span>
+              <span>施工进度超期</span>
               <img src="./images/dataScreen-title.png" alt="" />
             </div>
             <div class="dataScreen-main-chart">
@@ -191,6 +193,12 @@ import dayjs from "dayjs";
 const router = useRouter();
 const dataScreenRef = ref<HTMLElement | null>(null);
 
+// 1. Added function to handle video playback button click
+const openVideoPlayback = () => {
+  const url = `/videoplayback`;
+  window.open(url, '_blank');
+};
+
 // ======================= 添加工程完成度数据获取逻辑 =======================
 
 // 用于存储图表数据的响应式变量，初始为空数组
@@ -226,7 +234,15 @@ watch(selectedLocation, () => {
 // ========================================================
 
 // ======================= Table and Filter Data =======================
-const progressData = ref(Array.from({ length: 8 }, (_, i) => ({ event: `浇筑完成 ${i + 1}`, time: `2025-08-0${(i % 2) + 1}` })));
+// 2. Updated mock data for the construction progress table
+const progressData = ref([
+    { "state": "开挖台阶", "start_date": "2025-07-12", "end_date": "2025-07-20" },
+    { "state": "浇筑垫层", "start_date": "2025-07-21", "end_date": "2025-07-22" },
+    { "state": "钢筋绑扎", "start_date": "2025-07-23", "end_date": "2025-08-01" },
+    { "state": "模板安装", "start_date": "2025-08-02", "end_date": "2025-08-05" },
+    { "state": "混凝土浇筑", "start_date": "2025-08-06", "end_date": "" },
+    { "state": "养护", "start_date": "", "end_date": "" },
+]);
 const safetyEvents = ref(Array.from({ length: 4 }, (_, i) => ({ event: `违规操作 ${i + 1}`, time: `2025-08-0${(i % 3) + 1}` })));
 const safetyWarnings = ref(Array.from({ length: 25 }, (_, i) => ({ event: `设备离线 ${i + 1}`, location: '永年', time: `2025-08-0${(i % 4) + 1}` })));
 const delayWarnings = ref(Array.from({ length: 7 }, (_, i) => ({ location: '肥乡北', event: `桥墩 ${i + 1}# 延期`, plannedDate: '2025-09-10', delayTime: `${i + 1}天` })));
@@ -431,7 +447,8 @@ onBeforeUnmount(() => {
   font-size: 16px;
   
   thead tr {
-    background-color: rgba(5, 232, 254, 0.2);
+    // background-color: rgba(5, 232, 254, 0.2);
+    background-color: transparent; // Ensure background is not semi-transparent
     position: sticky;
     top: 0;
     z-index: 1;
@@ -441,7 +458,7 @@ onBeforeUnmount(() => {
     background: #0d2a42; // Solid background for header cells
     padding: 8px;
     text-align: center;
-    border-bottom: px solid rgba(5, 232, 254, 0.1);
+    border-bottom: 1px solid rgba(5, 232, 254, 0.1);
   }
 
   td {
