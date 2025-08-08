@@ -205,7 +205,7 @@ const fetchData = async () => {
   loading.value = true;
   constructionData.value = []; // 清空旧数据
   try {
-    const response = await fetch(`http://10.1.40.6:6000/data?location=${selectedLocation.value}`);
+    const response = await fetch(`http://59.110.65.210:8081/data?location=${selectedLocation.value}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -224,131 +224,6 @@ watch(selectedLocation, () => {
   fetchData();
 });
 // ========================================================
-
-const jsonData = [
-    {
-        "location": "yn",
-        "cons": "Z",
-        "start_date_plan": "2025-05-01",
-        "end_date_plan": "2025-06-08",
-        "current_date": "2025-08-06",
-        "duration_cons": "97",
-        "duration_plan": "39",
-        "duration_percent": "248%",
-        "total_count": "35",
-        "state_count": "29",
-        "complete_percent": "82%",
-        "un_complete_percent": "18%",
-        "countOfUnfinished": "6"
-    },
-    {
-        "location": "yn",
-        "cons": "GL",
-        "start_date_plan": "2025-05-15",
-        "end_date_plan": "2025-08-11",
-        "current_date": "2025-08-06",
-        "duration_cons": "83",
-        "duration_plan": "89",
-        "duration_percent": "93%",
-        "total_count": "12",
-        "state_count": "7",
-        "complete_percent": "58%",
-        "un_complete_percent": "42%",
-        "countOfUnfinished": "5"
-    },
-    {
-        "location": "yn",
-        "cons": "YZL_5",
-        "start_date_plan": "2025-05-05",
-        "end_date_plan": "2025-06-17",
-        "current_date": "2025-08-06",
-        "duration_cons": "93",
-        "duration_plan": "44",
-        "duration_percent": "211%",
-        "total_count": "35",
-        "state_count": "21",
-        "complete_percent": "60%",
-        "un_complete_percent": "40%",
-        "countOfUnfinished": "14"
-    },
-    {
-        "location": "yn",
-        "cons": "YZL_6",
-        "start_date_plan": "2025-06-19",
-        "end_date_plan": "2025-08-26",
-        "current_date": "2025-08-06",
-        "duration_cons": "48",
-        "duration_plan": "69",
-        "duration_percent": "69%",
-        "total_count": "35",
-        "state_count": "0",
-        "complete_percent": "0%",
-        "un_complete_percent": "100%",
-        "countOfUnfinished": "35"
-    },
-    {
-        "location": "yn",
-        "cons": "ZD_1",
-        "start_date_plan": "2025-05-05",
-        "end_date_plan": "2025-08-31",
-        "current_date": "2025-08-06",
-        "duration_cons": "93",
-        "duration_plan": "119",
-        "duration_percent": "78%",
-        "total_count": "5",
-        "state_count": "5",
-        "complete_percent": "100%",
-        "un_complete_percent": "0%",
-        "countOfUnfinished": "0"
-    },
-    {
-        "location": "yn",
-        "cons": "ZD_4",
-        "start_date_plan": "2025-10-07",
-        "end_date_plan": "2025-11-28",
-        "current_date": "2025-08-06",
-        "duration_cons": "-62",
-        "duration_plan": "71",
-        "duration_percent": "-87%",
-        "total_count": "5",
-        "state_count": "0",
-        "complete_percent": "0%",
-        "un_complete_percent": "100%",
-        "countOfUnfinished": "5"
-    },
-    {
-        "location": "yn",
-        "cons": "TD",
-        "start_date_plan": "2025-04-05",
-        "end_date_plan": "2025-08-11",
-        "current_date": "2025-08-06",
-        "duration_cons": "123",
-        "duration_plan": "129",
-        "duration_percent": "95%",
-        "total_count": "4",
-        "state_count": "4",
-        "complete_percent": "100%",
-        "un_complete_percent": "0%",
-        "countOfUnfinished": "0"
-    },
-    {
-        "location": "yn",
-        "cons": "HD",
-        "start_date_plan": "2025-04-05",
-        "end_date_plan": "2025-08-11",
-        "current_date": "2025-08-06",
-        "duration_cons": "123",
-        "duration_plan": "129",
-        "duration_percent": "95%",
-        "total_count": "3",
-        "state_count": "2",
-        "complete_percent": "66%",
-        "un_complete_percent": "34%",
-        "countOfUnfinished": "1"
-    }
-];
-// 将 JSON 数据存到一个响应式引用中
-constructionData.value = jsonData
 
 // ======================= Table and Filter Data =======================
 const progressData = ref(Array.from({ length: 8 }, (_, i) => ({ event: `浇筑完成 ${i + 1}`, time: `2025-08-0${(i % 2) + 1}` })));
@@ -433,7 +308,7 @@ watch(() => progressFilters.value.structure, (newStructure) => {
 
 onMounted(() => {
   // 页面加载时获取默认数据
-  //TODO:这里等数据接口部署到服务器上再调用 fetchData();
+  fetchData();
   if (dataScreenRef.value) {
     dataScreenRef.value.style.transform = `scale(${getScale()}) translate(-50%, -50%)`;
     dataScreenRef.value.style.width = `1920px`;
@@ -471,7 +346,7 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 @use "./index.scss";
 
-// ======================= 3. 添加筛选框样式 =======================
+// ======================= 筛选框样式 =======================
 .lf-header {
   // position: absolute;
   // top: 0;
