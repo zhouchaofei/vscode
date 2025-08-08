@@ -5,8 +5,8 @@
     </div>
     <div class="info-panel" v-if="props.chartData">
       <p>未完成数量: {{ props.chartData.countOfUnfinished }}</p>
-      <p>{{ consNameMap[props.chartData.cons] || props.chartData.cons }}已开展时长为: {{ props.chartData.duration_percent }}</p>
-      <p>计划完工日期为: {{ props.chartData.end_date_plan }}</p>
+      <p>{{ consNameMap[props.chartData.cons] || props.chartData.cons }}已开展时长: {{ props.chartData.duration_percent }}</p>
+      <p>计划完工日期: {{ props.chartData.end_date_plan }}</p>
     </div>
   </div>
 </template>
@@ -127,7 +127,7 @@ const option = computed<ECOption>(() => {
               // 2. 在中心显示项目中文名
               formatter: consNameMap[props.chartData.cons] || props.chartData.cons,
               color: "#ffffff",
-              fontSize: 16,
+              fontSize: 12,
               fontWeight: "bold"
             }
           }

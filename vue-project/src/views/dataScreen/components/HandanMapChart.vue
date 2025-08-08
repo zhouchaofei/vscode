@@ -85,9 +85,9 @@ const option: any = { // 使用 'any' 类型来绕过本地不完整的 ECOption
   },
   geo: {
     map: "handan",
-    zoom: 1.1,
-    center: [114.70, 36.72],
-    roam: true,
+    zoom: 1.15,
+    center: [114.74, 36.72],
+    roam: false,
     itemStyle: { // 地图区域的默认样式
       areaColor: {
         type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
