@@ -60,7 +60,7 @@ const activePopups = ref<any[]>([]);
 const players = new Map<string, videojs.Player>();
 const lines = ref<any[]>([]); // 存储连接线的坐标
 
-const maxRetries = 3;
+const maxRetries = 30;
 const retryDelay = 3000; // 3 seconds
 
 // --- API & 数据 ---
@@ -451,7 +451,9 @@ const handlePlaybackErrorAndRetry = async (camera: any) => {
     if (!popup) return;
 
     try {
-        console.log(`为 ${camera.name} 重新获取播放地址...`);
+        // console.log(`为 ${camera.name} 重新获取播放地址...`);
+        popup.retryCount++;
+        console.log(`为 ${camera.name} 重新获取播放地址... (尝试次数: ${popup.retryCount})`);
         popup.errorMsg = `尝试恢复... (${popup.retryCount}/${maxRetries})`;
         
         const token = await getValidAccessToken();

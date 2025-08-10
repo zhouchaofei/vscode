@@ -2,21 +2,21 @@
   <div class="dataScreen-container">
     <div class="dataScreen-content" ref="dataScreenRef">
       <div class="dataScreen-header">
-        <div class="header-lf">
+        <div class="header-lf" v-if="allDataLoaded">
           <span class="header-screening" @click="router.push('/')">首页</span>
         </div>
-        <div class="header-ct">
+        <div class="header-ct" v-if="allDataLoaded">
           <div class="header-ct-title">
             <span>互通施工关键流程的智慧管理平台</span>
           </div>
         </div>
-        <div class="header-ri">
+        <div class="header-ri" v-if="allDataLoaded">
           <span class="header-download" @click="openVideoPlayback">录像回放</span>
           <span class="header-time">当前时间：{{ time }}</span>
         </div>
       </div>
       <div class="dataScreen-main">
-        <div class="dataScreen-lf">
+        <div class="dataScreen-lf" v-if="allDataLoaded">
           <div class="dataScreen-lf-container">
             <div class="lf-header">
               <div class="dataScreen-main-title">
@@ -39,8 +39,12 @@
             </div>
           </div>
         </div>
+        <div class="loading-container" v-else>
+          <div class="loading-spinner"></div>
+          <div class="loading-text">数据加载中...</div>
+        </div>
 
-        <div class="dataScreen-ct">
+        <div class="dataScreen-ct" v-if="allDataLoaded">
           <div class="dataScreen-map">
             <div class="dataScreen-map-title">摄像头实时画面</div>
             <HandanMapChart />
@@ -126,7 +130,7 @@
           </div>
         </div>
 
-        <div class="dataScreen-rg">
+        <div class="dataScreen-rg" v-if="allDataLoaded">
           <div class="dataScreen-rg-top">
             <div class="dataScreen-main-title">
               <span>安全事件预警</span>
@@ -199,6 +203,9 @@ import AgeRatioChart from "./components/AgeRatioChart.vue";
 import HandanMapChart from "./components/HandanMapChart.vue";
 import dayjs from "dayjs";
 
+// 新增一个总加载状态
+const allDataLoaded = ref(false); 
+
 const router = useRouter();
 const dataScreenRef = ref<HTMLElement | null>(null);
 
@@ -211,120 +218,120 @@ const openVideoPlayback = () => {
 // ======================= 工程完成度数据获取逻辑 =======================
 // 用于存储图表数据的响应式变量，初始为空数组
 const constructionData = ref<any[]>([]);
-constructionData.value = [
-    {
-        "location": "yn",
-        "cons": "Z",
-        "start_date_plan": "2025-05-01",
-        "end_date_plan": "2025-06-08",
-        "current_date": "2025-08-09",
-        "duration_cons": "100",
-        "duration_plan": "39",
-        "total_count": "35",
-        "uncomplete_count": "6",
-        "complete_percent": "82%",
-        "un_complete_percent": "18%",
-        "duration_percent": "256%"
-    },
-    {
-        "location": "yn",
-        "cons": "GL",
-        "start_date_plan": "2025-05-15",
-        "end_date_plan": "2025-08-11",
-        "current_date": "2025-08-09",
-        "duration_cons": "86",
-        "duration_plan": "89",
-        "total_count": "12",
-        "uncomplete_count": "6",
-        "complete_percent": "50%",
-        "un_complete_percent": "50%",
-        "duration_percent": "96%"
-    },
-    {
-        "location": "yn",
-        "cons": "YZL_5",
-        "start_date_plan": "2025-05-05",
-        "end_date_plan": "2025-06-17",
-        "current_date": "2025-08-09",
-        "duration_cons": "96",
-        "duration_plan": "44",
-        "total_count": "35",
-        "uncomplete_count": "14",
-        "complete_percent": "60%",
-        "un_complete_percent": "40%",
-        "duration_percent": "218%"
-    },
-    {
-        "location": "yn",
-        "cons": "YZL_6",
-        "start_date_plan": "2025-06-19",
-        "end_date_plan": "2025-08-26",
-        "current_date": "2025-08-09",
-        "duration_cons": "51",
-        "duration_plan": "69",
-        "total_count": "35",
-        "uncomplete_count": "35",
-        "complete_percent": "0%",
-        "un_complete_percent": "100%",
-        "duration_percent": "73%"
-    },
-    {
-        "location": "yn",
-        "cons": "ZD_1",
-        "start_date_plan": "2025-05-05",
-        "end_date_plan": "2025-08-31",
-        "current_date": "2025-08-09",
-        "duration_cons": "96",
-        "duration_plan": "119",
-        "total_count": "5",
-        "uncomplete_count": "0",
-        "complete_percent": "100%",
-        "un_complete_percent": "0%",
-        "duration_percent": "100%"
-    },
-    {
-        "location": "yn",
-        "cons": "ZD_4",
-        "start_date_plan": "2025-10-07",
-        "end_date_plan": "2025-11-28",
-        "current_date": "2025-08-09",
-        "duration_cons": "0",
-        "duration_plan": "71",
-        "total_count": "5",
-        "uncomplete_count": "5",
-        "complete_percent": "0%",
-        "un_complete_percent": "100%",
-        "duration_percent": "0%"
-    },
-    {
-        "location": "yn",
-        "cons": "TD",
-        "start_date_plan": "2025-04-05",
-        "end_date_plan": "2025-08-11",
-        "current_date": "2025-08-09",
-        "duration_cons": "126",
-        "duration_plan": "129",
-        "total_count": "4",
-        "uncomplete_count": "0",
-        "complete_percent": "100%",
-        "un_complete_percent": "0%",
-        "duration_percent": "100%"
-    },
-    {
-        "location": "yn",
-        "cons": "HD",
-        "start_date_plan": "2025-04-05",
-        "end_date_plan": "2025-08-11",
-        "current_date": "2025-08-09",
-        "duration_cons": "126",
-        "duration_plan": "129",
-        "total_count": "3",
-        "uncomplete_count": "1",
-        "complete_percent": "66%",
-        "un_complete_percent": "34%",
-        "duration_percent": "97%"
-    }
-];
+// constructionData.value = [
+//     {
+//         "location": "yn",
+//         "cons": "Z",
+//         "start_date_plan": "2025-05-01",
+//         "end_date_plan": "2025-06-08",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "100",
+//         "duration_plan": "39",
+//         "total_count": "35",
+//         "uncomplete_count": "6",
+//         "complete_percent": "82%",
+//         "un_complete_percent": "18%",
+//         "duration_percent": "256%"
+//     },
+//     {
+//         "location": "yn",
+//         "cons": "GL",
+//         "start_date_plan": "2025-05-15",
+//         "end_date_plan": "2025-08-11",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "86",
+//         "duration_plan": "89",
+//         "total_count": "12",
+//         "uncomplete_count": "6",
+//         "complete_percent": "50%",
+//         "un_complete_percent": "50%",
+//         "duration_percent": "96%"
+//     },
+//     {
+//         "location": "yn",
+//         "cons": "YZL_5",
+//         "start_date_plan": "2025-05-05",
+//         "end_date_plan": "2025-06-17",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "96",
+//         "duration_plan": "44",
+//         "total_count": "35",
+//         "uncomplete_count": "14",
+//         "complete_percent": "60%",
+//         "un_complete_percent": "40%",
+//         "duration_percent": "218%"
+//     },
+//     {
+//         "location": "yn",
+//         "cons": "YZL_6",
+//         "start_date_plan": "2025-06-19",
+//         "end_date_plan": "2025-08-26",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "51",
+//         "duration_plan": "69",
+//         "total_count": "35",
+//         "uncomplete_count": "35",
+//         "complete_percent": "0%",
+//         "un_complete_percent": "100%",
+//         "duration_percent": "73%"
+//     },
+//     {
+//         "location": "yn",
+//         "cons": "ZD_1",
+//         "start_date_plan": "2025-05-05",
+//         "end_date_plan": "2025-08-31",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "96",
+//         "duration_plan": "119",
+//         "total_count": "5",
+//         "uncomplete_count": "0",
+//         "complete_percent": "100%",
+//         "un_complete_percent": "0%",
+//         "duration_percent": "100%"
+//     },
+//     {
+//         "location": "yn",
+//         "cons": "ZD_4",
+//         "start_date_plan": "2025-10-07",
+//         "end_date_plan": "2025-11-28",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "0",
+//         "duration_plan": "71",
+//         "total_count": "5",
+//         "uncomplete_count": "5",
+//         "complete_percent": "0%",
+//         "un_complete_percent": "100%",
+//         "duration_percent": "0%"
+//     },
+//     {
+//         "location": "yn",
+//         "cons": "TD",
+//         "start_date_plan": "2025-04-05",
+//         "end_date_plan": "2025-08-11",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "126",
+//         "duration_plan": "129",
+//         "total_count": "4",
+//         "uncomplete_count": "0",
+//         "complete_percent": "100%",
+//         "un_complete_percent": "0%",
+//         "duration_percent": "100%"
+//     },
+//     {
+//         "location": "yn",
+//         "cons": "HD",
+//         "start_date_plan": "2025-04-05",
+//         "end_date_plan": "2025-08-11",
+//         "current_date": "2025-08-09",
+//         "duration_cons": "126",
+//         "duration_plan": "129",
+//         "total_count": "3",
+//         "uncomplete_count": "1",
+//         "complete_percent": "66%",
+//         "un_complete_percent": "34%",
+//         "duration_percent": "97%"
+//     }
+// ];
 // 默认选中的地点
 const selectedLocation = ref('yn');
 // 加载状态
@@ -358,152 +365,152 @@ watch(selectedLocation, () => {
 
 // ======================= 右侧模块数据获取 =======================
 const safetyWarnings = ref<any[]>([]);
-safetyWarnings.value = [
-    {
-        "location": "肥乡梁场",
-        "alert_event": "施工人员未佩戴安全帽",
-        "time": "2025-08-08 17:30:00"
-    },
-    {
-        "location": "永年",
-        "alert_event": "龙门吊车姿态",
-        "time": "2025-08-08 16:20:21"
-    },
-    {
-        "location": "肥乡南",
-        "alert_event": "起重机作业",
-        "time": "2025-08-07 18:31:00"
-    },
-    {
-        "location": "肥乡北",
-        "alert_event": "起重机作业",
-        "time": "2025-08-07 13:21:00"
-    },
-    {
-        "location": "肥乡梁场",
-        "alert_event": "施工人员未佩戴安全帽",
-        "time": "2025-08-06 16:01:00"
-    },
-    {
-        "location": "永年",
-        "alert_event": "起重机作业",
-        "time": "2025-08-06 13:42:00"
-    },
-    {
-        "location": "肥乡梁场",
-        "alert_event": "施工人员未佩戴安全帽",
-        "time": "2025-08-06 13:16:50"
-    },
-    {
-        "location": "肥乡南",
-        "alert_event": "高空作业",
-        "time": "2025-08-06 11:21:00"
-    },
-    {
-        "location": "肥乡梁场",
-        "alert_event": "施工人员未佩戴安全帽",
-        "time": "2025-08-06 06:00:00"
-    }
-];
+// safetyWarnings.value = [
+//     {
+//         "location": "肥乡梁场",
+//         "alert_event": "施工人员未佩戴安全帽",
+//         "time": "2025-08-08 17:30:00"
+//     },
+//     {
+//         "location": "永年",
+//         "alert_event": "龙门吊车姿态",
+//         "time": "2025-08-08 16:20:21"
+//     },
+//     {
+//         "location": "肥乡南",
+//         "alert_event": "起重机作业",
+//         "time": "2025-08-07 18:31:00"
+//     },
+//     {
+//         "location": "肥乡北",
+//         "alert_event": "起重机作业",
+//         "time": "2025-08-07 13:21:00"
+//     },
+//     {
+//         "location": "肥乡梁场",
+//         "alert_event": "施工人员未佩戴安全帽",
+//         "time": "2025-08-06 16:01:00"
+//     },
+//     {
+//         "location": "永年",
+//         "alert_event": "起重机作业",
+//         "time": "2025-08-06 13:42:00"
+//     },
+//     {
+//         "location": "肥乡梁场",
+//         "alert_event": "施工人员未佩戴安全帽",
+//         "time": "2025-08-06 13:16:50"
+//     },
+//     {
+//         "location": "肥乡南",
+//         "alert_event": "高空作业",
+//         "time": "2025-08-06 11:21:00"
+//     },
+//     {
+//         "location": "肥乡梁场",
+//         "alert_event": "施工人员未佩戴安全帽",
+//         "time": "2025-08-06 06:00:00"
+//     }
+// ];
 const delayWarnings = ref<any[]>([]);
-delayWarnings.value = [
-    {
-        "location": "永年",
-        "cons": "桥墩",
-        "start_date_plan": "2025-05-01",
-        "end_date_plan": "2025-06-08",
-        "current_date": "2025-08-09",
-        "delay_days": "62"
-    },
-    {
-        "location": "永年",
-        "cons": "预制梁",
-        "start_date_plan": "2025-05-05",
-        "end_date_plan": "2025-06-17",
-        "current_date": "2025-08-09",
-        "delay_days": "53"
-    },
-    {
-        "location": "肥乡南",
-        "cons": "桥墩",
-        "start_date_plan": "2025-04-10",
-        "end_date_plan": "2025-06-04",
-        "current_date": "2025-08-09",
-        "delay_days": "66"
-    },
-    {
-        "location": "肥乡南",
-        "cons": "盖梁",
-        "start_date_plan": "2025-05-15",
-        "end_date_plan": "2025-07-19",
-        "current_date": "2025-08-09",
-        "delay_days": "21"
-    },
-    {
-        "location": "肥乡南",
-        "cons": "预制梁",
-        "start_date_plan": "2025-03-15",
-        "end_date_plan": "2025-04-24",
-        "current_date": "2025-08-09",
-        "delay_days": "107"
-    },
-    {
-        "location": "肥乡南",
-        "cons": "通道",
-        "start_date_plan": "2025-02-12",
-        "end_date_plan": "2025-05-01",
-        "current_date": "2025-08-09",
-        "delay_days": "100"
-    },
-    {
-        "location": "肥乡南",
-        "cons": "涵洞",
-        "start_date_plan": "2025-02-12",
-        "end_date_plan": "2025-05-01",
-        "current_date": "2025-08-09",
-        "delay_days": "100"
-    },
-    {
-        "location": "肥乡北",
-        "cons": "桥墩",
-        "start_date_plan": "2025-04-10",
-        "end_date_plan": "2025-06-04",
-        "current_date": "2025-08-09",
-        "delay_days": "66"
-    },
-    {
-        "location": "肥乡北",
-        "cons": "盖梁",
-        "start_date_plan": "2025-05-15",
-        "end_date_plan": "2025-07-19",
-        "current_date": "2025-08-09",
-        "delay_days": "21"
-    },
-    {
-        "location": "肥乡北",
-        "cons": "预制梁",
-        "start_date_plan": "2025-03-15",
-        "end_date_plan": "2025-04-24",
-        "current_date": "2025-08-09",
-        "delay_days": "107"
-    },
-    {
-        "location": "肥乡北",
-        "cons": "通道",
-        "start_date_plan": "2025-02-12",
-        "end_date_plan": "2025-05-01",
-        "current_date": "2025-08-09",
-        "delay_days": "100"
-    },
-    {
-        "location": "肥乡北",
-        "cons": "涵洞",
-        "start_date_plan": "2025-02-12",
-        "end_date_plan": "2025-05-01",
-        "current_date": "2025-08-09",
-        "delay_days": "100"
-    }
-];
+// delayWarnings.value = [
+//     {
+//         "location": "永年",
+//         "cons": "桥墩",
+//         "start_date_plan": "2025-05-01",
+//         "end_date_plan": "2025-06-08",
+//         "current_date": "2025-08-09",
+//         "delay_days": "62"
+//     },
+//     {
+//         "location": "永年",
+//         "cons": "预制梁",
+//         "start_date_plan": "2025-05-05",
+//         "end_date_plan": "2025-06-17",
+//         "current_date": "2025-08-09",
+//         "delay_days": "53"
+//     },
+//     {
+//         "location": "肥乡南",
+//         "cons": "桥墩",
+//         "start_date_plan": "2025-04-10",
+//         "end_date_plan": "2025-06-04",
+//         "current_date": "2025-08-09",
+//         "delay_days": "66"
+//     },
+//     {
+//         "location": "肥乡南",
+//         "cons": "盖梁",
+//         "start_date_plan": "2025-05-15",
+//         "end_date_plan": "2025-07-19",
+//         "current_date": "2025-08-09",
+//         "delay_days": "21"
+//     },
+//     {
+//         "location": "肥乡南",
+//         "cons": "预制梁",
+//         "start_date_plan": "2025-03-15",
+//         "end_date_plan": "2025-04-24",
+//         "current_date": "2025-08-09",
+//         "delay_days": "107"
+//     },
+//     {
+//         "location": "肥乡南",
+//         "cons": "通道",
+//         "start_date_plan": "2025-02-12",
+//         "end_date_plan": "2025-05-01",
+//         "current_date": "2025-08-09",
+//         "delay_days": "100"
+//     },
+//     {
+//         "location": "肥乡南",
+//         "cons": "涵洞",
+//         "start_date_plan": "2025-02-12",
+//         "end_date_plan": "2025-05-01",
+//         "current_date": "2025-08-09",
+//         "delay_days": "100"
+//     },
+//     {
+//         "location": "肥乡北",
+//         "cons": "桥墩",
+//         "start_date_plan": "2025-04-10",
+//         "end_date_plan": "2025-06-04",
+//         "current_date": "2025-08-09",
+//         "delay_days": "66"
+//     },
+//     {
+//         "location": "肥乡北",
+//         "cons": "盖梁",
+//         "start_date_plan": "2025-05-15",
+//         "end_date_plan": "2025-07-19",
+//         "current_date": "2025-08-09",
+//         "delay_days": "21"
+//     },
+//     {
+//         "location": "肥乡北",
+//         "cons": "预制梁",
+//         "start_date_plan": "2025-03-15",
+//         "end_date_plan": "2025-04-24",
+//         "current_date": "2025-08-09",
+//         "delay_days": "107"
+//     },
+//     {
+//         "location": "肥乡北",
+//         "cons": "通道",
+//         "start_date_plan": "2025-02-12",
+//         "end_date_plan": "2025-05-01",
+//         "current_date": "2025-08-09",
+//         "delay_days": "100"
+//     },
+//     {
+//         "location": "肥乡北",
+//         "cons": "涵洞",
+//         "start_date_plan": "2025-02-12",
+//         "end_date_plan": "2025-05-01",
+//         "current_date": "2025-08-09",
+//         "delay_days": "100"
+//     }
+// ];
 
 const fetchSafetyWarnings = async () => {
   try {
@@ -530,13 +537,13 @@ const fetchDelayWarnings = async () => {
 // ======================= 施工进度查询逻辑 =======================
 // Updated mock data for the construction progress table
 const progressData = ref<any[]>([]);
-progressData.value = [
-    {
-        "state": "开挖台阶",
-        "start_date": "2025-07-12",
-        "end_date": ""
-    }
-];
+// progressData.value = [
+//     {
+//         "state": "开挖台阶",
+//         "start_date": "2025-07-12",
+//         "end_date": ""
+//     }
+// ];
 // const safetyEvents = ref(Array.from({ length: 4 }, (_, i) => ({ event: `违规操作 ${i + 1}`, time: `2025-08-0${(i % 3) + 1}` })));
 // const safetyWarnings = ref(Array.from({ length: 25 }, (_, i) => ({ event: `设备离线 ${i + 1}`, location: '永年', time: `2025-08-0${(i % 4) + 1}` })));
 // const delayWarnings = ref(Array.from({ length: 7 }, (_, i) => ({ location: '肥乡北', event: `桥墩 ${i + 1}# 延期`, plannedDate: '2025-09-10', delayTime: `${i + 1}天` })));
@@ -910,16 +917,35 @@ const fetchProgressData = async () => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      let data = await response.json();
+      const textData = await response.text();
+      let data;
+      try {
+        // 尝试解析JSON，如果textData是空字符串""，JSON.parse会报错
+        data = JSON.parse(textData);
+      } catch (e) {
+        // 如果解析失败（例如，响应是空字符串或无效JSON），将data置为null
+        data = null;
+      }
 
-      // Add location and model/type to the data for table display
-      progressData.value = data.map((item: any) => ({
-        ...item,
-        location: location, // User-friendly location name
-        structure: model,   // User-friendly model/type name
-      }));
+      // 检查解析后的data是否为数组
+      if (Array.isArray(data)) {
+        // 如果是数组，正常处理
+        progressData.value = data.map((item: any) => ({
+          ...item,
+          location: location,
+          structure: model,
+        }));
+      } else {
+        // 如果不是数组（包括为null或解析出非数组值的情况），显示“未开工”
+        progressData.value = [{
+          location: location,
+          structure: model,
+          state: '未开工',
+          start_date: '-',
+          end_date: '-'
+        }];
+      }
 
-      // progressData.value = data;
     } catch (error) {
       console.error("获取施工进度数据失败:", error);
       progressData.value = [];
@@ -959,7 +985,33 @@ watch(progressFilters, () => {
 // ===================================================================
 
 // ======================= 生命周期钩子 =======================
-onMounted(() => {
+onMounted(async () => {
+  // Initial data fetch is now sequential to prevent backend crash
+  try {
+    // 初始时不渲染图表
+    allDataLoaded.value = false; 
+    console.log("Fetching data sequentially...");
+
+    // 串行获取所有数据
+    await fetchData();
+    console.log("Completed: fetchData");
+
+    await fetchProgressData();
+    console.log("Completed: fetchProgressData");
+
+    await fetchSafetyWarnings();
+    console.log("Completed: fetchSafetyWarnings");
+
+    await fetchDelayWarnings();
+    console.log("Completed: fetchDelayWarnings");
+
+  } catch (error) {
+    console.error("An error occurred during sequential data fetching:", error);
+  } finally {
+    // 无论成功或失败，最后都标记为加载完成，以渲染DOM
+    allDataLoaded.value = true; 
+    console.log("All data fetching routines completed. Rendering components.");
+  }
   // 页面加载时获取默认数据
   // Initial data fetch
   // fetchData();
@@ -1165,4 +1217,73 @@ onBeforeUnmount(() => {
   gap: 5px;
 }
 
+/* ======================= 全局加载动画样式 (居中于屏幕) ======================= */
+.loading-container {
+  /* 关键改动：使用 fixed 定位，脱离文档流，相对于浏览器窗口定位 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  
+  /* 关键改动：宽度和高度使用视口单位(vw/vh)，确保100%覆盖整个屏幕 */
+  width: 100vw;
+  height: 100vh;
+
+  /* 新增：增加一个半透明的深色背景蒙层，与您的UI风格匹配 */
+  /* #0d2a42 是您表格th的背景色，这里加了透明度 */
+  background-color: rgba(13, 42, 66, 0.8);
+  
+  /* 新增：设置一个非常高的 z-index，确保加载层能覆盖在页面所有其他元素的上方 */
+  z-index: 9999;
+
+  /* 以下部分保持不变，用于将其中的“圈圈”和文字居中 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: #fff;
+}
+// .loading-container {
+//   /* 使用 Flexbox 布局实现垂直和水平居中 */
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   flex-direction: column; /* 让圈圈和文字垂直排列 */
+  
+//   /* 确保加载容器撑满其父元素空间 */
+//   width: 100%;
+//   height: 100%;
+  
+//   /* 设置一个默认颜色，会影响到内部的文字颜色 */
+//   color: #fff;
+// }
+
+.loading-spinner {
+  width: 60px; /* 圈圈的宽度 */
+  height: 60px; /* 圈圈的高度 */
+  
+  /* 使用边框来画圆环 */
+  border-radius: 50%; /* 设置为圆形 */
+  border: 8px solid rgba(255, 255, 255, 0.2); /* 圆环的“轨道”颜色，带透明度 */
+  border-top-color: #05e8fe; /* 圆环“头部”的颜色，也就是旋转时的主体颜色 */
+  
+  /* 应用下面定义的旋转动画 */
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  margin-top: 20px; /* 与圈圈的间距 */
+  font-size: 20px; /* 文字大小 */
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* 给文字一点阴影，使其更清晰 */
+}
+
+/* 定义名为 "spin" 的旋转动画 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg); /* 从 0 度开始 */
+  }
+  to {
+    transform: rotate(360deg); /* 旋转到 360 度 */
+  }
+}
 </style>

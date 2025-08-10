@@ -150,7 +150,7 @@ const annotationDelayTimer = ref(null);
 const overlayTimer = ref(null); // 用于控制蒙层显示时长的计时器
 
 // --- NEW: Error recovery state ---
-const maxRetries = 3;
+const maxRetries = 30;
 const retryCounter = ref(0);
 const retryDelay = 3000; // 3 seconds
 
@@ -228,7 +228,7 @@ onMounted(async () => {
     
     const initialCamera = cameras.value[currentCameraId.value];
     if (!initialCamera || !initialCamera.url) {
-        throw new Error(`无法获取摄像头 ${initialCamera.name} 的播放地址。`);
+        throw new Error(`无法获取摄像头 ${initialCamera.name} 的播放地址，请刷新页面。`);
     }
 
     // 3. Initialize the player with the fetched URL
@@ -416,18 +416,20 @@ const initPlayer = (url) => {
           this.on('error', (e) => {
             const error = this.error() || e;
             isVideoPlaying.value = false;
-            videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
+            // videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
             console.error('Video.js Error:', error);
 
             // --- MODIFIED: Auto-recovery logic ---
             if (error && error.code === 3 && retryCounter.value < maxRetries) {
                 retryCounter.value++;
-                videoStatus.value = `播放错误，正在进行第 ${retryCounter.value} 次自动重试...`;
+                videoStatus.value = `视频流中断，正在进行第 ${retryCounter.value} 次自动重试...`;
                 console.log(`Playback error detected. Attempting retry ${retryCounter.value}/${maxRetries}...`);
                 setTimeout(handlePlaybackErrorAndRetry, retryDelay);
             } else if (retryCounter.value >= maxRetries) {
                 videoStatus.value = "自动重试失败，请手动刷新或切换摄像头。";
                 console.error("Maximum retries reached. Aborting.");
+            } else {
+                videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
             }
           });
           
