@@ -135,6 +135,11 @@
             <div class="dataScreen-main-chart">
               <div class="custom-table-container table-20-rows">
                 <table class="custom-table">
+                  <colgroup>
+                    <col style="width: 45%;">
+                    <col style="width: 22%;">
+                    <col style="width: 33%;">
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>事件</th>
@@ -144,7 +149,7 @@
                   </thead>
                   <tbody>
                     <tr v-for="(item, index) in safetyWarnings" :key="index">
-                      <td>{{ item.event }}</td>
+                      <td>{{ item.alert_event }}</td>
                       <td>{{ item.location }}</td>
                       <td>{{ item.time }}</td>
                     </tr>
@@ -172,9 +177,9 @@
                   <tbody>
                     <tr v-for="(item, index) in delayWarnings" :key="index">
                       <td>{{ item.location }}</td>
-                      <td>{{ item.event }}</td>
-                      <td>{{ item.plannedDate }}</td>
-                      <td>{{ item.delayTime }}</td>
+                      <td>{{ item.cons }}</td>
+                      <td>{{ item.end_date_plan }}</td>
+                      <td>{{ item.delay_days }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -351,7 +356,178 @@ watch(selectedLocation, () => {
 });
 // ========================================================
 
-// ======================= Table and Filter Data =======================
+// ======================= 右侧模块数据获取 =======================
+const safetyWarnings = ref<any[]>([]);
+safetyWarnings.value = [
+    {
+        "location": "肥乡梁场",
+        "alert_event": "施工人员未佩戴安全帽",
+        "time": "2025-08-08 17:30:00"
+    },
+    {
+        "location": "永年",
+        "alert_event": "龙门吊车姿态",
+        "time": "2025-08-08 16:20:21"
+    },
+    {
+        "location": "肥乡南",
+        "alert_event": "起重机作业",
+        "time": "2025-08-07 18:31:00"
+    },
+    {
+        "location": "肥乡北",
+        "alert_event": "起重机作业",
+        "time": "2025-08-07 13:21:00"
+    },
+    {
+        "location": "肥乡梁场",
+        "alert_event": "施工人员未佩戴安全帽",
+        "time": "2025-08-06 16:01:00"
+    },
+    {
+        "location": "永年",
+        "alert_event": "起重机作业",
+        "time": "2025-08-06 13:42:00"
+    },
+    {
+        "location": "肥乡梁场",
+        "alert_event": "施工人员未佩戴安全帽",
+        "time": "2025-08-06 13:16:50"
+    },
+    {
+        "location": "肥乡南",
+        "alert_event": "高空作业",
+        "time": "2025-08-06 11:21:00"
+    },
+    {
+        "location": "肥乡梁场",
+        "alert_event": "施工人员未佩戴安全帽",
+        "time": "2025-08-06 06:00:00"
+    }
+];
+const delayWarnings = ref<any[]>([]);
+delayWarnings.value = [
+    {
+        "location": "永年",
+        "cons": "桥墩",
+        "start_date_plan": "2025-05-01",
+        "end_date_plan": "2025-06-08",
+        "current_date": "2025-08-09",
+        "delay_days": "62"
+    },
+    {
+        "location": "永年",
+        "cons": "预制梁",
+        "start_date_plan": "2025-05-05",
+        "end_date_plan": "2025-06-17",
+        "current_date": "2025-08-09",
+        "delay_days": "53"
+    },
+    {
+        "location": "肥乡南",
+        "cons": "桥墩",
+        "start_date_plan": "2025-04-10",
+        "end_date_plan": "2025-06-04",
+        "current_date": "2025-08-09",
+        "delay_days": "66"
+    },
+    {
+        "location": "肥乡南",
+        "cons": "盖梁",
+        "start_date_plan": "2025-05-15",
+        "end_date_plan": "2025-07-19",
+        "current_date": "2025-08-09",
+        "delay_days": "21"
+    },
+    {
+        "location": "肥乡南",
+        "cons": "预制梁",
+        "start_date_plan": "2025-03-15",
+        "end_date_plan": "2025-04-24",
+        "current_date": "2025-08-09",
+        "delay_days": "107"
+    },
+    {
+        "location": "肥乡南",
+        "cons": "通道",
+        "start_date_plan": "2025-02-12",
+        "end_date_plan": "2025-05-01",
+        "current_date": "2025-08-09",
+        "delay_days": "100"
+    },
+    {
+        "location": "肥乡南",
+        "cons": "涵洞",
+        "start_date_plan": "2025-02-12",
+        "end_date_plan": "2025-05-01",
+        "current_date": "2025-08-09",
+        "delay_days": "100"
+    },
+    {
+        "location": "肥乡北",
+        "cons": "桥墩",
+        "start_date_plan": "2025-04-10",
+        "end_date_plan": "2025-06-04",
+        "current_date": "2025-08-09",
+        "delay_days": "66"
+    },
+    {
+        "location": "肥乡北",
+        "cons": "盖梁",
+        "start_date_plan": "2025-05-15",
+        "end_date_plan": "2025-07-19",
+        "current_date": "2025-08-09",
+        "delay_days": "21"
+    },
+    {
+        "location": "肥乡北",
+        "cons": "预制梁",
+        "start_date_plan": "2025-03-15",
+        "end_date_plan": "2025-04-24",
+        "current_date": "2025-08-09",
+        "delay_days": "107"
+    },
+    {
+        "location": "肥乡北",
+        "cons": "通道",
+        "start_date_plan": "2025-02-12",
+        "end_date_plan": "2025-05-01",
+        "current_date": "2025-08-09",
+        "delay_days": "100"
+    },
+    {
+        "location": "肥乡北",
+        "cons": "涵洞",
+        "start_date_plan": "2025-02-12",
+        "end_date_plan": "2025-05-01",
+        "current_date": "2025-08-09",
+        "delay_days": "100"
+    }
+];
+
+const fetchSafetyWarnings = async () => {
+  try {
+    const response = await fetch('http://59.110.65.210:8081/alert');
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    safetyWarnings.value = await response.json();
+  } catch (error) {
+    console.error("获取安全事件预警数据失败:", error);
+    safetyWarnings.value = [];
+  }
+};
+
+const fetchDelayWarnings = async () => {
+  try {
+    const response = await fetch('http://59.110.65.210:8081/data?location=all&data_type=delay');
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    delayWarnings.value = await response.json();
+  } catch (error) {
+    console.error("获取施工进度超期数据失败:", error);
+    delayWarnings.value = [];
+  }
+};
+
+// ======================= 施工进度查询逻辑 =======================
 // Updated mock data for the construction progress table
 const progressData = ref<any[]>([]);
 progressData.value = [
@@ -362,8 +538,8 @@ progressData.value = [
     }
 ];
 // const safetyEvents = ref(Array.from({ length: 4 }, (_, i) => ({ event: `违规操作 ${i + 1}`, time: `2025-08-0${(i % 3) + 1}` })));
-const safetyWarnings = ref(Array.from({ length: 25 }, (_, i) => ({ event: `设备离线 ${i + 1}`, location: '永年', time: `2025-08-0${(i % 4) + 1}` })));
-const delayWarnings = ref(Array.from({ length: 7 }, (_, i) => ({ location: '肥乡北', event: `桥墩 ${i + 1}# 延期`, plannedDate: '2025-09-10', delayTime: `${i + 1}天` })));
+// const safetyWarnings = ref(Array.from({ length: 25 }, (_, i) => ({ event: `设备离线 ${i + 1}`, location: '永年', time: `2025-08-0${(i % 4) + 1}` })));
+// const delayWarnings = ref(Array.from({ length: 7 }, (_, i) => ({ location: '肥乡北', event: `桥墩 ${i + 1}# 延期`, plannedDate: '2025-09-10', delayTime: `${i + 1}天` })));
 
 // const safetyEventFilter = ref('肥乡梁厂');
 
@@ -410,45 +586,9 @@ const delayWarnings = ref(Array.from({ length: 7 }, (_, i) => ({ location: '肥�
 // };
 
 const progressFilterMapping = {
-    '永年': { // yn
-        '桥台': { '0#Z-1': { l: 'yn', s: 'QT', t: '0#Z-1' }, '0#Z-2': { l: 'yn', s: 'QT', t: '0#Z-2' }, '0#Z-3': { l: 'yn', s: 'QT', t: '0#Z-3' }, '11#Z-1': { l: 'yn', s: 'QT', t: '11#Z-1' }, '11#Z-2': { l: 'yn', s: 'QT', t: '11#Z-2' }, '11#Z-3': { l: 'yn', s: 'QT', t: '11#Z-3' } },
-        '桥墩': { '1#Z-1': { l: 'yn', s: 'QD', t: '1#Z-1' }, '1#Z-2': { l: 'yn', s: 'QD', t: '1#Z-2' }, '1#Z-3': { l: 'yn', s: 'QD', t: '1#Z-3' }, '2#Z-1': { l: 'yn', s: 'QD', t: '2#Z-1' }, '2#Z-2': { l: 'yn', s: 'QD', t: '2#Z-2' }, '2#Z-3': { l: 'yn', s: 'QD', t: '2#Z-3' }, '3#Z-1': { l: 'yn', s: 'QD', t: '3#Z-1' }, '3#Z-2': { l: 'yn', s: 'QD', t: '3#Z-2' }, '3#Z-3': { l: 'yn', s: 'QD', t: '3#Z-3' }, '4#Z-1': { l: 'yn', s: 'QD', t: '4#Z-1' }, '4#Z-2': { l: 'yn', s: 'QD', t: '4#Z-2' }, '4#Z-3': { l: 'yn', s: 'QD', t: '4#Z-3' }, '5#Z-1': { l: 'yn', s: 'QD', t: '5#Z-1' }, '5#Z-2': { l: 'yn', s: 'QD', t: '5#Z-2' }, '5#Z-3': { l: 'yn', s: 'QD', t: '5#Z-3' }, '6#Z-1': { l: 'yn', s: 'QD', t: '6#Z-1' }, '6#Z-2': { l: 'yn', s: 'QD', t: '6#Z-2' }, '6#Z-3': { l: 'yn', s: 'QD', t: '6#Z-3' }, '7#Z-1': { l: 'yn', s: 'QD', t: '7#Z-1' }, '7#Z-2': { l: 'yn', s: 'QD', t: '7#Z-2' }, '7#Z-3': { l: 'yn', s: 'QD', t: '7#Z-3' }, '8#Z-1': { l: 'yn', s: 'QD', t: '8#Z-1' }, '8#Z-2': { l: 'yn', s: 'QD', t: '8#Z-2' }, '8#Z-3': { l: 'yn', s: 'QD', t: '8#Z-3' }, '9#Z-1': { l: 'yn', s: 'QD', t: '9#Z-1' }, '9#Z-2': { l: 'yn', s: 'QD', t: '9#Z-2' }, '9#Z-3': { l: 'yn', s: 'QD', t: '9#Z-3' }, '10#Z-1': { l: 'yn', s: 'QD', t: '10#Z-1' }, '10#Z-2': { l: 'yn', s: 'QD', t: '10#Z-2' } },
-        '盖梁': { '0#': { l: 'yn', s: 'GL', t: '0#' }, '1#': { l: 'yn', s: 'GL', t: '1#' }, '2#': { l: 'yn', s: 'GL', t: '2#' }, '3#': { l: 'yn', s: 'GL', t: '3#' }, '4#': { l: 'yn', s: 'GL', t: '4#' }, '5#': { l: 'yn', s: 'GL', t: '5#' }, '6#': { l: 'yn', s: 'GL', t: '6#' }, '7#': { l: 'yn', s: 'GL', t: '7#' }, '8#': { l: 'yn', s: 'GL', t: '8#' }, '9#': { l: 'yn', s: 'GL', t: '9#' }, '10#': { l: 'yn', s: 'GL', t: '10#' }, '11#': { l: 'yn', s: 'GL', t: '11#' } },
-        '预制箱梁': { 'XL1-1': { l: 'yn', s: 'YZL', t: 'XL1-1' }, 'XL1-2': { l: 'yn', s: 'YZL', t: 'XL1-2' }, 'XL1-3': { l: 'yn', s: 'YZL', t: 'XL1-3' }, 'XL1-4': { l: 'yn', s: 'YZL', t: 'XL1-4' }, 'XL1-5': { l: 'yn', s: 'YZL', t: 'XL1-5' }, 'XL2-1': { l: 'yn', s: 'YZL', t: 'XL2-1' }, 'XL2-2': { l: 'yn', s: 'YZL', t: 'XL2-2' }, 'XL2-3': { l: 'yn', s: 'YZL', t: 'XL2-3' }, 'XL2-4': { l: 'yn', s: 'YZL', t: 'XL2-4' }, 'XL2-5': { l: 'yn', s: 'YZL', t: 'XL2-5' }, 'XL3-1': { l: 'yn', s: 'YZL', t: 'XL3-1' }, 'XL3-2': { l: 'yn', s: 'YZL', t: 'XL3-2' }, 'XL3-3': { l: 'yn', s: 'YZL', t: 'XL3-3' }, 'XL3-4': { l: 'yn', s: 'YZL', t: 'XL3-4' }, 'XL3-5': { l: 'yn', s: 'YZL', t: 'XL3-5' }, 'XL4-1': { l: 'yn', s: 'YZL', t: 'XL4-1' }, 'XL4-2': { l: 'yn', s: 'YZL', t: 'XL4-2' }, 'XL4-3': { l: 'yn', s: 'YZL', t: 'XL4-3' }, 'XL4-4': { l: 'yn', s: 'YZL', t: 'XL4-4' }, 'XL4-5': { l: 'yn', s: 'YZL', t: 'XL4-5' }, 'XL5-1': { l: 'yn', s: 'YZL', t: 'XL5-1' }, 'XL5-2': { l: 'yn', s: 'YZL', t: 'XL5-2' }, 'XL5-3': { l: 'yn', s: 'YZL', t: 'XL5-3' }, 'XL5-4': { l: 'yn', s: 'YZL', t: 'XL5-4' }, 'XL5-5': { l: 'yn', s: 'YZL', t: 'XL5-5' }, 'XL6-1': { l: 'yn', s: 'YZL', t: 'XL6-1' }, 'XL6-2': { l: 'yn', s: 'YZL', t: 'XL6-2' }, 'XL6-3': { l: 'yn', s: 'YZL', t: 'XL6-3' }, 'XL6-4': { l: 'yn', s: 'YZL', t: 'XL6-4' }, 'XL6-5': { l: 'yn', s: 'YZL', t: 'XL6-5' } },
-        '现浇箱梁': { 'XL7': { l: 'yn', s: 'XJ', t: 'XL7' }, 'XL8': { l: 'yn', s: 'XJ', t: 'XL8' }, 'XL9': { l: 'yn', s: 'XJ', t: 'XL9' }, 'XL10': { l: 'yn', s: 'XJ', t: 'XL10' }, 'XL11': { l: 'yn', s: 'XJ', t: 'XL11' } },
-        '护栏': { 'HL': { l: 'yn', s: 'YZL', t: 'HL' } },
-        '横向湿接缝': { 'SJFH': { l: 'yn', s: 'YZL', t: 'SJFH' } },
-        '纵向湿接缝': { 'SJFZ': { l: 'yn', s: 'YZL', t: 'SJFZ' } },
-        '匝道': { 'A': { l: 'yn', s: 'ZD', t: 'A' }, 'B': { l: 'yn', s: 'ZD', t: 'B' }, 'C': { l: 'yn', s: 'ZD', t: 'C' }, 'D': { l: 'yn', s: 'ZD', t: 'D' }, 'E': { l: 'yn', s: 'ZD', t: 'E' } },
-        '通道': { 'CK0+192.289': { l: 'yn', s: 'TD', t: 'CK0+192.289' }, 'EK0+185.5': { l: 'yn', s: 'TD', t: 'EK0+185.5' }, 'K410+077.744': { l: 'yn', s: 'TD', t: 'K410+077.744' }, 'K410+427.139': { l: 'yn', s: 'TD', t: 'K410+427.139' } },
-        '涵洞': { 'CK0+310': { l: 'yn', s: 'HD', t: 'CK0+310' }, 'DK0+280': { l: 'yn', s: 'HD', t: 'DK0+280' }, 'GK0+432': { l: 'yn', s: 'HD', t: 'GK0+432' } }
-    },
-    '肥乡北': { // fx_n
-        '桥台': { '0#Z-1': { l: 'fx_n', s: 'QT', t: '0#Z-1' }, '0#Z-2': { l: 'fx_n', s: 'QT', t: '0#Z-2' }, '0#Z-3': { l: 'fx_n', s: 'QT', t: '0#Z-3' }, '4#Z-1': { l: 'fx_n', s: 'QT', t: '4#Z-1' }, '4#Z-2': { l: 'fx_n', s: 'QT', t: '4#Z-2' }, '4#Z-3': { l: 'fx_n', s: 'QT', t: '4#Z-3' } },
-        '桥墩': { '1#Z-1': { l: 'fx_n', s: 'QD', t: '1#Z-1' }, '1#Z-2': { l: 'fx_n', s: 'QD', t: '1#Z-2' }, '1#Z-3': { l: 'fx_n', s: 'QD', t: '1#Z-3' }, '2#Z-1': { l: 'fx_n', s: 'QD', t: '2#Z-1' }, '2#Z-2': { l: 'fx_n', s: 'QD', t: '2#Z-2' }, '2#Z-3': { l: 'fx_n', s: 'QD', t: '2#Z-3' }, '3#Z-1': { l: 'fx_n', s: 'QD', t: '3#Z-1' }, '3#Z-2': { l: 'fx_n', s: 'QD', t: '3#Z-2' }, '3#Z-3': { l: 'fx_n', s: 'QD', t: '3#Z-3' } },
-        '盖梁': { '0#': { l: 'fx_n', s: 'GL', t: '0#' }, '1#': { l: 'fx_n', s: 'GL', t: '1#' }, '2#': { l: 'fx_n', s: 'GL', t: '2#' }, '3#': { l: 'fx_n', s: 'GL', t: '3#' }, '4#': { l: 'fx_n', s: 'GL', t: '4#' } },
-        '预制箱梁': { 'XL1-1': { l: 'fx_n', s: 'YZL', t: 'XL1-1' }, 'XL1-2': { l: 'fx_n', s: 'YZL', t: 'XL1-2' }, 'XL1-3': { l: 'fx_n', s: 'YZL', t: 'XL1-3' }, 'XL1-4': { l: 'fx_n', s: 'YZL', t: 'XL1-4' }, 'XL1-5': { l: 'fx_n', s: 'YZL', t: 'XL1-5' }, 'XL2-1': { l: 'fx_n', s: 'YZL', t: 'XL2-1' }, 'XL2-2': { l: 'fx_n', s: 'YZL', t: 'XL2-2' }, 'XL2-3': { l: 'fx_n', s: 'YZL', t: 'XL2-3' }, 'XL2-4': { l: 'fx_n', s: 'YZL', t: 'XL2-4' }, 'XL2-5': { l: 'fx_n', s: 'YZL', t: 'XL2-5' }, 'XL3-1': { l: 'fx_n', s: 'YZL', t: 'XL3-1' }, 'XL3-2': { l: 'fx_n', s: 'YZL', t: 'XL3-2' }, 'XL3-3': { l: 'fx_n', s: 'YZL', t: 'XL3-3' }, 'XL3-4': { l: 'fx_n', s: 'YZL', t: 'XL3-4' }, 'XL3-5': { l: 'fx_n', s: 'YZL', t: 'XL3-5' }, 'XL4-1': { l: 'fx_n', s: 'YZL', t: 'XL4-1' }, 'XL4-2': { l: 'fx_n', s: 'YZL', t: 'XL4-2' }, 'XL4-3': { l: 'fx_n', s: 'YZL', t: 'XL4-3' }, 'XL4-4': { l: 'fx_n', s: 'YZL', t: 'XL4-4' }, 'XL4-5': { l: 'fx_n', s: 'YZL', t: 'XL4-5' } },
-        '护栏': { 'HL': { l: 'fx_n', s: 'YZL', t: 'HL' } },
-        '横向湿接缝': { 'SJFH': { l: 'fx_n', s: 'YZL', t: 'SJFH' } },
-        '纵向湿接缝': { 'SJFZ': { l: 'fx_n', s: 'YZL', t: 'SJFZ' } },
-        '匝道': { 'A': { l: 'fx_n', s: 'ZD', t: 'A' }, 'B': { l: 'fx_n', s: 'ZD', t: 'B' }, 'C': { l: 'fx_n', s: 'ZD', t: 'C' }, 'D': { l: 'fx_n', s: 'ZD', t: 'D' }, 'E': { l: 'fx_n', s: 'ZD', t: 'E' }, 'F': { l: 'fx_n', s: 'ZD', t: 'F' }, 'G': { l: 'fx_n', s: 'ZD', t: 'G' }, 'H': { l: 'fx_n', s: 'ZD', t: 'H' }, 'I': { l: 'fx_n', s: 'ZD', t: 'I' } },
-        '通道': { 'K47+731.832': { l: 'fx_n', s: 'TD', t: 'K47+731.832' }, 'AK0+800': { l: 'fx_n', s: 'TD', t: 'AK0+800' } },
-        '涵洞': { 'BK0+370': { l: 'fx_n', s: 'HD', t: 'BK0+370' }, 'CK0+080': { l: 'fx_n', s: 'HD', t: 'CK0+080' }, 'DK0+310': { l: 'fx_n', s: 'HD', t: 'DK0+310' }, 'EK0+270': { l: 'fx_n', s: 'HD', t: 'EK0+270' }, 'FK0+070': { l: 'fx_n', s: 'HD', t: 'FK0+070' }, 'GK0+240': { l: 'fx_n', s: 'HD', t: 'GK0+240' }, 'HK0+300': { l: 'fx_n', s: 'HD', t: 'HK0+300' }, 'IK0+160': { l: 'fx_n', s: 'HD', t: 'IK0+160' } },
-        '路肩墙': { 'AK0+000-AK0+080': { l: 'fx_n', s: 'LJQ', t: 'AK0+000-AK0+080' } }
-    },
-    '肥乡南': { // fx_s
-        '桥台': { '0#Z-1': { l: 'fx_s', s: 'QT', t: '0#Z-1' }, '0#Z-2': { l: 'fx_s', s: 'QT', t: '0#Z-2' }, '0#Z-3': { l: 'fx_s', s: 'QT', t: '0#Z-3' }, '5#Z-1': { l: 'fx_s', s: 'QT', t: '5#Z-1' }, '5#Z-2': { l: 'fx_s', s: 'QT', t: '5#Z-2' }, '5#Z-3': { l: 'fx_s', s: 'QT', t: '5#Z-3' } },
-        '桥墩': { '1#Z-1': { l: 'fx_s', s: 'QD', t: '1#Z-1' }, '1#Z-2': { l: 'fx_s', s: 'QD', t: '1#Z-2' }, '1#Z-3': { l: 'fx_s', s: 'QD', t: '1#Z-3' }, '2#Z-1': { l: 'fx_s', s: 'QD', t: '2#Z-1' }, '2#Z-2': { l: 'fx_s', s: 'QD', t: '2#Z-2' }, '2#Z-3': { l: 'fx_s', s: 'QD', t: '2#Z-3' }, '3#Z-1': { l: 'fx_s', s: 'QD', t: '3#Z-1' }, '3#Z-2': { l: 'fx_s', s: 'QD', t: '3#Z-2' }, '3#Z-3': { l: 'fx_s', s: 'QD', t: '3#Z-3' }, '4#Z-1': { l: 'fx_s', s: 'QD', t: '4#Z-1' }, '4#Z-2': { l: 'fx_s', s: 'QD', t: '4#Z-2' }, '4#Z-3': { l: 'fx_s', s: 'QD', t: '4#Z-3' } },
-        '盖梁': { '0#': { l: 'fx_s', s: 'GL', t: '0#' }, '1#': { l: 'fx_s', s: 'GL', t: '1#' }, '2#': { l: 'fx_s', s: 'GL', t: '2#' }, '3#': { l: 'fx_s', s: 'GL', t: '3#' }, '4#': { l: 'fx_s', s: 'GL', t: '4#' }, '5#': { l: 'fx_s', s: 'GL', t: '5#' } },
-        '预制箱梁': { 'XL1-1': { l: 'fx_s', s: 'YZL', t: 'XL1-1' }, 'XL1-2': { l: 'fx_s', s: 'YZL', t: 'XL1-2' }, 'XL1-3': { l: 'fx_s', s: 'YZL', t: 'XL1-3' }, 'XL1-4': { l: 'fx_s', s: 'YZL', t: 'XL1-4' }, 'XL1-5': { l: 'fx_s', s: 'YZL', t: 'XL1-5' }, 'XL2-1': { l: 'fx_s', s: 'YZL', t: 'XL2-1' }, 'XL2-2': { l: 'fx_s', s: 'YZL', t: 'XL2-2' }, 'XL2-3': { l: 'fx_s', s: 'YZL', t: 'XL2-3' }, 'XL2-4': { l: 'fx_s', s: 'YZL', t: 'XL2-4' }, 'XL2-5': { l: 'fx_s', s: 'YZL', t: 'XL2-5' }, 'XL3-1': { l: 'fx_s', s: 'YZL', t: 'XL3-1' }, 'XL3-2': { l: 'fx_s', s: 'YZL', t: 'XL3-2' }, 'XL3-3': { l: 'fx_s', s: 'YZL', t: 'XL3-3' }, 'XL3-4': { l: 'fx_s', s: 'YZL', t: 'XL3-4' }, 'XL3-5': { l: 'fx_s', s: 'YZL', t: 'XL3-5' }, 'XL4-1': { l: 'fx_s', s: 'YZL', t: 'XL4-1' }, 'XL4-2': { l: 'fx_s', s: 'YZL', t: 'XL4-2' }, 'XL4-3': { l: 'fx_s', s: 'YZL', t: 'XL4-3' }, 'XL4-4': { l: 'fx_s', s: 'YZL', t: 'XL4-4' }, 'XL4-5': { l: 'fx_s', s: 'YZL', t: 'XL4-5' }, 'XL5-1': { l: 'fx_s', s: 'YZL', t: 'XL5-1' }, 'XL5-2': { l: 'fx_s', s: 'YZL', t: 'XL5-2' }, 'XL5-3': { l: 'fx_s', s: 'YZL', t: 'XL5-3' }, 'XL5-4': { l: 'fx_s', s: 'YZL', t: 'XL5-4' }, 'XL5-5': { l: 'fx_s', s: 'YZL', t: 'XL5-5' } },
-        '护栏': { 'HL': { l: 'fx_s', s: 'YZL', t: 'HL' } },
-        '横向湿接缝': { 'SJFH': { l: 'fx_s', s: 'YZL', t: 'SJFH' } },
-        '纵向湿接缝': { 'SJFZ': { l: 'fx_s', s: 'YZL', t: 'SJFZ' } },
-        '匝道': { 'A': { l: 'fx_s', s: 'ZD', t: 'A' }, 'B': { l: 'fx_s', s: 'ZD', t: 'B' }, 'C': { l: 'fx_s', s: 'ZD', t: 'C' }, 'D': { l: 'fx_s', s: 'ZD', t: 'D' }, 'E': { l: 'fx_s', s: 'ZD', t: 'E' }, 'F': { l: 'fx_s', s: 'ZD', t: 'F' }, 'G': { l: 'fx_s', s: 'ZD', t: 'G' }, 'H': { l: 'fx_s', s: 'ZD', t: 'H' }, 'I': { l: 'fx_s', s: 'ZD', t: 'I' } },
-        '通道': { 'K47+731.832': { l: 'fx_s', s: 'TD', t: 'K47+731.832' }, 'AK0+800': { l: 'fx_s', s: 'TD', t: 'AK0+800' } },
-        '涵洞': { 'BK0+370': { l: 'fx_s', s: 'HD', t: 'BK0+370' }, 'CK0+080': { l: 'fx_s', s: 'HD', t: 'CK0+080' }, 'DK0+310': { l: 'fx_s', s: 'HD', t: 'DK0+310' }, 'EK0+270': { l: 'fx_s', s: 'HD', t: 'EK0+270' }, 'FK0+070': { l: 'fx_s', s: 'HD', t: 'FK0+070' }, 'GK0+240': { l: 'fx_s', s: 'HD', t: 'GK0+240' }, 'HK0+300': { l: 'fx_s', s: 'HD', t: 'HK0+300' }, 'IK0+160': { l: 'fx_s', s: 'HD', t: 'IK0+160' } },
-        '路肩墙': { 'AK0+830-AK0+869.718': { l: 'fx_s', s: 'LJQ', t: 'AK0+830-AK0+869.718' } }
-    }
+    '永年':{'桥台':{'0#Z-1':{l:'yn',s:'QT',t:'0#Z-1'},'0#Z-2':{l:'yn',s:'QT',t:'0#Z-2'},'0#Z-3':{l:'yn',s:'QT',t:'0#Z-3'},'11#Z-1':{l:'yn',s:'QT',t:'11#Z-1'},'11#Z-2':{l:'yn',s:'QT',t:'11#Z-2'},'11#Z-3':{l:'yn',s:'QT',t:'11#Z-3'}},'桥墩':{'1#Z-1':{l:'yn',s:'QD',t:'1#Z-1'},'1#Z-2':{l:'yn',s:'QD',t:'1#Z-2'},'1#Z-3':{l:'yn',s:'QD',t:'1#Z-3'},'2#Z-1':{l:'yn',s:'QD',t:'2#Z-1'},'2#Z-2':{l:'yn',s:'QD',t:'2#Z-2'},'2#Z-3':{l:'yn',s:'QD',t:'2#Z-3'},'3#Z-1':{l:'yn',s:'QD',t:'3#Z-1'},'3#Z-2':{l:'yn',s:'QD',t:'3#Z-2'},'3#Z-3':{l:'yn',s:'QD',t:'3#Z-3'},'4#Z-1':{l:'yn',s:'QD',t:'4#Z-1'},'4#Z-2':{l:'yn',s:'QD',t:'4#Z-2'},'4#Z-3':{l:'yn',s:'QD',t:'4#Z-3'},'5#Z-1':{l:'yn',s:'QD',t:'5#Z-1'},'5#Z-2':{l:'yn',s:'QD',t:'5#Z-2'},'5#Z-3':{l:'yn',s:'QD',t:'5#Z-3'},'6#Z-1':{l:'yn',s:'QD',t:'6#Z-1'},'6#Z-2':{l:'yn',s:'QD',t:'6#Z-2'},'6#Z-3':{l:'yn',s:'QD',t:'6#Z-3'},'7#Z-1':{l:'yn',s:'QD',t:'7#Z-1'},'7#Z-2':{l:'yn',s:'QD',t:'7#Z-2'},'7#Z-3':{l:'yn',s:'QD',t:'7#Z-3'},'8#Z-1':{l:'yn',s:'QD',t:'8#Z-1'},'8#Z-2':{l:'yn',s:'QD',t:'8#Z-2'},'8#Z-3':{l:'yn',s:'QD',t:'8#Z-3'},'9#Z-1':{l:'yn',s:'QD',t:'9#Z-1'},'9#Z-2':{l:'yn',s:'QD',t:'9#Z-2'},'9#Z-3':{l:'yn',s:'QD',t:'9#Z-3'},'10#Z-1':{l:'yn',s:'QD',t:'10#Z-1'},'10#Z-2':{l:'yn',s:'QD',t:'10#Z-2'}},'盖梁':{'0#':{l:'yn',s:'GL',t:'0#'},'1#':{l:'yn',s:'GL',t:'1#'},'2#':{l:'yn',s:'GL',t:'2#'},'3#':{l:'yn',s:'GL',t:'3#'},'4#':{l:'yn',s:'GL',t:'4#'},'5#':{l:'yn',s:'GL',t:'5#'},'6#':{l:'yn',s:'GL',t:'6#'},'7#':{l:'yn',s:'GL',t:'7#'},'8#':{l:'yn',s:'GL',t:'8#'},'9#':{l:'yn',s:'GL',t:'9#'},'10#':{l:'yn',s:'GL',t:'10#'},'11#':{l:'yn',s:'GL',t:'11#'}},'预制箱梁':{'XL1-1':{l:'yn',s:'YZL',t:'XL1-1'},'XL1-2':{l:'yn',s:'YZL',t:'XL1-2'},'XL1-3':{l:'yn',s:'YZL',t:'XL1-3'},'XL1-4':{l:'yn',s:'YZL',t:'XL1-4'},'XL1-5':{l:'yn',s:'YZL',t:'XL1-5'},'XL2-1':{l:'yn',s:'YZL',t:'XL2-1'},'XL2-2':{l:'yn',s:'YZL',t:'XL2-2'},'XL2-3':{l:'yn',s:'YZL',t:'XL2-3'},'XL2-4':{l:'yn',s:'YZL',t:'XL2-4'},'XL2-5':{l:'yn',s:'YZL',t:'XL2-5'},'XL3-1':{l:'yn',s:'YZL',t:'XL3-1'},'XL3-2':{l:'yn',s:'YZL',t:'XL3-2'},'XL3-3':{l:'yn',s:'YZL',t:'XL3-3'},'XL3-4':{l:'yn',s:'YZL',t:'XL3-4'},'XL3-5':{l:'yn',s:'YZL',t:'XL3-5'},'XL4-1':{l:'yn',s:'YZL',t:'XL4-1'},'XL4-2':{l:'yn',s:'YZL',t:'XL4-2'},'XL4-3':{l:'yn',s:'YZL',t:'XL4-3'},'XL4-4':{l:'yn',s:'YZL',t:'XL4-4'},'XL4-5':{l:'yn',s:'YZL',t:'XL4-5'},'XL5-1':{l:'yn',s:'YZL',t:'XL5-1'},'XL5-2':{l:'yn',s:'YZL',t:'XL5-2'},'XL5-3':{l:'yn',s:'YZL',t:'XL5-3'},'XL5-4':{l:'yn',s:'YZL',t:'XL5-4'},'XL5-5':{l:'yn',s:'YZL',t:'XL5-5'},'XL6-1':{l:'yn',s:'YZL',t:'XL6-1'},'XL6-2':{l:'yn',s:'YZL',t:'XL6-2'},'XL6-3':{l:'yn',s:'YZL',t:'XL6-3'},'XL6-4':{l:'yn',s:'YZL',t:'XL6-4'},'XL6-5':{l:'yn',s:'YZL',t:'XL6-5'}},'现浇箱梁':{'XL7':{l:'yn',s:'XJ',t:'XL7'},'XL8':{l:'yn',s:'XJ',t:'XL8'},'XL9':{l:'yn',s:'XJ',t:'XL9'},'XL10':{l:'yn',s:'XJ',t:'XL10'},'XL11':{l:'yn',s:'XJ',t:'XL11'}},'护栏':{'HL':{l:'yn',s:'YZL',t:'HL'}},'横向湿接缝':{'SJFH':{l:'yn',s:'YZL',t:'SJFH'}},'纵向湿接缝':{'SJFZ':{l:'yn',s:'YZL',t:'SJFZ'}},'匝道':{'A':{l:'yn',s:'ZD',t:'A'},'B':{l:'yn',s:'ZD',t:'B'},'C':{l:'yn',s:'ZD',t:'C'},'D':{l:'yn',s:'ZD',t:'D'},'E':{l:'yn',s:'ZD',t:'E'}},'通道':{'CK0+192.289':{l:'yn',s:'TD',t:'CK0+192.289'},'EK0+185.5':{l:'yn',s:'TD',t:'EK0+185.5'},'K410+077.744':{l:'yn',s:'TD',t:'K410+077.744'},'K410+427.139':{l:'yn',s:'TD',t:'K410+427.139'}},'涵洞':{'CK0+310':{l:'yn',s:'HD',t:'CK0+310'},'DK0+280':{l:'yn',s:'HD',t:'DK0+280'},'GK0+432':{l:'yn',s:'HD',t:'GK0+432'}}},
+    '肥乡北':{'桥台':{'0#Z-1':{l:'fx_n',s:'QT',t:'0#Z-1'},'0#Z-2':{l:'fx_n',s:'QT',t:'0#Z-2'},'0#Z-3':{l:'fx_n',s:'QT',t:'0#Z-3'},'4#Z-1':{l:'fx_n',s:'QT',t:'4#Z-1'},'4#Z-2':{l:'fx_n',s:'QT',t:'4#Z-2'},'4#Z-3':{l:'fx_n',s:'QT',t:'4#Z-3'}},'桥墩':{'1#Z-1':{l:'fx_n',s:'QD',t:'1#Z-1'},'1#Z-2':{l:'fx_n',s:'QD',t:'1#Z-2'},'1#Z-3':{l:'fx_n',s:'QD',t:'1#Z-3'},'2#Z-1':{l:'fx_n',s:'QD',t:'2#Z-1'},'2#Z-2':{l:'fx_n',s:'QD',t:'2#Z-2'},'2#Z-3':{l:'fx_n',s:'QD',t:'2#Z-3'},'3#Z-1':{l:'fx_n',s:'QD',t:'3#Z-1'},'3#Z-2':{l:'fx_n',s:'QD',t:'3#Z-2'},'3#Z-3':{l:'fx_n',s:'QD',t:'3#Z-3'}},'盖梁':{'0#':{l:'fx_n',s:'GL',t:'0#'},'1#':{l:'fx_n',s:'GL',t:'1#'},'2#':{l:'fx_n',s:'GL',t:'2#'},'3#':{l:'fx_n',s:'GL',t:'3#'},'4#':{l:'fx_n',s:'GL',t:'4#'}},'预制箱梁':{'XL1-1':{l:'fx_n',s:'YZL',t:'XL1-1'},'XL1-2':{l:'fx_n',s:'YZL',t:'XL1-2'},'XL1-3':{l:'fx_n',s:'YZL',t:'XL1-3'},'XL1-4':{l:'fx_n',s:'YZL',t:'XL1-4'},'XL1-5':{l:'fx_n',s:'YZL',t:'XL1-5'},'XL2-1':{l:'fx_n',s:'YZL',t:'XL2-1'},'XL2-2':{l:'fx_n',s:'YZL',t:'XL2-2'},'XL2-3':{l:'fx_n',s:'YZL',t:'XL2-3'},'XL2-4':{l:'fx_n',s:'YZL',t:'XL2-4'},'XL2-5':{l:'fx_n',s:'YZL',t:'XL2-5'},'XL3-1':{l:'fx_n',s:'YZL',t:'XL3-1'},'XL3-2':{l:'fx_n',s:'YZL',t:'XL3-2'},'XL3-3':{l:'fx_n',s:'YZL',t:'XL3-3'},'XL3-4':{l:'fx_n',s:'YZL',t:'XL3-4'},'XL3-5':{l:'fx_n',s:'YZL',t:'XL3-5'},'XL4-1':{l:'fx_n',s:'YZL',t:'XL4-1'},'XL4-2':{l:'fx_n',s:'YZL',t:'XL4-2'},'XL4-3':{l:'fx_n',s:'YZL',t:'XL4-3'},'XL4-4':{l:'fx_n',s:'YZL',t:'XL4-4'},'XL4-5':{l:'fx_n',s:'YZL',t:'XL4-5'}},'护栏':{'HL':{l:'fx_n',s:'YZL',t:'HL'}},'横向湿接缝':{'SJFH':{l:'fx_n',s:'YZL',t:'SJFH'}},'纵向湿接缝':{'SJFZ':{l:'fx_n',s:'YZL',t:'SJFZ'}},'匝道':{'A':{l:'fx_n',s:'ZD',t:'A'},'B':{l:'fx_n',s:'ZD',t:'B'},'C':{l:'fx_n',s:'ZD',t:'C'},'D':{l:'fx_n',s:'ZD',t:'D'},'E':{l:'fx_n',s:'ZD',t:'E'},'F':{l:'fx_n',s:'ZD',t:'F'},'G':{l:'fx_n',s:'ZD',t:'G'},'H':{l:'fx_n',s:'ZD',t:'H'},'I':{l:'fx_n',s:'ZD',t:'I'}},'通道':{'K47+731.832':{l:'fx_n',s:'TD',t:'K47+731.832'},'AK0+800':{l:'fx_n',s:'TD',t:'AK0+800'}},'涵洞':{'BK0+370':{l:'fx_n',s:'HD',t:'BK0+370'},'CK0+080':{l:'fx_n',s:'HD',t:'CK0+080'},'DK0+310':{l:'fx_n',s:'HD',t:'DK0+310'},'EK0+270':{l:'fx_n',s:'HD',t:'EK0+270'},'FK0+070':{l:'fx_n',s:'HD',t:'FK0+070'},'GK0+240':{l:'fx_n',s:'HD',t:'GK0+240'},'HK0+300':{l:'fx_n',s:'HD',t:'HK0+300'},'IK0+160':{l:'fx_n',s:'HD',t:'IK0+160'}},'路肩墙':{'AK0+000-AK0+080':{l:'fx_n',s:'LJQ',t:'AK0+000-AK0+080'}}},
+    '肥乡南':{'桥台':{'0#Z-1':{l:'fx_s',s:'QT',t:'0#Z-1'},'0#Z-2':{l:'fx_s',s:'QT',t:'0#Z-2'},'0#Z-3':{l:'fx_s',s:'QT',t:'0#Z-3'},'5#Z-1':{l:'fx_s',s:'QT',t:'5#Z-1'},'5#Z-2':{l:'fx_s',s:'QT',t:'5#Z-2'},'5#Z-3':{l:'fx_s',s:'QT',t:'5#Z-3'}},'桥墩':{'1#Z-1':{l:'fx_s',s:'QD',t:'1#Z-1'},'1#Z-2':{l:'fx_s',s:'QD',t:'1#Z-2'},'1#Z-3':{l:'fx_s',s:'QD',t:'1#Z-3'},'2#Z-1':{l:'fx_s',s:'QD',t:'2#Z-1'},'2#Z-2':{l:'fx_s',s:'QD',t:'2#Z-2'},'2#Z-3':{l:'fx_s',s:'QD',t:'2#Z-3'},'3#Z-1':{l:'fx_s',s:'QD',t:'3#Z-1'},'3#Z-2':{l:'fx_s',s:'QD',t:'3#Z-2'},'3#Z-3':{l:'fx_s',s:'QD',t:'3#Z-3'},'4#Z-1':{l:'fx_s',s:'QD',t:'4#Z-1'},'4#Z-2':{l:'fx_s',s:'QD',t:'4#Z-2'},'4#Z-3':{l:'fx_s',s:'QD',t:'4#Z-3'}},'盖梁':{'0#':{l:'fx_s',s:'GL',t:'0#'},'1#':{l:'fx_s',s:'GL',t:'1#'},'2#':{l:'fx_s',s:'GL',t:'2#'},'3#':{l:'fx_s',s:'GL',t:'3#'},'4#':{l:'fx_s',s:'GL',t:'4#'},'5#':{l:'fx_s',s:'GL',t:'5#'}},'预制箱梁':{'XL1-1':{l:'fx_s',s:'YZL',t:'XL1-1'},'XL1-2':{l:'fx_s',s:'YZL',t:'XL1-2'},'XL1-3':{l:'fx_s',s:'YZL',t:'XL1-3'},'XL1-4':{l:'fx_s',s:'YZL',t:'XL1-4'},'XL1-5':{l:'fx_s',s:'YZL',t:'XL1-5'},'XL2-1':{l:'fx_s',s:'YZL',t:'XL2-1'},'XL2-2':{l:'fx_s',s:'YZL',t:'XL2-2'},'XL2-3':{l:'fx_s',s:'YZL',t:'XL2-3'},'XL2-4':{l:'fx_s',s:'YZL',t:'XL2-4'},'XL2-5':{l:'fx_s',s:'YZL',t:'XL2-5'},'XL3-1':{l:'fx_s',s:'YZL',t:'XL3-1'},'XL3-2':{l:'fx_s',s:'YZL',t:'XL3-2'},'XL3-3':{l:'fx_s',s:'YZL',t:'XL3-3'},'XL3-4':{l:'fx_s',s:'YZL',t:'XL3-4'},'XL3-5':{l:'fx_s',s:'YZL',t:'XL3-5'},'XL4-1':{l:'fx_s',s:'YZL',t:'XL4-1'},'XL4-2':{l:'fx_s',s:'YZL',t:'XL4-2'},'XL4-3':{l:'fx_s',s:'YZL',t:'XL4-3'},'XL4-4':{l:'fx_s',s:'YZL',t:'XL4-4'},'XL4-5':{l:'fx_s',s:'YZL',t:'XL4-5'},'XL5-1':{l:'fx_s',s:'YZL',t:'XL5-1'},'XL5-2':{l:'fx_s',s:'YZL',t:'XL5-2'},'XL5-3':{l:'fx_s',s:'YZL',t:'XL5-3'},'XL5-4':{l:'fx_s',s:'YZL',t:'XL5-4'},'XL5-5':{l:'fx_s',s:'YZL',t:'XL5-5'}},'护栏':{'HL':{l:'fx_s',s:'YZL',t:'HL'}},'横向湿接缝':{'SJFH':{l:'fx_s',s:'YZL',t:'SJFH'}},'纵向湿接缝':{'SJFZ':{l:'fx_s',s:'YZL',t:'SJFZ'}},'匝道':{'A':{l:'fx_s',s:'ZD',t:'A'},'B':{l:'fx_s',s:'ZD',t:'B'},'C':{l:'fx_s',s:'ZD',t:'C'},'D':{l:'fx_s',s:'ZD',t:'D'},'E':{l:'fx_s',s:'ZD',t:'E'},'F':{l:'fx_s',s:'ZD',t:'F'},'G':{l:'fx_s',s:'ZD',t:'G'},'H':{l:'fx_s',s:'ZD',t:'H'},'I':{l:'fx_s',s:'ZD',t:'I'}},'通道':{'K47+731.832':{l:'fx_s',s:'TD',t:'K47+731.832'},'AK0+800':{l:'fx_s',s:'TD',t:'AK0+800'}},'涵洞':{'BK0+370':{l:'fx_s',s:'HD',t:'BK0+370'},'CK0+080':{l:'fx_s',s:'HD',t:'CK0+080'},'DK0+310':{l:'fx_s',s:'HD',t:'DK0+310'},'EK0+270':{l:'fx_s',s:'HD',t:'EK0+270'},'FK0+070':{l:'fx_s',s:'HD',t:'FK0+070'},'GK0+240':{l:'fx_s',s:'HD',t:'GK0+240'},'HK0+300':{l:'fx_s',s:'HD',t:'HK0+300'},'IK0+160':{l:'fx_s',s:'HD',t:'IK0+160'}},'路肩墙':{'AK0+830-AK0+869.718':{l:'fx_s',s:'LJQ',t:'AK0+830-AK0+869.718'}}}
 };
 
 const progressFilters = ref({
@@ -462,7 +602,9 @@ const fetchProgressData = async () => {
 
   if (location && structure && model) {
     try {
-      const params = progressFilterMapping[location][structure][model];
+      const locationMap = progressFilterMapping[location as keyof typeof progressFilterMapping];
+      const structureMap = locationMap[structure as keyof typeof locationMap];
+      const params = structureMap[model as keyof typeof structureMap];
       if (!params) return;
 
       const encodedType = encodeURIComponent(params.t).replace(/%2B/g, '%2B').replace(/%23/g, '%23');
@@ -474,14 +616,14 @@ const fetchProgressData = async () => {
       }
       let data = await response.json();
 
-      // Add location and structure to the data for table display
-      data = data.map(item => ({
+      // Add location and model/type to the data for table display
+      progressData.value = data.map((item: any) => ({
         ...item,
-        location: location,
-        structure: model, 
+        location: location, // User-friendly location name
+        structure: model,   // User-friendly model/type name
       }));
 
-      progressData.value = data;
+      // progressData.value = data;
     } catch (error) {
       console.error("获取施工进度数据失败:", error);
       progressData.value = [];
@@ -497,29 +639,37 @@ const progressStructures = computed(() => {
 const progressModels = computed(() => {
   const loc = progressFilters.value.location as keyof typeof progressFilterMapping;
   const struc = progressFilters.value.structure as keyof typeof progressFilterMapping[typeof loc];
-  return progressFilterMapping[loc][struc] || [];
+  const structureMap = progressFilterMapping[loc]?.[struc];
+  return structureMap ? Object.keys(structureMap) : [];
 });
 
 watch(() => progressFilters.value.location, (newLocation) => {
   const newStructures = Object.keys(progressFilterMapping[newLocation as keyof typeof progressFilterMapping]);
-  progressFilters.value.structure = newStructures[0];
+  progressFilters.value.structure = newStructures[0] || '';
 });
 
-watch(() => progressFilters.value.structure, (newStructure) => {
-  const loc = progressFilters.value.location as keyof typeof progressFilterMapping;
-  const newModels = progressFilterMapping[loc][newStructure as keyof typeof progressFilterMapping[typeof loc]] || [];
-  progressFilters.value.model = newModels[0];
-});
+watch(() => progressFilters.value.structure, (newStructure, oldStructure) => {
+    if (newStructure !== oldStructure) {
+        const loc = progressFilters.value.location as keyof typeof progressFilterMapping;
+        const struc = newStructure as keyof typeof progressFilterMapping[typeof loc];
+        const newModels = Object.keys(progressFilterMapping[loc]?.[struc] || {});
+        progressFilters.value.model = newModels[0] || '';
+    }
+}, { immediate: true });
 
 watch(progressFilters, () => {
   fetchProgressData();
 }, { deep: true });
 // ===================================================================
 
+// ======================= 生命周期钩子 =======================
 onMounted(() => {
   // 页面加载时获取默认数据
+  // Initial data fetch
   // fetchData();
-  // fetchProgressData(); // Initial fetch
+  // fetchProgressData();
+  // fetchSafetyWarnings();
+  // fetchDelayWarnings();
   if (dataScreenRef.value) {
     dataScreenRef.value.style.transform = `scale(${getScale()}) translate(-50%, -50%)`;
     dataScreenRef.value.style.width = `1920px`;
@@ -628,10 +778,14 @@ onBeforeUnmount(() => {
   &.table-20-rows {
     // 20 rows * 30px/row + 30px header
     max-height: calc(20 * 30px + 30px);
+    // height: calc(20 * 32px + 40px);
+    // overflow-y: auto;
   }
 
   &.table-6-rows {
     max-height: calc(6 * 30px + 30px);
+    // height: calc(6 * 32px + 40px);
+    // overflow-y: auto;
   }
 }
 
@@ -640,6 +794,7 @@ onBeforeUnmount(() => {
   border-collapse: collapse;
   color: #fff;
   font-size: 16px;
+  // table-layout: fixed; /* Added for consistent column widths */
   
   thead tr {
     // background-color: rgba(5, 232, 254, 0.2);
@@ -654,12 +809,17 @@ onBeforeUnmount(() => {
     padding: 8px;
     text-align: center;
     border-bottom: 1px solid rgba(5, 232, 254, 0.1);
+    white-space: nowrap; /* Prevent header text wrapping */
   }
 
   td {
     padding: 8px;
     text-align: center;
     border-bottom: 1px solid rgba(5, 232, 254, 0.1);
+    /* Added for text overflow */
+    // white-space: nowrap;
+    // overflow: hidden;
+    // text-overflow: ellipsis;
   }
   
   tbody tr:nth-child(odd) {

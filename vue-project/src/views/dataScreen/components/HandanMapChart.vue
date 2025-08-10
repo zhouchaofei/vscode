@@ -32,6 +32,7 @@
       </div>
       <div class="popup-content">
         <div v-if="popup.loading" class="video-loading">加载中...</div>
+        <div v-if="popup.errorMsg" class="video-loading">{{ popup.errorMsg }}</div>
         <div :id="`video-container-${popup.camera.english}`" class="video-js-container"></div>
       </div>
     </div>
@@ -58,6 +59,9 @@ const activePopups = ref<any[]>([]);
 // 使用一个 Map 来管理多个播放器实例
 const players = new Map<string, videojs.Player>();
 const lines = ref<any[]>([]); // 存储连接线的坐标
+
+const maxRetries = 3;
+const retryDelay = 3000; // 3 seconds
 
 // --- API & 数据 ---
 const appKey = 'd4baaab8baf24baa9541f1bbe64b2200';
@@ -243,7 +247,7 @@ const updateLines = () => {
     lines.value = [];
     return;
   }
-  const containerRect = chartRef.value.getBoundingClientRect();
+  // const containerRect = chartRef.value.getBoundingClientRect();
 
   const newLines = activePopups.value.map((popup, index) => {
     const iconPoint = myChart.convertToPixel('geo', popup.camera.value);
@@ -325,7 +329,7 @@ const openAllPopups = async () => {
         transform: getPopupTransform(camera.name),
       };
       // 创建 popup 对象并立即推入数组，触发 UI 渲染
-      const popup = { camera, style, loading: true };
+      const popup = { camera, style, loading: true, retryCount: 0, errorMsg: '' };
       activePopups.value.push(popup);
 
       // 异步获取视频流，不阻塞下一个摄像头的处理
@@ -344,11 +348,12 @@ const openAllPopups = async () => {
               initVideoPlayer(camera, videoUrl);
             });
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error(`无法加载 ${camera.name} 的视频:`, e);
           const targetPopup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
           if (targetPopup) {
             targetPopup.loading = false; // 即使失败也要停止加载状态
+            targetPopup.errorMsg = '加载失败';
           }
         }
       })();
@@ -441,6 +446,26 @@ const fetchCameraUrl = async (token: string, camera: any) => {
   }
 };
 
+const handlePlaybackErrorAndRetry = async (camera: any) => {
+    const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
+    if (!popup) return;
+
+    try {
+        console.log(`为 ${camera.name} 重新获取播放地址...`);
+        popup.errorMsg = `尝试恢复... (${popup.retryCount}/${maxRetries})`;
+        
+        const token = await getValidAccessToken();
+        const newUrl = await fetchCameraUrl(token, camera);
+        
+        console.log(`成功为 ${camera.name} 获取新地址, 正在重新初始化播放器。`);
+        initVideoPlayer(camera, newUrl);
+
+    } catch (error) {
+        console.error(`为 ${camera.name} 恢复失败:`, error);
+        popup.errorMsg = "恢复失败";
+    }
+};
+
 /**
  * **修改**: 初始化播放器，并将其存入 Map
  */
@@ -466,10 +491,34 @@ const initVideoPlayer = (camera: any, url: string) => {
     const videoElement = videoContainer.querySelector('video');
     
     if (videoElement) {
-        const player = videojs(videoElement, videoOptions, () => {
-          player.play().catch(e => console.error(`自动播放 ${camera.name} 失败:`, e));
+        const player = videojs(videoElement, videoOptions, function() {
+          const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
+          
+          this.on('playing', () => {
+              if (popup) {
+                  popup.retryCount = 0;
+                  popup.errorMsg = '';
+              }
+              console.log(`${camera.name} 播放成功。`);
+          });
+
+          this.on('error', (e) => {
+              const error = this.error() || e;
+              console.error(`${camera.name} 播放错误:`, error);
+              
+              if (popup && error && error.code === 3 && popup.retryCount < maxRetries) {
+                  popup.retryCount++;
+                  console.log(`${camera.name} 发生解码错误。进行第 ${popup.retryCount} 次重试...`);
+                  setTimeout(() => handlePlaybackErrorAndRetry(camera), retryDelay);
+              } else if (popup) {
+                  popup.errorMsg = "播放失败";
+                  console.error(`${camera.name} 已达到最大重试次数或发生不可恢复的错误。`);
+              }
+          });
+
+          this.play().catch(e => console.warn(`自动播放 ${camera.name} 被阻止:`, e));
         });
-        players.set(playerId, player); // 存入Map
+        players.set(playerId, player);
     }
   }
 };

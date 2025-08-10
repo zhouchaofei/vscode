@@ -92,12 +92,6 @@ const cameras = ref({
   fx_lc: { id: 'fx_lc', name: '肥乡梁厂', url: '', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
 });
 
-// 新增：静态的人员数据（假数据）
-const personnelData = ref({
-  total: 0,           // 施工人员总数
-  safetyAlerts: 0      // 无安全帽佩戴提醒次数
-});
-
 // 不同标注类型的颜色映射
 const typeColors = {
   // 结构与主要组件 (暖色调)
@@ -154,6 +148,11 @@ const videoStatus = ref("播放器准备就绪");
 const isPlayerReady = ref(false); // 状态锁，标记播放器是否准备就绪
 const annotationDelayTimer = ref(null);
 const overlayTimer = ref(null); // 用于控制蒙层显示时长的计时器
+
+// --- NEW: Error recovery state ---
+const maxRetries = 3;
+const retryCounter = ref(0);
+const retryDelay = 3000; // 3 seconds
 
 // --- Computed Properties ---
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
@@ -294,25 +293,63 @@ const fetchAllCameraUrls = async (token) => {
       params.append('channelNo', 1);
       params.append('protocol', 2);
 
-    try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: params
-        });
-        const data = await response.json();
-        if (data.code === '200' && data.data) {
-          camera.url = data.data.url;
-        } else {
-          console.error(`Failed to get URL for ${camera.name}: ${data.msg}`);
-        }
-    } catch (error) {
-        console.error(`Network error fetching URL for ${camera.name}:`, error);
-    }
+      try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+          });
+          const data = await response.json();
+          if (data.code === '200' && data.data) {
+            camera.url = data.data.url;
+          } else {
+            console.error(`Failed to get URL for ${camera.name}: ${data.msg}`);
+          }
+      } catch (error) {
+          console.error(`Network error fetching URL for ${camera.name}:`, error);
+      }
     });
 
     await Promise.all(promises);
     console.log("All camera URL fetch requests completed for annotation page.");
+};
+
+// --- NEW: Function to handle automatic recovery from playback errors ---
+const handlePlaybackErrorAndRetry = async () => {
+    try {
+        console.log("Re-fetching camera URL for recovery...");
+        videoStatus.value = "正在重新获取播放地址...";
+
+        const cameraToRetry = cameras.value[currentCameraId.value];
+        const token = accessToken.value;
+        const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
+        const params = new URLSearchParams();
+        params.append('accessToken', token);
+        params.append('deviceSerial', cameraToRetry.deviceSerial);
+        params.append('channelNo', 1);
+        params.append('protocol', 2);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params
+        });
+        const data = await response.json();
+
+        if (data.code === '200' && data.data && data.data.url) {
+            const newUrl = data.data.url;
+            console.log("Successfully fetched new URL. Re-initializing player.");
+            cameras.value[currentCameraId.value].url = newUrl;
+            await initPlayer(newUrl);
+            // On successful re-initialization, reset the counter
+            retryCounter.value = 0;
+        } else {
+            throw new Error(`Failed to get new URL: ${data.msg}`);
+        }
+    } catch (error) {
+        console.error("Retry attempt failed:", error);
+        videoStatus.value = "自动重试失败。请手动刷新。";
+    }
 };
 
 // --- Video.js 播放器初始化 ---
@@ -373,6 +410,7 @@ const initPlayer = (url) => {
           this.on('playing', () => { 
             isVideoPlaying.value = true; 
             videoStatus.value = "视频流播放中"; 
+            retryCounter.value = 0; // Reset counter on successful play
           });
           
           this.on('error', (e) => {
@@ -380,6 +418,17 @@ const initPlayer = (url) => {
             isVideoPlaying.value = false;
             videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
             console.error('Video.js Error:', error);
+
+            // --- MODIFIED: Auto-recovery logic ---
+            if (error && error.code === 3 && retryCounter.value < maxRetries) {
+                retryCounter.value++;
+                videoStatus.value = `播放错误，正在进行第 ${retryCounter.value} 次自动重试...`;
+                console.log(`Playback error detected. Attempting retry ${retryCounter.value}/${maxRetries}...`);
+                setTimeout(handlePlaybackErrorAndRetry, retryDelay);
+            } else if (retryCounter.value >= maxRetries) {
+                videoStatus.value = "自动重试失败，请手动刷新或切换摄像头。";
+                console.error("Maximum retries reached. Aborting.");
+            }
           });
           
           this.on('ended', () => { 
