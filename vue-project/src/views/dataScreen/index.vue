@@ -104,7 +104,7 @@
                     <option>永年</option>
                     <option>肥乡北</option>
                     <option>肥乡南</option>
-                    <option>肥乡梁厂</option>
+                    <option>肥乡梁场</option>
                   </select>
                 </div>
               </div>
@@ -548,7 +548,7 @@ const progressData = ref<any[]>([]);
 // const safetyWarnings = ref(Array.from({ length: 25 }, (_, i) => ({ event: `设备离线 ${i + 1}`, location: '永年', time: `2025-08-0${(i % 4) + 1}` })));
 // const delayWarnings = ref(Array.from({ length: 7 }, (_, i) => ({ location: '肥乡北', event: `桥墩 ${i + 1}# 延期`, plannedDate: '2025-09-10', delayTime: `${i + 1}天` })));
 
-// const safetyEventFilter = ref('肥乡梁厂');
+// const safetyEventFilter = ref('肥乡梁场');
 
 // const progressFilterOptions = {
 //   '永年': {

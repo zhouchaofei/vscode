@@ -8,7 +8,7 @@
           <option value="yn">永年</option>
           <option value="fx_n">肥乡北</option>
           <option value="fx_s">肥乡南</option>
-          <option value="fx_lc">肥乡梁厂</option>
+          <option value="fx_lc">肥乡梁场</option>
         </select>
       </div>
       <div class="select-group">

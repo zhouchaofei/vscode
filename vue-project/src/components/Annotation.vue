@@ -89,7 +89,7 @@ const cameras = ref({
   yn: { id: 'yn', name: '永年', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010516991327760034' },
   fx_n: { id: 'fx_n', name: '肥乡北', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010084991327588111' },
   fx_s: { id: 'fx_s', name: '肥乡南', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33011012991327147072' },
-  fx_lc: { id: 'fx_lc', name: '肥乡梁厂', url: '', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
+  fx_lc: { id: 'fx_lc', name: '肥乡梁场', url: '', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
 });
 
 // 不同标注类型的颜色映射
@@ -152,7 +152,7 @@ const overlayTimer = ref(null); // 用于控制蒙层显示时长的计时器
 // --- NEW: Error recovery state ---
 const maxRetries = 30;
 const retryCounter = ref(0);
-const retryDelay = 3000; // 3 seconds
+const retryDelay = 1000; // 1 second
 
 // --- Computed Properties ---
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);

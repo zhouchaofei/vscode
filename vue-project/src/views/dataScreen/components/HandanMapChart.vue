@@ -61,7 +61,7 @@ const players = new Map<string, videojs.Player>();
 const lines = ref<any[]>([]); // 存储连接线的坐标
 
 const maxRetries = 30;
-const retryDelay = 3000; // 3 seconds
+const retryDelay = 1000; // 1 second
 
 // --- API & 数据 ---
 const appKey = 'd4baaab8baf24baa9541f1bbe64b2200';
@@ -71,7 +71,7 @@ const cameraData = ref([
     { id: 1, name: '永年', english: 'yn', deviceSerial: '33011063992677425735:33010516991327760034', view: 'view1', value: [114.5569, 36.7897] },
     { id: 2, name: '肥乡北', english: 'fx_n', deviceSerial: '33011063992677425735:33010084991327588111', view: 'view1', value: [114.7002, 36.5716] },
     { id: 3, name: '肥乡南', english: 'fx_s', deviceSerial: '33011063992677425735:33011012991327147072', view: 'view1', value: [114.7002, 36.5716] },
-    { id: 4, name: '肥乡梁厂', english: 'fx_lc', deviceSerial: '33011063992677425735:33011033991327056374', view: 'view1', value: [114.7002, 36.5716] }
+    { id: 4, name: '肥乡梁场', english: 'fx_lc', deviceSerial: '33011063992677425735:33011033991327056374', view: 'view1', value: [114.7002, 36.5716] }
 ]);
 
 const cameraIcon = 'path://M14.6,12.5H9.4c-1.2,0-2.1-0.9-2.1-2.1V5.1c0-1.2,0.9-2.1,2.1-2.1h5.3c1.2,0,2.1,0.9,2.1,2.1v5.3C16.7,11.6,15.8,12.5,14.6,12.5z M9.4,4.1c-0.6,0-1.1,0.5-1.1,1.1v5.3c0,0.6,0.5,1.1,1.1,1.1h5.3c0.6,0,1.1-0.5,1.1-1.1V5.1c0-0.6-0.5-1.1-1.1-1.1H9.4z M17.9,16.8H6.1c-1.2,0-2.1-0.9-2.1-2.1V7.4h1.1v7.3c0,0.6,0.5,1.1,1.1,1.1h11.8c0.6,0,1.1-0.5,1.1-1.1V7.4h1.1v7.3C20,15.9,19.1,16.8,17.9,16.8z M12,14.6c-0.6,0-1-0.4-1-1v-2.1c0-0.6,0.4-1,1-1s1,0.4,1,1v2.1C13,14.2,12.6,14.6,12,14.6z';
@@ -150,7 +150,7 @@ const option: any = { // 使用 'any' 类型来绕过本地不完整的 ECOption
 //     case '肥乡北': // 左上侧
 //       popupTransform = 'translate(70%, -163%)';
 //       break;
-//     case '肥乡梁厂': // 上侧
+//     case '肥乡梁场': // 上侧
 //       popupTransform = 'translate(70%, -26%)';
 //       break;
 //     case '肥乡南': // 左侧
@@ -168,7 +168,7 @@ const getPopupTransform = (cameraName: string) => {
   switch (cameraName) {
     case '永年': return 'translate(20%, -110%)';
     case '肥乡北': return 'translate(70%, -163%)';
-    case '肥乡梁厂': return 'translate(70%, -26%)';
+    case '肥乡梁场': return 'translate(70%, -26%)';
     case '肥乡南': return 'translate(-136%, -70%)';
     default: return 'translate(-50%, -120%)';
   }
