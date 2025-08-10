@@ -183,7 +183,7 @@ const formattedPopupDetails = computed(() => {
   const processedLines = lines.map(line => {
     const trimmedLine = line.trim();
     // Check if the line is a date line
-    if (trimmedLine.startsWith('开始日期:') || trimmedLine.startsWith('结束日期:')) {
+    if (trimmedLine.startsWith('开始时间:') || trimmedLine.startsWith('完成时间:')) {
       // If it is, wrap it in a yellow span
       return `<span style="color: yellow;">${trimmedLine}</span>`;
     } else {
