@@ -74,8 +74,8 @@
                     <thead>
                       <tr>
                         <th>施工地区</th>
-                        <th>构件</th>
-                        <th>工序</th>
+                        <th>施工构件</th>
+                        <th>施工工序</th>
                         <th>开始时间</th>
                         <th>结束时间</th>
                       </tr>
@@ -146,7 +146,7 @@
                   </colgroup>
                   <thead>
                     <tr>
-                      <th>事件</th>
+                      <th>安全事件</th>
                       <th>地点</th>
                       <th>时间</th>
                     </tr>
@@ -172,9 +172,9 @@
                 <table class="custom-table">
                   <thead>
                     <tr>
-                      <th>地点</th>
-                      <th>事件</th>
-                      <th>计划日期</th>
+                      <th>施工区域</th>
+                      <th>施工构件</th>
+                      <th>计划完成日期</th>
                       <th>延期时间</th>
                     </tr>
                   </thead>
@@ -933,13 +933,13 @@ const fetchProgressData = async () => {
         progressData.value = data.map((item: any) => ({
           ...item,
           location: location,
-          structure: model,
+          structure: structure + '-' + model,
         }));
       } else {
         // 如果不是数组（包括为null或解析出非数组值的情况），显示“未开工”
         progressData.value = [{
           location: location,
-          structure: model,
+          structure: structure + '-' + model,
           state: '未开工',
           start_date: '-',
           end_date: '-'
@@ -1076,7 +1076,7 @@ onBeforeUnmount(() => {
   border: 1px solid #05e8fe;
   border-radius: 4px;
   padding: 4px 8px;
-  font-size: 16px;
+  font-size: 15px;
   outline: none;
   cursor: pointer;
   transition: all 0.3s ease; // 添加过渡
@@ -1141,7 +1141,7 @@ onBeforeUnmount(() => {
   width: 100%;
   border-collapse: collapse;
   color: #fff;
-  font-size: 16px;
+  font-size: 13px;
   // table-layout: fixed; /* Added for consistent column widths */
   
   thead tr {
