@@ -111,13 +111,13 @@ async function searchVideos() {
 
 async function fetchVideoListFromServer(camera, date) {
   const apiUrl = `http://59.110.65.210:8081/videosData?location=${camera}&date=${date}`;
-  console.log(`正在从API获取视频列表: ${apiUrl}`);
   try {
     const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error(`网络请求失败，状态码: ${response.status}`);
     }
-    return await response.json();
+    const data = await response.json();
+    return data.videos;
   } catch (error) {
     console.error("调用视频列表API时出错:", error);
     throw error;
@@ -138,10 +138,9 @@ async function selectVideo(video) {
 
 function formatTimeFromFilename(fileName) {
   const parts = fileName.split('-');
-  // **BUG修正**: 根据文件名结构，时间戳在索引5和6的位置
   if (parts.length >= 7) {
-    const startTimeStr = parts[5];
-    const endTimeStr = parts[6];
+    const startTimeStr = parts[4];
+    const endTimeStr = parts[5];
     const format = (s) => s ? `${s.substr(8,2)}:${s.substr(10,2)}:${s.substr(12,2)}` : '';
     return `${format(startTimeStr)} - ${format(endTimeStr)}`;
   }
