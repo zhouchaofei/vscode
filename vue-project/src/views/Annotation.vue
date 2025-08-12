@@ -1,7 +1,6 @@
 <template>
   <div class="annotator-container" @click="handleGlobalClick">
     <div ref="videoContainer" class="video-container">
-      <!-- 动态创建视频元素 -->
     </div>
     
     <canvas
@@ -23,7 +22,6 @@
       <div class="drawer-container">
         <div class="drawer-panel" :class="{ 'is-open': isCameraDrawerOpen }">
           <div class="controls-group camera-controls">
-            <!-- 动态生成摄像头按钮 -->
             <button 
               v-for="camera in cameras" 
               :key="camera.id"
@@ -43,7 +41,6 @@
 
       <div class="top-controls-container">
         <div class="controls-group view-controls">
-          <!-- 动态生成视图按钮 -->
           <button 
             v-for="view in views" 
             :key="view.id"
@@ -65,7 +62,6 @@
       </main>
     </div>
 
-    <!-- 视角切换加载蒙层 -->
     <div class="loading-overlay" v-show="isViewSwitching">
       <div class="loading-content">
         <div class="loading-spinner"></div>
@@ -79,12 +75,9 @@
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
-// --- 导入 Video.js 及其 HLS 插件 ---
 import videojs from 'video.js';
-import 'video.js/dist/video-js.css'; // 导入 Video.js 的 CSS
+import 'video.js/dist/video-js.css';
 
-// --- 配置Configuration ---
-// --- MODIFIED: Configuration includes deviceSerial, URL is now empty ---
 const cameras = ref({
   yn: { id: 'yn', name: '永年', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010516991327760034' },
   fx_n: { id: 'fx_n', name: '肥乡北', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010084991327588111' },
@@ -92,69 +85,57 @@ const cameras = ref({
   fx_lc: { id: 'fx_lc', name: '肥乡梁场', url: '', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
 });
 
-// 不同标注类型的颜色映射
 const typeColors = {
-  // 结构与主要组件 (暖色调)
-  '盖梁': '#FF8C00',      // 暗橙色 (DarkOrange)
-  '箱梁': '#FFA500',      // 橙色 (Orange)
-  '桥墩': '#FFD700',      // 金色 (Gold)
-  '桥台': '#F0E68C',      // 卡其色 (Khaki)
-  '预制梁': '#FF6347',    // 番茄红 (Tomato)
-  '跨': '#CD853F',        // 新增: 秘鲁色 (Peru)
+  '盖梁': '#FF8C00',
+  '箱梁': '#FFA500',
+  '桥墩': '#FFD700',
+  '桥台': '#F0E68C',
+  '预制梁': '#FF6347',
+  '跨': '#CD853F',
 
-  // 交通与设施 (醒目的颜色)
-  '方向': '#FF4500',      // 橙红色 (OrangeRed)
-  '匝道': '#1E90FF',      // 道奇蓝 (DodgerBlue)
-  '通道': '#32CD32',      // 酸橙绿 (LimeGreen)
-  '收费站': '#9370DB',    // 新增: 中紫色 (MediumPurple)
+  '方向': '#FF4500',
+  '匝道': '#1E90FF',
+  '通道': '#32CD32',
+  '收费站': '#9370DB',
 
-  // 支撑与细节部件 (冷色/中性色)
-  '支座': '#00FFFF',      // 青色 (Aqua/Cyan)
-  '挡块': '#B0C4DE',      // 亮钢蓝 (LightSteelBlue)
-  '涵洞': '#9932CC',      // 暗兰花紫 (DarkOrchid)
-  '台座': '#FF0000',      // 红色 (Red)
-  '路肩墙': '#708090',    // 新增: 石板灰 (SlateGray)
+  '支座': '#00FFFF',
+  '挡块': '#B0C4DE',
+  '涵洞': '#9932CC',
+  '台座': '#FF0000',
+  '路肩墙': '#708090',
 
-  // 其他
-  '其他': '#FFFFFF'       // 白色 (White)
+  '其他': '#FFFFFF'
 };
 
-// --- 状态管理 ---
-// --- Canvas 和状态管理 ---
 const annotationCanvas = ref(null);
 let annotationCtx = null;
 
-const annotations = ref([]); // 保存来自后端的标注数据
-const hoveredAnnotation = ref(null); // 保存当前鼠标悬停的标注
-const popupPosition = ref({ x: 0, y: 0 }); // 详情弹出框的位置
-const canvasCursor = ref('default'); // 用于在悬停时将光标变为'pointer'
+const annotations = ref([]);
+const hoveredAnnotation = ref(null);
+const popupPosition = ref({ x: 0, y: 0 });
+const canvasCursor = ref('default');
 
 const route = useRoute();
-const accessToken = ref(''); // --- NEW: To store the token from URL
+const accessToken = ref('');
 
-// --- 摄像头和视角状态 ---
-const currentCameraId = ref(''); // Default is now empty, will be set from URL
-const currentViewId = ref('view1'); // 默认选中视角1
-const isCameraDrawerOpen = ref(false); // 控制抽屉状态
-const isLoading = ref(false); // 加载状态标记
-const isViewSwitching = ref(false); // 新增：视角切换蒙层状态
+const currentCameraId = ref('');
+const currentViewId = ref('view1');
+const isCameraDrawerOpen = ref(false);
+const isLoading = ref(false);
+const isViewSwitching = ref(false); 
 
-// --- Video.js 播放器状态 ---
-const videoContainer = ref(null); // 视频容器的引用
-// const videoPlayer = ref(null);    // 视频元素的引用
-const player = ref(null);      // 用于持有 Video.js 播放器实例
+const videoContainer = ref(null);
+const player = ref(null);
 const isVideoPlaying = ref(false);
 const videoStatus = ref("播放器准备就绪");
-const isPlayerReady = ref(false); // 状态锁，标记播放器是否准备就绪
+const isPlayerReady = ref(false);
 const annotationDelayTimer = ref(null);
-const overlayTimer = ref(null); // 用于控制蒙层显示时长的计时器
+const overlayTimer = ref(null);
 
-// --- NEW: Error recovery state ---
 const maxRetries = 30;
 const retryCounter = ref(0);
-const retryDelay = 1000; // 1 second
+const retryDelay = 1000;
 
-// --- Computed Properties ---
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
 
 const views = computed(() => {
@@ -170,41 +151,28 @@ const views = computed(() => {
   });
 });
 
-// --- MODIFIED: A new, robust method for highlighting ---
 const formattedPopupDetails = computed(() => {
   if (!hoveredAnnotation.value || !hoveredAnnotation.value.details) {
     return '';
   }
 
-  // Split the details string into an array of lines.
-  // This regex handles various forms of <br> tags like <br>, <br/>, </br> and surrounding spaces.
   const lines = hoveredAnnotation.value.details.split(/\s*<\/?br.*?>\s*/);
 
   const processedLines = lines.map(line => {
     const trimmedLine = line.trim();
-    // Check if the line is a date line
     if (trimmedLine.startsWith('开始时间:') || trimmedLine.startsWith('完成时间:')) {
-      // If it is, wrap it in a yellow span
       return `<span style="color: yellow;">${trimmedLine}</span>`;
     } else {
-      // Otherwise, return the line as is
       return trimmedLine;
     }
   });
 
-  // Join the processed lines back together with standard <br> tags.
-  // Filter out any empty lines that might result from the split.
   return processedLines.filter(line => line).join('<br>');
 });
 
-// --- 组件生命周期钩子 ---
-// onMounted 现在是 async 函数
-// --- MODIFIED: onMounted to handle incoming accessToken and fetch data ---
 onMounted(async () => {
-  // 确保 DOM 已经渲染
   await nextTick();
   
-  // 1. Get token and camera identifiers from the URL query
   accessToken.value = route.query.accessToken;
   currentCameraId.value = route.query.cameraName;
   currentViewId.value = route.query.view || 'view1';
@@ -219,11 +187,9 @@ onMounted(async () => {
   initCanvas();
   window.addEventListener('resize', handleResize);
 
-  // 等待播放器初始化完成后，再执行后续逻辑
   try {
     isLoading.value = true;
     
-    // 2. Fetch URLs for ALL cameras using the provided token
     await fetchAllCameraUrls(accessToken.value);
     
     const initialCamera = cameras.value[currentCameraId.value];
@@ -231,11 +197,10 @@ onMounted(async () => {
         throw new Error(`无法获取摄像头 ${initialCamera.name} 的播放地址，请刷新页面。`);
     }
 
-    // 3. Initialize the player with the fetched URL
     await initPlayer(initialCamera.url);
     
     console.log("播放器初始化完成，加载默认视角数据。");
-    await switchView(currentViewId.value, true); // `true` forces execution
+    await switchView(currentViewId.value, true);
 
   } catch (error) {
     console.error("在 onMounted 期间发生错误:", error);
@@ -246,7 +211,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  // 销毁播放器以释放资源
   if (player.value) {
     player.value.dispose();
   }
@@ -259,16 +223,12 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-// --- 摄像头面板交互 ---
-// 切换摄像头抽屉的显示状态
 const toggleCameraDrawer = () => {
   isCameraDrawerOpen.value = !isCameraDrawerOpen.value;
 };
 
-// 处理全局点击事件，检测点击是否在面板外
 const handleGlobalClick = (event) => {
   if (isCameraDrawerOpen.value) {
-    // 检查点击是否在抽屉面板内
     const panel = document.querySelector('.drawer-panel');
     const handle = document.querySelector('.drawer-handle');
     
@@ -280,12 +240,10 @@ const handleGlobalClick = (event) => {
   }
 };
 
-// --- NEW: Function to fetch all camera URLs (similar to DataScreen) ---
 const fetchAllCameraUrls = async (token) => {
     console.log("Annotation page fetching camera URLs...");
     const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
     
-    // Create an array of promises
     const promises = Object.values(cameras.value).map(async (camera) => {
       const params = new URLSearchParams();
       params.append('accessToken', token);
@@ -314,7 +272,6 @@ const fetchAllCameraUrls = async (token) => {
     console.log("All camera URL fetch requests completed for annotation page.");
 };
 
-// --- NEW: Function to handle automatic recovery from playback errors ---
 const handlePlaybackErrorAndRetry = async () => {
     try {
         console.log("Re-fetching camera URL for recovery...");
@@ -341,7 +298,6 @@ const handlePlaybackErrorAndRetry = async () => {
             console.log("Successfully fetched new URL. Re-initializing player.");
             cameras.value[currentCameraId.value].url = newUrl;
             await initPlayer(newUrl);
-            // On successful re-initialization, reset the counter
             retryCounter.value = 0;
         } else {
             throw new Error(`Failed to get new URL: ${data.msg}`);
@@ -352,43 +308,29 @@ const handlePlaybackErrorAndRetry = async () => {
     }
 };
 
-// --- Video.js 播放器初始化 ---
-/**
- * 修复版的初始化 Video.js 播放器函数
- * 动态创建视频元素而不是尝试重用
- */
 const initPlayer = (url) => {
   return new Promise((resolve, reject) => {
     isPlayerReady.value = false;
     videoStatus.value = "正在初始化播放器...";
     
-    // 先清除旧播放器实例
     if (player.value) {
       player.value.dispose();
       player.value = null;
     }
     
-    // 使用 nextTick 确保 DOM 已更新
     nextTick(() => {
-      // 检查视频容器是否存在
       if (!videoContainer.value) {
         return reject(new Error("Video container not found in DOM"));
       }
       
-      // 创建全新的视频元素
       const videoElement = document.createElement('video');
       videoElement.className = 'video-js vjs-default-skin';
       videoElement.id = 'video-player-' + Date.now(); // 唯一ID
       
-      // 清空容器并添加新元素
       videoContainer.value.innerHTML = '';
       videoContainer.value.appendChild(videoElement);
       
-      // 保存新的引用
-      // videoPlayer.value = videoElement;
-      
       try {
-        // 创建播放器配置
         const options = {
           autoplay: true,
           muted: true,
@@ -401,25 +343,19 @@ const initPlayer = (url) => {
           }]
         };
 
-        // 创建新的播放器实例
         player.value = videojs(videoElement, options, function() {
           console.log('Video.js 播放器已创建并准备就绪');
-          // isPlayerReady.value = true;
-
-          // 设置各种事件监听器
           this.on('playing', () => { 
             isVideoPlaying.value = true; 
             videoStatus.value = "视频流播放中"; 
-            retryCounter.value = 0; // Reset counter on successful play
+            retryCounter.value = 0;
           });
           
           this.on('error', (e) => {
             const error = this.error() || e;
             isVideoPlaying.value = false;
-            // videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
             console.error('Video.js Error:', error);
 
-            // --- MODIFIED: Auto-recovery logic ---
             if (error && error.code === 3 && retryCounter.value < maxRetries) {
                 retryCounter.value++;
                 videoStatus.value = `视频流中断，正在进行第 ${retryCounter.value} 次自动重试...`;
@@ -443,7 +379,6 @@ const initPlayer = (url) => {
             videoStatus.value = '已暂停'; 
           });
           
-          // 尝试播放
           this.play().catch(error => {
             console.warn("自动播放被浏览器阻止:", error);
           });
@@ -458,13 +393,10 @@ const initPlayer = (url) => {
   });
 };
 
-// --- Canvas 和绘制 ---
 const initCanvas = () => {
-    // 变更：标注画布现在需要匹配视频容器的尺寸
     const container = document.querySelector('.video-container');
     if (!container || !annotationCanvas.value) return;
 
-    // Canvas 尺寸直接匹配容器尺寸
     const { clientWidth: width, clientHeight: height } = container;
 
     annotationCanvas.value.width = width;
@@ -472,44 +404,36 @@ const initCanvas = () => {
     
     annotationCtx = annotationCanvas.value.getContext('2d');
     
-    drawAnnotations(); // 窗口大小调整时重绘标注
+    drawAnnotations();
 };
 
-// 优化了handleResize，现在只进行重绘，不再重新获取数据
-// 窗口大小调整时，重新初始化 Canvas 即可
 const handleResize = () => {
-    initCanvas(); // initCanvas 会重设画布大小并调用 drawAnnotations
+    initCanvas();
 };
 
-// 将 `annotations` ref 中存储的所有标注绘制到画布上。
 const drawAnnotations = () => {
   if (!annotationCtx) return;
-  // 获取当前画布的实时尺寸
   const currentCanvasWidth = annotationCtx.canvas.width;
   const currentCanvasHeight = annotationCtx.canvas.height;
   
   annotationCtx.clearRect(0, 0, currentCanvasWidth, currentCanvasHeight);
 
-  // 为“台座”类型创建一个独立的计数器
   let taizuoCounter = 1;
 
   annotations.value.forEach(anno => {
     const color = typeColors[anno.type] || '#FFFFFF'; 
     const coordinates = anno.coordinates;
 
-    // 检查是否存在必要的尺寸信息
     if (!coordinates || coordinates.length < 2 || !anno.imageWidth || !anno.imageHeight) return;
 
-    // 缩放比例基于 Canvas 尺寸，而 Canvas 尺寸等于容器尺寸
     const scaleX = currentCanvasWidth / anno.imageWidth;
     const scaleY = currentCanvasHeight / anno.imageHeight;
 
     annotationCtx.lineWidth = 3;
     annotationCtx.strokeStyle = color;
-    annotationCtx.fillStyle = `${color}4D`; // 30% 透明度填充
+    annotationCtx.fillStyle = `${color}4D`;
 
     annotationCtx.beginPath();
-    // 对每个坐标点应用缩放比例
     const startX = coordinates[0].x * scaleX;
     const startY = coordinates[0].y * scaleY;
     annotationCtx.moveTo(startX, startY);
@@ -524,26 +448,22 @@ const drawAnnotations = () => {
     annotationCtx.stroke();
     annotationCtx.fill();
 
-    // --- 文本绘制逻辑修改 ---
-    let labelText = anno.title; // 默认使用原始标题
-    // 如果类型是'台座'，则使用计数器生成新标题
+    let labelText = anno.title;
     if (anno.type === '台座') {
       labelText = `台座${taizuoCounter}`;
-      taizuoCounter++; // 递增计数器
+      taizuoCounter++;
     }
 
-    // 对文本位置同样应用缩放
     annotationCtx.fillStyle = '#FFFFFF';
     annotationCtx.font = 'bold 16px Arial';
     annotationCtx.textBaseline = 'top';
-    const textX = startX + 10; // 在缩放后的坐标基础上偏移
+    const textX = startX + 10;
     const textY = startY + 10;
     annotationCtx.fillText(labelText, textX, textY);
   });
 };
 
 
-// --- 后端数据与交互 ---
 const fetchAnnotations = async (location, view) => {
   console.log(`正在从后台获取标注数据: ${location}, view: ${view}`);
   const url = `http://59.110.65.210:8081/label?location=${location}&view=${view}`;
@@ -553,16 +473,13 @@ const fetchAnnotations = async (location, view) => {
     
     const data = await response.json();
     console.log("标注数据加载成功:", data);
-    return data; // 返回加载的标注数据
+    return data;
   } catch (error) {
     console.error("获取标注数据失败:", error);
     return [];
   }
 };
 
-/**
- * 切换摄像头 - 完全销毁和重建播放器
- */
 const switchCamera = async (cameraId) => {
   if (isLoading.value || currentCameraId.value === cameraId) {
     console.log(`播放器正在加载或摄像头未改变，取消切换。`);
@@ -570,20 +487,16 @@ const switchCamera = async (cameraId) => {
   }
 
   try {
-    // 选择摄像头后关闭面板
     isCameraDrawerOpen.value = false;
 
     isLoading.value = true;
     console.log(`开始切换到摄像头: ${cameraId}`);
     currentCameraId.value = cameraId;
-    currentViewId.value = 'view1'; // 重置为默认视角
+    currentViewId.value = 'view1';
     
-    // 清除所有标注
     annotations.value = [];
     drawAnnotations();
     
-    // 更新状态
-    // isVideoPlaying.value = false;
     videoStatus.value = "正在切换摄像头...";
 
     const newCamera = cameras.value[cameraId];
@@ -591,10 +504,8 @@ const switchCamera = async (cameraId) => {
         throw new Error(`URL for ${newCamera.name} is not available.`);
     }
 
-    // 完全重新初始化播放器
     await initPlayer(newCamera.url);
     
-    // 切换到默认视角并加载标注
     await switchView('view1', true);
     
     console.log(`摄像头切换到 ${cameraId} 完成`);
@@ -606,31 +517,21 @@ const switchCamera = async (cameraId) => {
   }
 };
 
-/**
- * 修复版的切换视角函数
- * @param {string} viewId - 要切换到的视角ID
- * @param {boolean} forceExecution - 即使系统正在加载也强制执行
- */
-// --- MODIFIED: switchView now uses the accessToken from the component's state ---
 const switchView = async (viewId, forceExecution = false) => {
-  // 如果系统正在加载且不是强制执行，则直接返回
   if (isLoading.value && !forceExecution) {
     console.warn("系统正在加载中，请稍后再试。");
     return;
   }
 
   try {
-    // 只有当不是强制执行时才设置加载状态
-    // 这避免了在初始化或摄像头切换期间的重复加载状态
     if (!forceExecution) {
       isLoading.value = true;
     }
 
-    // 显示视角切换蒙层
     isViewSwitching.value = true;
     
     console.log(`准备切换到视角: ${viewId}`);
-    currentViewId.value = viewId; // 更新当前视角状态
+    currentViewId.value = viewId;
 
     if (annotationDelayTimer.value) {
       clearTimeout(annotationDelayTimer.value);
@@ -639,64 +540,48 @@ const switchView = async (viewId, forceExecution = false) => {
       clearTimeout(overlayTimer.value);
     }
 
-    // 清除当前标注
     annotations.value = [];
     drawAnnotations();
 
-    // 预设点切换逻辑
     const indexMatch = viewId.match(/(\d+)$/);
     if (!indexMatch) {
       throw new Error(`无效的视角ID格式: ${viewId}`);
     }
     
     const index = parseInt(indexMatch[1], 10);
-    // const accessToken = "at.6gz3gid25e93u8bm2m1zbx7le0wc0en9-2vf26ugcvn-1niw9oh-cifftv8lw";
     const deviceSerial = currentCamera.value.deviceSerial;
     const channelNo = 1;
     const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken.value}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
 
-    // 发送视角切换指令
     const response = await fetch(apiUrl, { method: 'POST' });
     const result = await response.json();
 
-    // 萤石云API成功响应码为'200'
     if (!response.ok || result.code !== '200') {
       throw new Error(`API 错误: ${result.msg || '未知错误'}`);
     }
 
     console.log(`视角 ${viewId} 切换指令发送成功。`);
     
-    // 获取新标注数据
     const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
     
-    // 延迟显示标注（给摄像头移动时间）
-    const delayTime = 20000; // 20秒延迟
-    console.log(`将在${delayTime/1000}秒后显示新标注。`);
+    const delayTime = 20000;
 
-    // 设置定时器以显示标注和隐藏蒙层
     annotationDelayTimer.value = setTimeout(() => {
       console.log("延迟结束，正在显示新标注。");
       annotations.value = newAnnotations;
       drawAnnotations();
-      isViewSwitching.value = false; // 隐藏蒙层
+      isViewSwitching.value = false;
     }, delayTime);
     
   } catch (error) {
     console.error(`切换到视角 ${viewId} 失败:`, error);
     videoStatus.value = `视角切换失败: ${error.message}`;
-    isViewSwitching.value = false; // 出错时也要隐藏蒙层
+    isViewSwitching.value = false;
   } finally {
     isLoading.value = false;
   }
 };
 
-// --- 用于详情弹出框的鼠标交互 ---
-/**
- * 使用射线投射算法检查一个点是否在多边形内部。
- * @param {{x: number, y: number}} point 鼠标位置。
- * @param {Array<{x: number, y: number}>} polygon 标注图形的顶点数组。
- * @returns {boolean} 如果点在多边形内，则返回true。
- */
 function isPointInPolygon(point, polygon) {
     let isInside = false;
     const x = point.x, y = point.y;
@@ -715,7 +600,6 @@ const handleCanvasMouseMove = (e) => {
   const rect = annotationCanvas.value.getBoundingClientRect();
   const mousePos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
-  // --- 悬停检测也需要使用缩放后的坐标 ---
   const currentCanvasWidth = annotationCanvas.value.width;
   const currentCanvasHeight = annotationCanvas.value.height;
 
@@ -724,7 +608,6 @@ const handleCanvasMouseMove = (e) => {
       const scaleX = currentCanvasWidth / anno.imageWidth;
       const scaleY = currentCanvasHeight / anno.imageHeight;
 
-      // 将原始坐标转换为当前画布坐标以进行比较
       const scaledPolygon = anno.coordinates.map(p => ({ x: p.x * scaleX, y: p.y * scaleY }));
       return isPointInPolygon(mousePos, scaledPolygon);
   });
@@ -748,7 +631,6 @@ const handleCanvasMouseMove = (e) => {
   font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* --- 用于容纳播放器的视频容器 --- */
 .video-container {
     position: absolute;
     top: 0;
@@ -758,26 +640,23 @@ const handleCanvasMouseMove = (e) => {
     z-index: 1;
 }
 
-/* --- 让 Video.js 自己处理尺寸 --- */
 .video-container :deep(.video-js) {
     width: 100%;
     height: 100%;
 }
 
-/* video.js 内部的 video 元素拉伸填充 */
 .video-container :deep(.video-js .vjs-tech) {
   object-fit: fill;
 }
 
 .video-container :deep(.video-js .vjs-control-bar) {
-  display: none; /* 隐藏 Video.js 的控制栏 */
+  display: none;
 }
 
 .annotation-canvas-layer {
   position: absolute; 
   top: 0; 
   left: 0;
-  /* 变更：尺寸现在由 initCanvas 处理，但要确保它在视频之上 */
   width: 100%; 
   height: 100%;
   z-index: 3;
@@ -800,7 +679,6 @@ const handleCanvasMouseMove = (e) => {
   position: relative; 
 }
 
-/* --- 头部 --- */
 .app-header {
   position: relative; height: 50px; width: 100%; color: #fff;
   background: linear-gradient( to right, 
@@ -844,7 +722,6 @@ const handleCanvasMouseMove = (e) => {
   box-shadow: 0 0 10px #00ff7f;
 }
 
-/* --- 抽屉式面板 --- */
 .drawer-container {
   position: absolute;
   top: 65px;
@@ -864,7 +741,7 @@ const handleCanvasMouseMove = (e) => {
   border-radius: 0 12px 12px 0;
   transform: translateX(-100%);
   transition: transform 0.4s ease-in-out;
-  overflow: visible; /* 关键：允许子元素(手柄)在外部显示 */
+  overflow: visible;
 }
 .drawer-panel.is-open {
   transform: translateX(0);
@@ -873,7 +750,7 @@ const handleCanvasMouseMove = (e) => {
 .drawer-handle {
   position: absolute;
   top: 0;
-  left: 100%; /* 关键：定位在父元素(面板)的右侧 */
+  left: 100%;
   width: 35px;
   height: 100%; 
   background-color: rgba(0, 191, 255, 0.8);
@@ -888,14 +765,13 @@ const handleCanvasMouseMove = (e) => {
   font-size: 1rem;
   line-height: 1.5;
   text-orientation: mixed;
-  white-space: nowrap; /* 防止文字换行 */
+  white-space: nowrap;
   transition: background-color 0.3s;
 }
 .drawer-container:hover {
   background-color: rgba(0, 191, 255, 1);
 }
 
-/* --- 顶部右侧控件 --- */
 .top-controls-container {
   position: absolute; 
   top: 65px; 
@@ -942,7 +818,6 @@ const handleCanvasMouseMove = (e) => {
   transform: scale(1.05);
 }
 
-/* 用于禁用状态的按钮样式 */
 .control-btn:disabled {
   background-color: rgba(50, 60, 80, 0.5);
   border-color: rgba(100, 110, 130, 0.5);
@@ -955,7 +830,6 @@ const handleCanvasMouseMove = (e) => {
   transform: none;
 }
 
-/* --- 详情弹出框 --- */
 .details-popup {
   position: absolute; 
   width: 250px; 
@@ -983,7 +857,6 @@ const handleCanvasMouseMove = (e) => {
   line-height: 1.5; 
 }
 
-/* --- 加载蒙层样式 --- */
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -991,7 +864,7 @@ const handleCanvasMouseMove = (e) => {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1000; /* 确保在所有元素之上 */
+  z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: center;

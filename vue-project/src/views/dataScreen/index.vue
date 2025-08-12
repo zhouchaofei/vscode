@@ -175,25 +175,20 @@ const allDataLoaded = ref(false);
 const router = useRouter();
 const dataScreenRef = ref<HTMLElement | null>(null);
 
-// Added function to handle video playback button click
 const openVideoPlayback = () => {
   const url = `/videoplayback`;
   window.open(url, '_blank');
 };
 
-// ======================= 工程完成度数据获取逻辑 =======================
-// 用于存储图表数据的响应式变量，初始为空数组
+// 存储图表数据
 const constructionData = ref<any[]>([]);
 
-// 默认选中的地点
 const selectedLocation = ref('yn');
-// 加载状态
 const loading = ref(false);
 
-// 定义获取数据的函数
 const fetchData = async () => {
   loading.value = true;
-  constructionData.value = []; // 清空旧数据
+  constructionData.value = [];
   try {
     const data_type = 'schedule'
     const response = await fetch(`http://59.110.65.210:8081/data?location=${selectedLocation.value}&data_type=${data_type}`);
@@ -204,21 +199,16 @@ const fetchData = async () => {
     constructionData.value = data;
   } catch (error) {
     console.error("获取数据失败:", error);
-    // 在这里可以添加一些用户友好的错误提示
   } finally {
     loading.value = false;
   }
 };
 
-// 监听 selectedLocation 的变化，并在变化时重新获取数据
 watch(selectedLocation, () => {
   fetchData();
 });
-// ========================================================
 
-// ======================= 右侧模块数据获取 =======================
 const safetyWarnings = ref<any[]>([]);
-
 const delayWarnings = ref<any[]>([]);
 
 const fetchSafetyWarnings = async () => {
@@ -243,10 +233,8 @@ const fetchDelayWarnings = async () => {
   }
 };
 
-// ======================= 施工进度查询逻辑 =======================
-// Updated mock data for the construction progress table
-const progressData = ref<any[]>([]);
 
+const progressData = ref<any[]>([]);
 const progressFilterMapping = {
   '永年': {
     '桥台': {
@@ -547,8 +535,6 @@ const progressFilterMapping = {
     }
   }
 };
-
-
 const progressFilters = ref({
   location: '永年',
   structure: '匝道',
@@ -575,23 +561,18 @@ const fetchProgressData = async () => {
       const textData = await response.text();
       let data;
       try {
-        // 尝试解析JSON，如果textData是空字符串""，JSON.parse会报错
         data = JSON.parse(textData);
       } catch (e) {
-        // 如果解析失败（例如，响应是空字符串或无效JSON），将data置为null
         data = null;
       }
 
-      // 检查解析后的data是否为数组
       if (Array.isArray(data)) {
-        // 如果是数组，正常处理
         progressData.value = data.map((item: any) => ({
           ...item,
           location: location,
           structure: structure + '-' + model,
         }));
       } else {
-        // 如果不是数组（包括为null或解析出非数组值的情况），显示“未开工”
         progressData.value = [{
           location: location,
           structure: structure + '-' + model,
@@ -637,13 +618,10 @@ watch(() => progressFilters.value.structure, (newStructure, oldStructure) => {
 watch(progressFilters, () => {
   fetchProgressData();
 }, { deep: true });
-// ===================================================================
 
-// ======================= 生命周期钩子 =======================
+
 onMounted(async () => {
-  // Initial data fetch is now sequential to prevent backend crash
   try {
-    // 初始时不渲染图表
     allDataLoaded.value = false; 
     console.log("Fetching data sequentially...");
 
@@ -663,16 +641,9 @@ onMounted(async () => {
   } catch (error) {
     console.error("An error occurred during sequential data fetching:", error);
   } finally {
-    // 无论成功或失败，最后都标记为加载完成，以渲染DOM
     allDataLoaded.value = true; 
     console.log("All data fetching routines completed. Rendering components.");
   }
-  // 页面加载时获取默认数据
-  // Initial data fetch
-  // fetchData();
-  // fetchProgressData();
-  // fetchSafetyWarnings();
-  // fetchDelayWarnings();
   if (dataScreenRef.value) {
     dataScreenRef.value.style.transform = `scale(${getScale()}) translate(-50%, -50%)`;
     dataScreenRef.value.style.width = `1920px`;
@@ -681,21 +652,18 @@ onMounted(async () => {
   window.addEventListener("resize", resize);
 });
 
-// 设置响应式
 const resize = () => {
   if (dataScreenRef.value) {
     dataScreenRef.value.style.transform = `scale(${getScale()}) translate(-50%, -50%)`;
   }
 };
 
-// 根据浏览器大小推断缩放比例
 const getScale = (width = 1920, height = 1080) => {
   let ww = window.innerWidth / width;
   let wh = window.innerHeight / height;
   return ww < wh ? ww : wh;
 };
 
-// 获取当前时间
 let timer: NodeJS.Timer | null = null;
 let time = ref<string>(dayjs().format("YYYY年MM月DD HH:mm:ss"));
 timer = setInterval(() => {
@@ -710,18 +678,11 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 @use "./index.scss";
 
-// ======================= 筛选框样式 =======================
 .lf-header {
-  // position: absolute;
-  // top: 0;
-  // left: 0;
-  // right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  // padding-right: 20px;
-  padding: 0 30px 0 0; // 增加右边距
-  // height: 40px; // Explicit height
+  padding: 0 30px 0 0;
 }
 
 .location-filter select,
@@ -734,20 +695,9 @@ onBeforeUnmount(() => {
   font-size: 15px;
   outline: none;
   cursor: pointer;
-  transition: all 0.3s ease; // 添加过渡
+  transition: all 0.3s ease;
   margin-left: 10px;
 }
-// .location-filter select {
-//   background-color: rgba(0, 0, 0, 0.5); // 背景更深
-//   color: #e0e0e0; // 柔和字体色
-//   border: 1px solid #05e8fe;
-//   border-radius: 5px; // 更圆角
-//   padding: 6px 12px; // 更大内边距
-//   font-size: 16px; // 更大字体
-//   outline: none;
-//   cursor: pointer;
-//   transition: all 0.3s ease; // 添加过渡
-// }
 
 .location-filter select:hover,
 .filters select:hover {
@@ -761,34 +711,23 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
-// .dataScreen-main-title {
-//   position: static; /* 覆盖原来的 absolute 定位 */
-// }
-
 .loading-text {
   color: #fff;
   width: 100%;
   text-align: center;
   margin-top: 50px;
 }
-// ==========================================================
 
-// Table styles
 .custom-table-container {
   height: 100%;
   overflow-y: auto;
   
   &.table-20-rows {
-    // 20 rows * 30px/row + 30px header
     max-height: calc(20 * 30px + 30px);
-    // height: calc(20 * 32px + 40px);
-    // overflow-y: auto;
   }
 
   &.table-6-rows {
     max-height: calc(6 * 30px + 30px);
-    // height: calc(6 * 32px + 40px);
-    // overflow-y: auto;
   }
 }
 
@@ -797,32 +736,26 @@ onBeforeUnmount(() => {
   border-collapse: collapse;
   color: #fff;
   font-size: 13px;
-  // table-layout: fixed; /* Added for consistent column widths */
   
   thead tr {
-    // background-color: rgba(5, 232, 254, 0.2);
-    background-color: transparent; // Ensure background is not semi-transparent
+    background-color: transparent;
     position: sticky;
     top: 0;
     z-index: 1;
   }
   
   th {
-    background: #0d2a42; // Solid background for header cells
+    background: #0d2a42;
     padding: 8px;
     text-align: center;
     border-bottom: 1px solid rgba(5, 232, 254, 0.1);
-    white-space: nowrap; /* Prevent header text wrapping */
+    white-space: nowrap;
   }
 
   td {
     padding: 8px;
     text-align: center;
     border-bottom: 1px solid rgba(5, 232, 254, 0.1);
-    /* Added for text overflow */
-    // white-space: nowrap;
-    // overflow: hidden;
-    // text-overflow: ellipsis;
   }
   
   tbody tr:nth-child(odd) {
@@ -838,7 +771,6 @@ onBeforeUnmount(() => {
   }
 }
 
-/* Custom Scrollbar */
 .custom-table-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -855,16 +787,10 @@ onBeforeUnmount(() => {
 }
 
 .cb-header {
-  // position: absolute;
-  // top: 1px;
-  // left: 0;
-  // right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 10px 0 0;
-  // padding: 0 10px;
-  // height: 45px; // Explicit height
 }
 
 .filters {
@@ -872,25 +798,14 @@ onBeforeUnmount(() => {
   gap: 5px;
 }
 
-/* ======================= 全局加载动画样式 (居中于屏幕) ======================= */
 .loading-container {
-  /* 关键改动：使用 fixed 定位，脱离文档流，相对于浏览器窗口定位 */
   position: fixed;
   top: 0;
   left: 0;
-  
-  /* 关键改动：宽度和高度使用视口单位(vw/vh)，确保100%覆盖整个屏幕 */
   width: 100vw;
   height: 100vh;
-
-  /* 新增：增加一个半透明的深色背景蒙层，与您的UI风格匹配 */
-  /* #0d2a42 是您表格th的背景色，这里加了透明度 */
   background-color: rgba(13, 42, 66, 0.8);
-  
-  /* 新增：设置一个非常高的 z-index，确保加载层能覆盖在页面所有其他元素的上方 */
   z-index: 9999;
-
-  /* 以下部分保持不变，用于将其中的“圈圈”和文字居中 */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -899,26 +814,21 @@ onBeforeUnmount(() => {
 }
 
 .loading-spinner {
-  width: 60px; /* 圈圈的宽度 */
-  height: 60px; /* 圈圈的高度 */
-  
-  /* 使用边框来画圆环 */
-  border-radius: 50%; /* 设置为圆形 */
-  border: 8px solid rgba(255, 255, 255, 0.2); /* 圆环的“轨道”颜色，带透明度 */
-  border-top-color: #05e8fe; /* 圆环“头部”的颜色，也就是旋转时的主体颜色 */
-  
-  /* 应用下面定义的旋转动画 */
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 8px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #05e8fe;
   animation: spin 1s linear infinite;
 }
 
 .loading-text {
-  margin-top: 20px; /* 与圈圈的间距 */
-  font-size: 20px; /* 文字大小 */
+  margin-top: 20px;
+  font-size: 20px;
   font-weight: 500;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* 给文字一点阴影，使其更清晰 */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-/* 定义名为 "spin" 的旋转动画 */
 @keyframes spin {
   from {
     transform: rotate(0deg); /* 从 0 度开始 */

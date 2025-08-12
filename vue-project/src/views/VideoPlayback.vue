@@ -72,7 +72,7 @@ export default {
       videoList: [],
       currentVideoSource: '',
       isLoading: false,
-      searched: false, // 用于跟踪是否已经执行过搜索
+      searched: false,
     }
   },
   methods: {
@@ -81,7 +81,6 @@ export default {
       return today.toISOString().substr(0, 10);
     },
     
-    // --- 关键函数：搜索视频 ---
     async searchVideos() {
       if (!this.selectedCamera || !this.selectedDate) {
         alert('请选择摄像头和日期');
@@ -89,8 +88,8 @@ export default {
       }
       this.isLoading = true;
       this.searched = true;
-      this.videoList = []; // 清空上一次的列表
-      this.currentVideoSource = ''; // 清空播放器
+      this.videoList = [];
+      this.currentVideoSource = '';
 
       const dateStr = this.selectedDate.replace(/-/g, '');
       
@@ -113,63 +112,44 @@ export default {
       }
     },
 
-    /**
-     * !!! 已更新：此函数现在调用真实的后端API !!!
-     * @param {string} camera - 摄像头ID, e.g., 'yn'
-     * @param {string} date - 日期字符串, e.g., '20250803'
-     * @returns {Promise<string[]>} - 返回一个包含文件名的数组
-     */
     async fetchVideoListFromServer(camera, date) {
-      // 1. 构建完整的API URL
       const apiUrl = `http://59.110.65.210:8081/videosData?location=${camera}&date=${date}`;
       console.log(`正在从API获取视频列表: ${apiUrl}`);
 
       try {
-        // 2. 使用 fetch 发送网络请求
         const response = await fetch(apiUrl);
 
-        // 3. 检查请求是否成功 (HTTP状态码 200-299)
         if (!response.ok) {
-          // 如果不成功，抛出错误，外层的catch会捕获到
           throw new Error(`网络请求失败，状态码: ${response.status}`);
         }
 
-        // 4. 将返回的 body 解析为 JSON 格式
-        //    我们假设API会返回一个文件名的数组，例如: ["file1.mp4", "file2.mp4"]
         const fileNames = await response.json();
         return fileNames;
 
       } catch (error) {
-        // 5. 如果发生任何错误（网络问题、服务器崩溃等），在控制台打印并向上抛出
         console.error("调用视频列表API时出错:", error);
-        throw error; // 将错误抛出，让调用此函数的地方（searchVideos方法）可以捕获并处理
+        throw error;
       }
     },
 
-    // --- 点击列表项时，更新播放器源 ---
     async selectVideo(video) {
       this.currentVideoSource = video.src;
       try {
-        // this.$nextTick 确保Vue已经根据新的currentVideoSource更新了DOM
         await this.$nextTick(); 
         
-        // 现在可以安全地访问更新后的 videoPlayer 元素并播放它
         if (this.$refs.videoPlayer) {
-          // .play() 方法会返回一个Promise，我们await它
           await this.$refs.videoPlayer.play();
         }
       } catch (error) {
-        // 如果自动播放失败（例如被浏览器策略阻止），会在控制台打印警告
         console.warn("视频自动播放失败，这可能是浏览器策略导致的。用户需要手动点击播放。", error);
       }
     },
 
-    // --- 从长文件名中提取并格式化时间 ---
     formatTimeFromFilename(fileName) {
       const parts = fileName.split('-');
       if (parts.length >= 7) {
-        const startTimeStr = parts[4]; // e.g., "20250803055953"
-        const endTimeStr = parts[5];   // e.g., "20250803062949"
+        const startTimeStr = parts[4];
+        const endTimeStr = parts[5];
         
         const format = (s) => `${s.substr(8,2)}:${s.substr(10,2)}:${s.substr(12,2)}`;
 
@@ -250,7 +230,7 @@ export default {
   flex: 1;
   display: flex;
   gap: 20px;
-  overflow: hidden; /* 防止子元素溢出 */
+  overflow: hidden;
 }
 
 .video-list-panel {
@@ -260,7 +240,7 @@ export default {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* 让列表内容可滚动 */
+  overflow-y: auto;
   flex-shrink: 0;
 }
 

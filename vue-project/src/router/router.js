@@ -3,11 +3,6 @@ import Annotation from '../views/Annotation.vue'
 import VideoPlayback from '../views/VideoPlayback.vue'
 
 const routes = [
-  // {
-  //   path: '/',
-  //   name: 'DataScreen',
-  //   component: DataScreen
-  // },
   {
     path: '/annotation',
     name: 'Annotation',
