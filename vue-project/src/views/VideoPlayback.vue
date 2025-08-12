@@ -42,7 +42,6 @@
           </li>
         </ul>
       </div>
-
       <div class="video-player-area">
         <div v-if="!currentVideoSource" class="player-placeholder">
           请从左侧列表选择一个视频进行播放
@@ -52,7 +51,8 @@
           :key="currentVideoSource"
           ref="videoPlayer"
           controls
-          muted class="video-element"
+          muted 
+          class="video-element"
         >
           <source :src="currentVideoSource" type="video/mp4">
           您的浏览器不支持视频播放。
@@ -62,106 +62,95 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'VideoPlayback',
-  data() {
-    return {
-      selectedCamera: 'yn',
-      selectedDate: this.getTodayDateString(),
-      videoList: [],
-      currentVideoSource: '',
-      isLoading: false,
-      searched: false,
-    }
-  },
-  methods: {
-    getTodayDateString() {
-      const today = new Date();
-      return today.toISOString().substr(0, 10);
-    },
-    
-    async searchVideos() {
-      if (!this.selectedCamera || !this.selectedDate) {
-        alert('请选择摄像头和日期');
-        return;
-      }
-      this.isLoading = true;
-      this.searched = true;
-      this.videoList = [];
-      this.currentVideoSource = '';
+<script setup>
+import { ref, nextTick } from 'vue';
 
-      const dateStr = this.selectedDate.replace(/-/g, '');
-      
-      try {
-        const fileNames = await this.fetchVideoListFromServer(this.selectedCamera, dateStr);
-        
-        this.videoList = fileNames.map(fileName => {
-          return {
-            fileName: fileName,
-            src: `/videos/${dateStr}/${this.selectedCamera}/${fileName}`,
-            displayTime: this.formatTimeFromFilename(fileName)
-          };
-        });
+// --- 数据状态定义 ---
+const selectedCamera = ref('yn');
+const selectedDate = ref(getTodayDateString());
+const videoList = ref([]);
+const currentVideoSource = ref('');
+const isLoading = ref(false);
+const searched = ref(false);
+const videoPlayer = ref(null);
 
-      } catch (error) {
-        console.error("获取视频列表失败:", error);
-        alert("获取视频列表失败，请检查网络或联系管理员。");
-      } finally {
-        this.isLoading = false;
-      }
-    },
+// --- 方法定义 ---
+function getTodayDateString() {
+  const today = new Date();
+  return today.toISOString().substr(0, 10);
+}
 
-    async fetchVideoListFromServer(camera, date) {
-      const apiUrl = `http://59.110.65.210:8081/videosData?location=${camera}&date=${date}`;
-      console.log(`正在从API获取视频列表: ${apiUrl}`);
-
-      try {
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) {
-          throw new Error(`网络请求失败，状态码: ${response.status}`);
-        }
-
-        const fileNames = await response.json();
-        return fileNames;
-
-      } catch (error) {
-        console.error("调用视频列表API时出错:", error);
-        throw error;
-      }
-    },
-
-    async selectVideo(video) {
-      this.currentVideoSource = video.src;
-      try {
-        await this.$nextTick(); 
-        
-        if (this.$refs.videoPlayer) {
-          await this.$refs.videoPlayer.play();
-        }
-      } catch (error) {
-        console.warn("视频自动播放失败，这可能是浏览器策略导致的。用户需要手动点击播放。", error);
-      }
-    },
-
-    formatTimeFromFilename(fileName) {
-      const parts = fileName.split('-');
-      if (parts.length >= 7) {
-        const startTimeStr = parts[4];
-        const endTimeStr = parts[5];
-        
-        const format = (s) => `${s.substr(8,2)}:${s.substr(10,2)}:${s.substr(12,2)}`;
-
-        return `${format(startTimeStr)} - ${format(endTimeStr)}`;
-      }
-      return '未知时间';
-    }
+async function searchVideos() {
+  if (!selectedCamera.value || !selectedDate.value) {
+    alert('请选择摄像头和日期');
+    return;
   }
+  isLoading.value = true;
+  searched.value = true;
+  videoList.value = [];
+  currentVideoSource.value = '';
+
+  const dateStr = selectedDate.value.replace(/-/g, '');
+  
+  try {
+    const fileNames = await fetchVideoListFromServer(selectedCamera.value, dateStr);
+    
+    videoList.value = fileNames.map(fileName => ({
+      fileName: fileName,
+      src: `/videos/${dateStr}/${selectedCamera.value}/${fileName}`,
+      displayTime: formatTimeFromFilename(fileName)
+    }));
+
+  } catch (error) {
+    console.error("获取视频列表失败:", error);
+    alert("获取视频列表失败，请检查网络或联系管理员。");
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+async function fetchVideoListFromServer(camera, date) {
+  const apiUrl = `http://59.110.65.210:8081/videosData?location=${camera}&date=${date}`;
+  console.log(`正在从API获取视频列表: ${apiUrl}`);
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`网络请求失败，状态码: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("调用视频列表API时出错:", error);
+    throw error;
+  }
+}
+
+async function selectVideo(video) {
+  currentVideoSource.value = video.src;
+  try {
+    await nextTick();
+    if (videoPlayer.value) {
+      await videoPlayer.value.play();
+    }
+  } catch (error) {
+    console.warn("视频自动播放失败，这可能是浏览器策略导致的。用户需要手动点击播放。", error);
+  }
+}
+
+function formatTimeFromFilename(fileName) {
+  const parts = fileName.split('-');
+  // **BUG修正**: 根据文件名结构，时间戳在索引5和6的位置
+  if (parts.length >= 7) {
+    const startTimeStr = parts[5];
+    const endTimeStr = parts[6];
+    const format = (s) => s ? `${s.substr(8,2)}:${s.substr(10,2)}:${s.substr(12,2)}` : '';
+    return `${format(startTimeStr)} - ${format(endTimeStr)}`;
+  }
+  return '未知时间';
 }
 </script>
 
 <style scoped>
+/* 样式部分无需改动 */
 .video-playback-container {
   width: 100%;
   height: 100vh;
