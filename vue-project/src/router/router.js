@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Annotation from '../components/Annotation.vue'
-import DataScreen from '../views/DataScreen.vue'
+import Annotation from '../views/Annotation.vue'
 import VideoPlayback from '../views/VideoPlayback.vue'
 
 const routes = [
