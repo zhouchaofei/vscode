@@ -75,14 +75,19 @@
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useRoute } from 'vue-router';
 
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
+// import videojs from 'video.js';
+// import 'video.js/dist/video-js.css';
+import EZUIKit from 'ezuikit-js';
 
 const cameras = ref({
-  yn: { id: 'yn', name: '永年', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010516991327760034' },
-  fx_n: { id: 'fx_n', name: '肥乡北', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010084991327588111' },
-  fx_s: { id: 'fx_s', name: '肥乡南', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33011012991327147072' },
-  fx_lc: { id: 'fx_lc', name: '肥乡梁场', url: '', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
+  // yn: { id: 'yn', name: '永年', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010516991327760034' },
+  // fx_n: { id: 'fx_n', name: '肥乡北', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33010084991327588111' },
+  // fx_s: { id: 'fx_s', name: '肥乡南', url: '', viewCount: 3, deviceSerial: '33011063992677425735:33011012991327147072' },
+  // fx_lc: { id: 'fx_lc', name: '肥乡梁场', url: '', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
+   yn: { id: 'yn', name: '永年', viewCount: 3, deviceSerial: '33011063992677425735:33010516991327760034' },
+   fx_n: { id: 'fx_n', name: '肥乡北', viewCount: 3, deviceSerial: '33011063992677425735:33010084991327588111' },
+   fx_s: { id: 'fx_s', name: '肥乡南', viewCount: 3, deviceSerial: '33011063992677425735:33011012991327147072' },
+   fx_lc: { id: 'fx_lc', name: '肥乡梁场', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
 });
 
 const typeColors = {
@@ -132,9 +137,13 @@ const isPlayerReady = ref(false);
 const annotationDelayTimer = ref(null);
 const overlayTimer = ref(null);
 
-const maxRetries = 30;
-const retryCounter = ref(0);
-const retryDelay = 5000;
+// const maxRetries = 30;
+// const retryCounter = ref(0);
+// const retryDelay = 5000;
+
+const switchViewMaxRetries = 3;
+const switchViewRetryCounter = ref(0);
+const switchViewRetryDelay = 3000; // 3秒后重试
 
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
 
@@ -190,14 +199,15 @@ onMounted(async () => {
   try {
     isLoading.value = true;
     
-    await fetchAllCameraUrls(accessToken.value);
+    // await fetchAllCameraUrls(accessToken.value);
     
-    const initialCamera = cameras.value[currentCameraId.value];
-    if (!initialCamera || !initialCamera.url) {
-        throw new Error(`无法获取摄像头 ${initialCamera.name} 的播放地址，请刷新页面。`);
-    }
+    // const initialCamera = cameras.value[currentCameraId.value];
+    // if (!initialCamera || !initialCamera.url) {
+    //     throw new Error(`无法获取摄像头 ${initialCamera.name} 的播放地址，请刷新页面。`);
+    // }
 
-    await initPlayer(initialCamera.url);
+    // await initPlayer(initialCamera.url);
+    await initPlayer();
     
     // console.log("播放器初始化完成，加载默认视角数据。");
     // await switchView(currentViewId.value, true);
@@ -212,7 +222,8 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (player.value) {
-    player.value.dispose();
+    // player.value.dispose();
+    player.value.destroy();
   }
   if (annotationDelayTimer.value) {
     clearTimeout(annotationDelayTimer.value);
@@ -240,164 +251,224 @@ const handleGlobalClick = (event) => {
   }
 };
 
-const fetchAllCameraUrls = async (token) => {
-    console.log("Annotation page fetching camera URLs...");
-    const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
+// const fetchAllCameraUrls = async (token) => {
+//     console.log("Annotation page fetching camera URLs...");
+//     const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
     
-    const promises = Object.values(cameras.value).map(async (camera) => {
-      const params = new URLSearchParams();
-      params.append('accessToken', token);
-      params.append('deviceSerial', camera.deviceSerial);
-      params.append('channelNo', 1);
-      params.append('protocol', 2);
+//     const promises = Object.values(cameras.value).map(async (camera) => {
+//       const params = new URLSearchParams();
+//       params.append('accessToken', token);
+//       params.append('deviceSerial', camera.deviceSerial);
+//       params.append('channelNo', 1);
+//       params.append('protocol', 2);
 
-      try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params
-          });
-          const data = await response.json();
-          if (data.code === '200' && data.data) {
-            camera.url = data.data.url;
-          } else {
-            console.error(`Failed to get URL for ${camera.name}: ${data.msg}`);
-          }
-      } catch (error) {
-          console.error(`Network error fetching URL for ${camera.name}:`, error);
-      }
-    });
+//       try {
+//           const response = await fetch(url, {
+//             method: 'POST',
+//             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+//             body: params
+//           });
+//           const data = await response.json();
+//           if (data.code === '200' && data.data) {
+//             camera.url = data.data.url;
+//           } else {
+//             console.error(`Failed to get URL for ${camera.name}: ${data.msg}`);
+//           }
+//       } catch (error) {
+//           console.error(`Network error fetching URL for ${camera.name}:`, error);
+//       }
+//     });
 
-    await Promise.all(promises);
-    console.log("All camera URL fetch requests completed for annotation page.");
-};
+//     await Promise.all(promises);
+//     console.log("All camera URL fetch requests completed for annotation page.");
+// };
 
-const handlePlaybackErrorAndRetry = async () => {
-    try {
-        console.log("Re-fetching camera URL for recovery...");
-        videoStatus.value = "正在重新获取播放地址...";
+// const handlePlaybackErrorAndRetry = async () => {
+//     try {
+//         console.log("Re-fetching camera URL for recovery...");
+//         videoStatus.value = "正在重新获取播放地址...";
 
-        const cameraToRetry = cameras.value[currentCameraId.value];
-        const token = accessToken.value;
-        const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
-        const params = new URLSearchParams();
-        params.append('accessToken', token);
-        params.append('deviceSerial', cameraToRetry.deviceSerial);
-        params.append('channelNo', 1);
-        params.append('protocol', 2);
+//         const cameraToRetry = cameras.value[currentCameraId.value];
+//         const token = accessToken.value;
+//         const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
+//         const params = new URLSearchParams();
+//         params.append('accessToken', token);
+//         params.append('deviceSerial', cameraToRetry.deviceSerial);
+//         params.append('channelNo', 1);
+//         params.append('protocol', 2);
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params
-        });
-        const data = await response.json();
+//         const response = await fetch(url, {
+//             method: 'POST',
+//             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+//             body: params
+//         });
+//         const data = await response.json();
 
-        if (data.code === '200' && data.data && data.data.url) {
-            const newUrl = data.data.url;
-            console.log("Successfully fetched new URL. Re-initializing player.");
-            cameras.value[currentCameraId.value].url = newUrl;
-            await initPlayer(newUrl);
-            retryCounter.value = 0;
-        } else {
-            throw new Error(`Failed to get new URL: ${data.msg}`);
-        }
-    } catch (error) {
-        console.error("Retry attempt failed:", error);
-        videoStatus.value = "自动重试失败。请手动刷新。";
+//         if (data.code === '200' && data.data && data.data.url) {
+//             const newUrl = data.data.url;
+//             console.log("Successfully fetched new URL. Re-initializing player.");
+//             cameras.value[currentCameraId.value].url = newUrl;
+//             await initPlayer(newUrl);
+//             retryCounter.value = 0;
+//         } else {
+//             throw new Error(`Failed to get new URL: ${data.msg}`);
+//         }
+//     } catch (error) {
+//         console.error("Retry attempt failed:", error);
+//         videoStatus.value = "自动重试失败。请手动刷新。";
+//     }
+// };
+
+// const initPlayer = (url) => {
+//   return new Promise((resolve, reject) => {
+//     isPlayerReady.value = false;
+//     videoStatus.value = "正在初始化播放器...";
+    
+//     if (player.value) {
+//       player.value.dispose();
+//       player.value = null;
+//     }
+    
+//     nextTick(() => {
+//       if (!videoContainer.value) {
+//         return reject(new Error("Video container not found in DOM"));
+//       }
+      
+//       const videoElement = document.createElement('video');
+//       videoElement.className = 'video-js vjs-default-skin';
+//       videoElement.id = 'video-player-' + Date.now(); // 唯一ID
+      
+//       videoContainer.value.innerHTML = '';
+//       videoContainer.value.appendChild(videoElement);
+      
+//       try {
+//         const options = {
+//           autoplay: true,
+//           muted: true,
+//           controls: true,
+//           preload: 'auto',
+//           responsive: true,
+//           sources: [{ 
+//             src: url, 
+//             type: 'application/x-mpegURL' 
+//           }]
+//         };
+
+//         player.value = videojs(videoElement, options, function() {
+//           console.log('Video.js 播放器已创建并准备就绪');
+//           this.on('playing', () => { 
+//             isVideoPlaying.value = true; 
+//             videoStatus.value = "视频流播放中"; 
+//             retryCounter.value = 0;
+//             // 视频成功播放，加载当前视角的标注
+//             console.log("视频开始播放，准备加载标注...");
+//             switchView(currentViewId.value, true);
+//           });
+          
+//           this.on('error', (e) => {
+//             const error = this.error() || e;
+//             isVideoPlaying.value = false;
+//             console.error('Video.js Error:', error);
+
+//             // 视频播放出错，清除所有标注
+//             annotations.value = [];
+//             drawAnnotations();
+
+//             if (error && error.code === 3 || error.code === 4 && retryCounter.value < maxRetries) {
+//                 retryCounter.value++;
+//                 videoStatus.value = `视频流中断，正在进行第 ${retryCounter.value} 次自动重试...`;
+//                 console.log(`Playback error detected. Attempting retry ${retryCounter.value}/${maxRetries}...`);
+//                 setTimeout(handlePlaybackErrorAndRetry, retryDelay);
+//             } else if (retryCounter.value >= maxRetries) {
+//                 videoStatus.value = "自动重试失败，请手动刷新或切换摄像头。";
+//                 console.error("Maximum retries reached. Aborting.");
+//             } else {
+//                 videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
+//             }
+//           });
+          
+//           this.on('ended', () => { 
+//             isVideoPlaying.value = false; 
+//             videoStatus.value = '播放结束'; 
+//           });
+          
+//           this.on('pause', () => { 
+//             isVideoPlaying.value = false; 
+//             videoStatus.value = '已暂停'; 
+//           });
+          
+//           this.play().catch(error => {
+//             console.warn("自动播放被浏览器阻止:", error);
+//           });
+          
+//           resolve();
+//         });
+//       } catch (error) {
+//         console.error("创建播放器实例失败:", error);
+//         reject(error);
+//       }
+//     });
+//   });
+// };
+
+const initPlayer = async () => {
+  isPlayerReady.value = false;
+  videoStatus.value = "正在初始化播放器...";
+
+  if (player.value) {
+    await player.value.destroy();
+    player.value = null;
+  }
+
+  // 等待DOM更新
+  await nextTick();
+
+  if (!videoContainer.value) {
+    console.error("Video container not found in DOM");
+    return;
+  }
+  // 为播放器创建一个唯一的容器ID
+  const playerContainerId = 'video-player-' + Date.now();
+  videoContainer.value.innerHTML = `<div id="${playerContainerId}" style="width: 100%; height: 100%;"></div>`;
+
+  const camera = currentCamera.value;
+  if (!camera || !camera.deviceSerial) {
+    videoStatus.value = "错误：找不到当前摄像头设备。";
+    return;
+  }
+
+  // 直接拼接 EZOPEN 协议地址
+  const ezopenURL = `ezopen://open.ys7.com/${camera.deviceSerial}/1.live`;
+
+  console.log(`Initializing EZUIKit player for URL: ${ezopenURL}`);
+
+  // 初始化 EZUIKit 播放器
+  player.value = new EZUIKit.EZUIKitPlayer({
+    id: playerContainerId,
+    accessToken: accessToken.value,
+    url: ezopenURL,
+    template: 'simple', // 使用极简模板
+    quality: 2,
+    autoplay: true,
+    muted: true,
+    audio: false,
+    handleSuccess: () => {
+      console.log("EZUIKit 播放成功");
+      isVideoPlaying.value = true;
+      videoStatus.value = "视频流播放中";
+      // 视频成功播放，加载当前视角的标注
+      switchView(currentViewId.value, true);
+    },
+    handleError: (e) => {
+      console.error("EZUIKit 播放错误:", e);
+      isVideoPlaying.value = false;
+      videoStatus.value = `播放错误: ${e.msg || '未知错误，请刷新'}`;
+      // 视频播放出错，清除所有标注
+      annotations.value = [];
+      drawAnnotations();
     }
-};
-
-const initPlayer = (url) => {
-  return new Promise((resolve, reject) => {
-    isPlayerReady.value = false;
-    videoStatus.value = "正在初始化播放器...";
-    
-    if (player.value) {
-      player.value.dispose();
-      player.value = null;
-    }
-    
-    nextTick(() => {
-      if (!videoContainer.value) {
-        return reject(new Error("Video container not found in DOM"));
-      }
-      
-      const videoElement = document.createElement('video');
-      videoElement.className = 'video-js vjs-default-skin';
-      videoElement.id = 'video-player-' + Date.now(); // 唯一ID
-      
-      videoContainer.value.innerHTML = '';
-      videoContainer.value.appendChild(videoElement);
-      
-      try {
-        const options = {
-          autoplay: true,
-          muted: true,
-          controls: true,
-          preload: 'auto',
-          responsive: true,
-          sources: [{ 
-            src: url, 
-            type: 'application/x-mpegURL' 
-          }]
-        };
-
-        player.value = videojs(videoElement, options, function() {
-          console.log('Video.js 播放器已创建并准备就绪');
-          this.on('playing', () => { 
-            isVideoPlaying.value = true; 
-            videoStatus.value = "视频流播放中"; 
-            retryCounter.value = 0;
-            // 视频成功播放，加载当前视角的标注
-            console.log("视频开始播放，准备加载标注...");
-            switchView(currentViewId.value, true);
-          });
-          
-          this.on('error', (e) => {
-            const error = this.error() || e;
-            isVideoPlaying.value = false;
-            console.error('Video.js Error:', error);
-
-            // 视频播放出错，清除所有标注
-            annotations.value = [];
-            drawAnnotations();
-
-            if (error && error.code === 3 || error.code === 4 && retryCounter.value < maxRetries) {
-                retryCounter.value++;
-                videoStatus.value = `视频流中断，正在进行第 ${retryCounter.value} 次自动重试...`;
-                console.log(`Playback error detected. Attempting retry ${retryCounter.value}/${maxRetries}...`);
-                setTimeout(handlePlaybackErrorAndRetry, retryDelay);
-            } else if (retryCounter.value >= maxRetries) {
-                videoStatus.value = "自动重试失败，请手动刷新或切换摄像头。";
-                console.error("Maximum retries reached. Aborting.");
-            } else {
-                videoStatus.value = `播放错误: ${error?.message || '未知错误'}`;
-            }
-          });
-          
-          this.on('ended', () => { 
-            isVideoPlaying.value = false; 
-            videoStatus.value = '播放结束'; 
-          });
-          
-          this.on('pause', () => { 
-            isVideoPlaying.value = false; 
-            videoStatus.value = '已暂停'; 
-          });
-          
-          this.play().catch(error => {
-            console.warn("自动播放被浏览器阻止:", error);
-          });
-          
-          resolve();
-        });
-      } catch (error) {
-        console.error("创建播放器实例失败:", error);
-        reject(error);
-      }
-    });
   });
+  isPlayerReady.value = true;
 };
 
 const initCanvas = () => {
@@ -506,12 +577,13 @@ const switchCamera = async (cameraId) => {
     
     videoStatus.value = "正在切换摄像头...";
 
-    const newCamera = cameras.value[cameraId];
-    if (!newCamera.url) {
-        throw new Error(`URL for ${newCamera.name} is not available.`);
-    }
+    // const newCamera = cameras.value[cameraId];
+    // if (!newCamera.url) {
+    //     throw new Error(`URL for ${newCamera.name} is not available.`);
+    // }
 
-    await initPlayer(newCamera.url);
+    // await initPlayer(newCamera.url);
+    await initPlayer();
     
     await switchView('view1', true);
     
@@ -524,70 +596,147 @@ const switchCamera = async (cameraId) => {
   }
 };
 
-const switchView = async (viewId, forceExecution = false) => {
-  if (isLoading.value && !forceExecution) {
-    console.warn("系统正在加载中，请稍后再试。");
-    return;
+const switchView = async (viewId, forceExecution = false, isRetry = false) => {
+  // 对于用户发起的新的切换请求，重置重试计数器
+  if (!isRetry) {
+    switchViewRetryCounter.value = 0;
   }
 
-  try {
-    if (!forceExecution) {
-      isLoading.value = true;
-    }
+   // 阻止在加载时重复点击
+   if (isLoading.value && !forceExecution) {
+     console.warn("系统正在加载中，请稍后再试。");
+     return;
+   }
 
-    isViewSwitching.value = true;
-    
-    console.log(`准备切换到视角: ${viewId}`);
-    currentViewId.value = viewId;
+   try {
+     // 仅在首次尝试时设置加载状态和UI
+     if (!isRetry) {
+       isLoading.value = true;
+       isViewSwitching.value = true;
 
-    if (annotationDelayTimer.value) {
-      clearTimeout(annotationDelayTimer.value);
-    }
-    if (overlayTimer.value) {
-      clearTimeout(overlayTimer.value);
-    }
+       console.log(`准备切换到视角: ${viewId}`);
+       currentViewId.value = viewId;
 
-    annotations.value = [];
-    drawAnnotations();
+       if (annotationDelayTimer.value) clearTimeout(annotationDelayTimer.value);
+       if (overlayTimer.value) clearTimeout(overlayTimer.value);
 
-    const indexMatch = viewId.match(/(\d+)$/);
-    if (!indexMatch) {
-      throw new Error(`无效的视角ID格式: ${viewId}`);
-    }
-    
-    const index = parseInt(indexMatch[1], 10);
-    const deviceSerial = currentCamera.value.deviceSerial;
-    const channelNo = 1;
-    const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken.value}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
+       annotations.value = [];
+       drawAnnotations();
+     }
 
-    const response = await fetch(apiUrl, { method: 'POST' });
-    const result = await response.json();
+     const indexMatch = viewId.match(/(\d+)$/);
+     if (!indexMatch) throw new Error(`无效的视角ID格式: ${viewId}`);
 
-    if (!response.ok || result.code !== '200') {
-      throw new Error(`API 错误: ${result.msg || '未知错误'}`);
-    }
+     const index = parseInt(indexMatch[1], 10);
+     const deviceSerial = currentCamera.value.deviceSerial;
+     const channelNo = 1;
+     const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken.value}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
 
-    console.log(`视角 ${viewId} 切换指令发送成功。`);
-    
-    const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
-    
-    const delayTime = 100;
+     const response = await fetch(apiUrl, { method: 'POST' });
+     const result = await response.json();
 
-    annotationDelayTimer.value = setTimeout(() => {
-      // console.log("延迟结束，正在显示新标注。");
-      annotations.value = newAnnotations;
-      drawAnnotations();
-      isViewSwitching.value = false;
-    }, delayTime);
-    
-  } catch (error) {
-    console.error(`切换到视角 ${viewId} 失败:`, error);
-    videoStatus.value = `视角切换失败: ${error.message}`;
-    isViewSwitching.value = false;
-  } finally {
-    isLoading.value = false;
-  }
+     if (!response.ok || result.code !== '200') {
+       throw new Error(`API 错误: ${result.msg || '未知错误'}`);
+     }
+
+     console.log(`视角 ${viewId} 切换指令发送成功。`);
+     switchViewRetryCounter.value = 0; // 成功后重置计数器
+
+     const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
+     const delayTime = 5000;
+
+     annotationDelayTimer.value = setTimeout(() => {
+       console.log("延迟结束，正在显示新标注。");
+       annotations.value = newAnnotations;
+       drawAnnotations();
+       isViewSwitching.value = false;
+       isLoading.value = false; // 整个流程成功结束，解除加载状态
+     }, delayTime);
+
+     videoStatus.value = `视频流播放中`;
+   } catch (error) {
+     console.error(`切换到视角 ${viewId} 失败 (尝试次数 ${switchViewRetryCounter.value + 1}):`, error);
+
+     if (switchViewRetryCounter.value < switchViewMaxRetries) {
+       switchViewRetryCounter.value++;
+       videoStatus.value = `视角切换失败，正在进行第 ${switchViewRetryCounter.value}/${switchViewMaxRetries} 次重试...`;
+       // 延迟后再次调用自身，并标记为重试
+       setTimeout(() => {
+         switchView(viewId, true, true);
+       }, switchViewRetryDelay);
+     } else {
+       // 达到最大重试次数后，彻底失败
+       videoStatus.value = `视角切换失败: ${error.message}`;
+       isViewSwitching.value = false;
+       isLoading.value = false; // 整个流程失败结束，解除加载状态
+     }
+   }
 };
+
+// const switchView = async (viewId, forceExecution = false) => {
+//   if (isLoading.value && !forceExecution) {
+//     console.warn("系统正在加载中，请稍后再试。");
+//     return;
+//   }
+
+//   try {
+//     if (!forceExecution) {
+//       isLoading.value = true;
+//     }
+
+//     isViewSwitching.value = true;
+    
+//     console.log(`准备切换到视角: ${viewId}`);
+//     currentViewId.value = viewId;
+
+//     if (annotationDelayTimer.value) {
+//       clearTimeout(annotationDelayTimer.value);
+//     }
+//     if (overlayTimer.value) {
+//       clearTimeout(overlayTimer.value);
+//     }
+
+//     annotations.value = [];
+//     drawAnnotations();
+
+//     const indexMatch = viewId.match(/(\d+)$/);
+//     if (!indexMatch) {
+//       throw new Error(`无效的视角ID格式: ${viewId}`);
+//     }
+    
+//     const index = parseInt(indexMatch[1], 10);
+//     const deviceSerial = currentCamera.value.deviceSerial;
+//     const channelNo = 1;
+//     const apiUrl = `https://open.ys7.com/api/lapp/device/preset/move?accessToken=${accessToken.value}&deviceSerial=${deviceSerial}&index=${index}&channelNo=${channelNo}`;
+
+//     const response = await fetch(apiUrl, { method: 'POST' });
+//     const result = await response.json();
+
+//     if (!response.ok || result.code !== '200') {
+//       throw new Error(`API 错误: ${result.msg || '未知错误'}`);
+//     }
+
+//     console.log(`视角 ${viewId} 切换指令发送成功。`);
+    
+//     const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
+    
+//     const delayTime = 4000;
+
+//     annotationDelayTimer.value = setTimeout(() => {
+//       // console.log("延迟结束，正在显示新标注。");
+//       annotations.value = newAnnotations;
+//       drawAnnotations();
+//       isViewSwitching.value = false;
+//     }, delayTime);
+//     videoStatus.value = `视频流播放中`;
+//   } catch (error) {
+//     console.error(`切换到视角 ${viewId} 失败:`, error);
+//     videoStatus.value = `视角切换失败: ${error.message}`;
+//     isViewSwitching.value = false;
+//   } finally {
+//     isLoading.value = false;
+//   }
+// };
 
 function isPointInPolygon(point, polygon) {
     let isInside = false;
@@ -647,7 +796,7 @@ const handleCanvasMouseMove = (e) => {
     z-index: 1;
 }
 
-.video-container :deep(.video-js) {
+/* .video-container :deep(.video-js) {
     width: 100%;
     height: 100%;
 }
@@ -658,7 +807,7 @@ const handleCanvasMouseMove = (e) => {
 
 .video-container :deep(.video-js .vjs-control-bar) {
   display: none;
-}
+} */
 
 .annotation-canvas-layer {
   position: absolute; 

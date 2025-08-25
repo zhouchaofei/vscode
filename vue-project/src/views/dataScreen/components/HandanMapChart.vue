@@ -40,9 +40,10 @@
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
 import * as echarts from "echarts";
 import handanMapJson from "../assets/yn_and_feixiang.json";
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
-import '@videojs/http-streaming';
+// import videojs from 'video.js';
+// import 'video.js/dist/video-js.css';
+// import '@videojs/http-streaming';
+import EZUIKit from "ezuikit-js";
 
 const chartRef = ref<HTMLDivElement>();
 let myChart: echarts.ECharts;
@@ -50,11 +51,12 @@ let resizeObserver: ResizeObserver;
 const popupRefs = ref<HTMLDivElement[]>([]);
 
 const activePopups = ref<any[]>([]);
-const players = new Map<string, videojs.Player>();
+// const players = new Map<string, videojs.Player>();
+const players = new Map<string, any>(); // Storing EZUIKit player instances
 const lines = ref<any[]>([]);
 
-const maxRetries = 30;
-const retryDelay = 5000;
+// const maxRetries = 30;
+// const retryDelay = 5000;
 
 const appKey = 'd4baaab8baf24baa9541f1bbe64b2200';
 const appSecret = 'f42fb82edaed28c57b2045d882f0208e';
@@ -201,30 +203,35 @@ const openAllPopups = async () => {
         top: `${pointInPixel[1]}px`,
         transform: getPopupTransform(camera.name),
       };
-      const popup = { camera, style, loading: true, retryCount: 0, errorMsg: '' };
+      // const popup = { camera, style, loading: true, retryCount: 0, errorMsg: '' };
+      const popup = { camera, style, loading: true, errorMsg: '' };
       activePopups.value.push(popup);
 
-      (async () => {
-        try {
-          const videoUrl = await fetchCameraUrl(token, camera);
+      // (async () => {
+      //   try {
+      //     const videoUrl = await fetchCameraUrl(token, camera);
           
-          const targetPopup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-          if (targetPopup) {
-            targetPopup.loading = false;
+      //     const targetPopup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
+      //     if (targetPopup) {
+      //       targetPopup.loading = false;
             
-            nextTick(() => {
-              initVideoPlayer(camera, videoUrl);
-            });
-          }
-        } catch (e: any) {
-          console.error(`无法加载 ${camera.name} 的视频:`, e);
-          const targetPopup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-          if (targetPopup) {
-            targetPopup.loading = false;
-            targetPopup.errorMsg = '加载失败';
-          }
-        }
-      })();
+      //       nextTick(() => {
+      //         initVideoPlayer(camera, videoUrl);
+      //       });
+      //     }
+      //   } catch (e: any) {
+      //     console.error(`无法加载 ${camera.name} 的视频:`, e);
+      //     const targetPopup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
+      //     if (targetPopup) {
+      //       targetPopup.loading = false;
+      //       targetPopup.errorMsg = '加载失败';
+      //     }
+      //   }
+      // })();
+      // The video player will handle its own loading state via callbacks
+      nextTick(() => {
+        initVideoPlayer(camera, token);
+      });
     }
 
   } catch (error) {
@@ -277,104 +284,151 @@ const getValidAccessToken = async () => {
   }
 };
 
-const fetchCameraUrl = async (token: string, camera: any) => {
-  const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
-  const params = new URLSearchParams();
-  params.append('accessToken', token);
-  params.append('deviceSerial', camera.deviceSerial);
-  params.append('channelNo', '1');
-  params.append('protocol', '2');
+// const fetchCameraUrl = async (token: string, camera: any) => {
+//   const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
+//   const params = new URLSearchParams();
+//   params.append('accessToken', token);
+//   params.append('deviceSerial', camera.deviceSerial);
+//   params.append('channelNo', '1');
+//   params.append('protocol', '2');
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params
-    });
-    const data = await response.json();
-    if (data.code === '200' && data.data) {
-      return data.data.url;
-    } else {
-      throw new Error(`获取 ${camera.name} 视频流地址失败: ${data.msg}`);
-    }
-  } catch(error) {
-    console.error(`获取视频流地址时出错:`, error);
-    throw error;
-  }
-};
+//   try {
+//     const response = await fetch(url, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+//       body: params
+//     });
+//     const data = await response.json();
+//     if (data.code === '200' && data.data) {
+//       return data.data.url;
+//     } else {
+//       throw new Error(`获取 ${camera.name} 视频流地址失败: ${data.msg}`);
+//     }
+//   } catch(error) {
+//     console.error(`获取视频流地址时出错:`, error);
+//     throw error;
+//   }
+// };
 
-const handlePlaybackErrorAndRetry = async (camera: any) => {
-    const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-    if (!popup) return;
+// const handlePlaybackErrorAndRetry = async (camera: any) => {
+//     const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
+//     if (!popup) return;
 
-    try {
-        popup.retryCount++;
-        console.log(`为 ${camera.name} 重新获取播放地址... (尝试次数: ${popup.retryCount})`);
-        popup.errorMsg = `尝试恢复... (${popup.retryCount}/${maxRetries})`;
+//     try {
+//         popup.retryCount++;
+//         console.log(`为 ${camera.name} 重新获取播放地址... (尝试次数: ${popup.retryCount})`);
+//         popup.errorMsg = `尝试恢复... (${popup.retryCount}/${maxRetries})`;
         
-        const token = await getValidAccessToken();
-        const newUrl = await fetchCameraUrl(token, camera);
+//         const token = await getValidAccessToken();
+//         const newUrl = await fetchCameraUrl(token, camera);
         
-        console.log(`成功为 ${camera.name} 获取新地址, 正在重新初始化播放器。`);
-        initVideoPlayer(camera, newUrl);
+//         console.log(`成功为 ${camera.name} 获取新地址, 正在重新初始化播放器。`);
+//         initVideoPlayer(camera, newUrl);
 
-    } catch (error) {
-        console.error(`为 ${camera.name} 恢复失败:`, error);
-        popup.errorMsg = "恢复失败";
-    }
-};
+//     } catch (error) {
+//         console.error(`为 ${camera.name} 恢复失败:`, error);
+//         popup.errorMsg = "恢复失败";
+//     }
+// };
 
-const initVideoPlayer = (camera: any, url: string) => {
+// const initVideoPlayer = (camera: any, url: string) => {
+//   const playerId = camera.english;
+//   if (players.has(playerId)) {
+//     players.get(playerId)?.dispose();
+//   }
+  
+//   const videoOptions: videojs.PlayerOptions = {
+//     autoplay: true,
+//     muted: true,
+//     controls: false,
+//     preload: 'auto',
+//     fluid: true,
+//     sources: [{ src: url, type: 'application/x-mpegURL' }]
+//   };
+
+//   const videoContainer = document.getElementById(`video-container-${playerId}`);
+//   if (videoContainer) {
+//     videoContainer.innerHTML = `<video class="video-js vjs-default-skin"></video>`;
+//     const videoElement = videoContainer.querySelector('video');
+    
+//     if (videoElement) {
+//         const player = videojs(videoElement, videoOptions, function() {
+//           const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
+          
+//           this.on('playing', () => {
+//               if (popup) {
+//                   popup.retryCount = 0;
+//                   popup.errorMsg = '';
+//               }
+//               console.log(`${camera.name} 播放成功。`);
+//           });
+
+//           this.on('error', (e) => {
+//               const error = this.error() || e;
+//               console.error(`${camera.name} 播放错误:`, error);
+              
+//               if (popup && error && error.code === 3 && popup.retryCount < maxRetries) {
+//                   popup.retryCount++;
+//                   console.log(`${camera.name} 发生解码错误。进行第 ${popup.retryCount} 次重试...`);
+//                   setTimeout(() => handlePlaybackErrorAndRetry(camera), retryDelay);
+//               } else if (popup) {
+//                   popup.errorMsg = "播放失败";
+//                   console.error(`${camera.name} 已达到最大重试次数或发生不可恢复的错误。`);
+//               }
+//           });
+
+//           this.play().catch(e => console.warn(`自动播放 ${camera.name} 被阻止:`, e));
+//         });
+//         players.set(playerId, player);
+//     }
+//   }
+// };
+
+const initVideoPlayer = (camera: any, token: string) => {
   const playerId = camera.english;
   if (players.has(playerId)) {
-    players.get(playerId)?.dispose();
+    players.get(playerId)?.destroy();
   }
-  
-  const videoOptions: videojs.PlayerOptions = {
+
+  const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
+  const videoContainer = document.getElementById(`video-container-${playerId}`);
+
+  if (!videoContainer) {
+    console.error(`Video container for ${camera.name} not found.`);
+    if (popup) {
+      popup.loading = false;
+      popup.errorMsg = '容器不存在';
+    }
+    return;
+  }
+
+  const ezopenURL = `ezopen://open.ys7.com/${camera.deviceSerial}/1.live`;
+
+  const player = new EZUIKit.EZUIKitPlayer({
+    id: `video-container-${playerId}`,
+    accessToken: token,
+    url: ezopenURL,
+    template: 'simple',
+    quality: 2,
     autoplay: true,
     muted: true,
-    controls: false,
-    preload: 'auto',
-    fluid: true,
-    sources: [{ src: url, type: 'application/x-mpegURL' }]
-  };
-
-  const videoContainer = document.getElementById(`video-container-${playerId}`);
-  if (videoContainer) {
-    videoContainer.innerHTML = `<video class="video-js vjs-default-skin"></video>`;
-    const videoElement = videoContainer.querySelector('video');
-    
-    if (videoElement) {
-        const player = videojs(videoElement, videoOptions, function() {
-          const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-          
-          this.on('playing', () => {
-              if (popup) {
-                  popup.retryCount = 0;
-                  popup.errorMsg = '';
-              }
-              console.log(`${camera.name} 播放成功。`);
-          });
-
-          this.on('error', (e) => {
-              const error = this.error() || e;
-              console.error(`${camera.name} 播放错误:`, error);
-              
-              if (popup && error && error.code === 3 && popup.retryCount < maxRetries) {
-                  popup.retryCount++;
-                  console.log(`${camera.name} 发生解码错误。进行第 ${popup.retryCount} 次重试...`);
-                  setTimeout(() => handlePlaybackErrorAndRetry(camera), retryDelay);
-              } else if (popup) {
-                  popup.errorMsg = "播放失败";
-                  console.error(`${camera.name} 已达到最大重试次数或发生不可恢复的错误。`);
-              }
-          });
-
-          this.play().catch(e => console.warn(`自动播放 ${camera.name} 被阻止:`, e));
-        });
-        players.set(playerId, player);
-    }
-  }
+    audio: false,
+    handleSuccess: () => {
+      console.log(`${camera.name} 播放成功。`);
+      if (popup) {
+        popup.loading = false;
+        popup.errorMsg = '';
+      }
+    },
+    handleError: (e: any) => {
+      console.error(`${camera.name} 播放错误:`, e);
+      if (popup) {
+        popup.loading = false;
+        popup.errorMsg = '播放失败';
+      }
+    },
+  });
+  players.set(playerId, player);
 };
 
 watch(activePopups, () => nextTick(updateLines), { deep: true });
@@ -396,7 +450,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  players.forEach(player => player.dispose());
+  // players.forEach(player => player.dispose());
+  players.forEach(player => player.destroy());
   players.clear();
 
   if (myChart) {
