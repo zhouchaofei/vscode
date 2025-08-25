@@ -134,7 +134,7 @@ const overlayTimer = ref(null);
 
 const maxRetries = 30;
 const retryCounter = ref(0);
-const retryDelay = 1000;
+const retryDelay = 5000;
 
 const currentCamera = computed(() => cameras.value[currentCameraId.value]);
 

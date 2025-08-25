@@ -20,7 +20,7 @@
           <div class="dataScreen-lf-container">
             <div class="lf-header">
               <div class="dataScreen-main-title">
-                <span>工程完成度</span>
+                <span>施工总体进度</span>
                 <img src="./images/dataScreen-title.png" alt="" />
               </div>
               <div class="location-filter">

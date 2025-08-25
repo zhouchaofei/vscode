@@ -54,7 +54,7 @@ const players = new Map<string, videojs.Player>();
 const lines = ref<any[]>([]);
 
 const maxRetries = 30;
-const retryDelay = 1000;
+const retryDelay = 5000;
 
 const appKey = 'd4baaab8baf24baa9541f1bbe64b2200';
 const appSecret = 'f42fb82edaed28c57b2045d882f0208e';
