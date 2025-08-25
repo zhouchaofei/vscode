@@ -442,6 +442,8 @@ const initPlayer = async () => {
 
   console.log(`Initializing EZUIKit player for URL: ${ezopenURL}`);
 
+  isViewSwitching.value = true;
+
   // 初始化 EZUIKit 播放器
   player.value = new EZUIKit.EZUIKitPlayer({
     id: playerContainerId,
