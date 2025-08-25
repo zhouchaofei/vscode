@@ -65,7 +65,7 @@
     <div class="loading-overlay" v-show="isViewSwitching">
       <div class="loading-content">
         <div class="loading-spinner"></div>
-        <div class="loading-text">视角切换中，请稍候...</div>
+        <div class="loading-text">加载视频中，请稍候...</div>
       </div>
     </div>
   </div>
@@ -199,8 +199,8 @@ onMounted(async () => {
 
     await initPlayer(initialCamera.url);
     
-    console.log("播放器初始化完成，加载默认视角数据。");
-    await switchView(currentViewId.value, true);
+    // console.log("播放器初始化完成，加载默认视角数据。");
+    // await switchView(currentViewId.value, true);
 
   } catch (error) {
     console.error("在 onMounted 期间发生错误:", error);
@@ -349,6 +349,9 @@ const initPlayer = (url) => {
             isVideoPlaying.value = true; 
             videoStatus.value = "视频流播放中"; 
             retryCounter.value = 0;
+            // 视频成功播放，加载当前视角的标注
+            console.log("视频开始播放，准备加载标注...");
+            switchView(currentViewId.value, true);
           });
           
           this.on('error', (e) => {
@@ -356,7 +359,11 @@ const initPlayer = (url) => {
             isVideoPlaying.value = false;
             console.error('Video.js Error:', error);
 
-            if (error && error.code === 3 && retryCounter.value < maxRetries) {
+            // 视频播放出错，清除所有标注
+            annotations.value = [];
+            drawAnnotations();
+
+            if (error && error.code === 3 || error.code === 4 && retryCounter.value < maxRetries) {
                 retryCounter.value++;
                 videoStatus.value = `视频流中断，正在进行第 ${retryCounter.value} 次自动重试...`;
                 console.log(`Playback error detected. Attempting retry ${retryCounter.value}/${maxRetries}...`);
@@ -564,10 +571,10 @@ const switchView = async (viewId, forceExecution = false) => {
     
     const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
     
-    const delayTime = 20000;
+    const delayTime = 100;
 
     annotationDelayTimer.value = setTimeout(() => {
-      console.log("延迟结束，正在显示新标注。");
+      // console.log("延迟结束，正在显示新标注。");
       annotations.value = newAnnotations;
       drawAnnotations();
       isViewSwitching.value = false;
