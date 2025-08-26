@@ -90,6 +90,12 @@ const cameras = ref({
    fx_lc: { id: 'fx_lc', name: '肥乡梁场', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
 });
 
+// --- 新增：为播放器添加重试逻辑 ---
+const playerMaxRetries = 5; // 最大重试次数
+const playerRetryCounter = ref(0);
+const playerRetryDelay = 5000; // 重试间隔 (5秒)
+// --- 结束新增 ---
+
 const typeColors = {
   '盖梁': '#FF8C00',
   '箱梁': '#FFA500',
@@ -450,12 +456,13 @@ const initPlayer = async () => {
     accessToken: accessToken.value,
     url: ezopenURL,
     template: 'simple', // 使用极简模板
-    quality: 2,
+    quality: '2',
     autoplay: true,
     muted: true,
     audio: false,
     handleSuccess: () => {
       console.log("EZUIKit 播放成功");
+      playerRetryCounter.value = 0; // 播放成功后，重置重试计数器
       isVideoPlaying.value = true;
       videoStatus.value = "视频流播放中";
       // 视频成功播放，加载当前视角的标注
@@ -464,10 +471,22 @@ const initPlayer = async () => {
     handleError: (e) => {
       console.error("EZUIKit 播放错误:", e);
       isVideoPlaying.value = false;
-      videoStatus.value = `播放错误: ${e.msg || '未知错误，请刷新'}`;
+      // videoStatus.value = `播放错误: ${e.msg || '未知错误，请刷新'}`;
       // 视频播放出错，清除所有标注
       annotations.value = [];
       drawAnnotations();
+
+      if (playerRetryCounter.value < playerMaxRetries) {
+        playerRetryCounter.value++;
+        videoStatus.value = `播放失败，正在进行第 ${playerRetryCounter.value}/${playerMaxRetries} 次重试...`;
+        console.log(`准备在 ${playerRetryDelay / 1000} 秒后重试...`);
+        setTimeout(() => {
+          initPlayer(); // 重新调用初始化函数进行重试
+        }, playerRetryDelay);
+      } else {
+        videoStatus.value = `自动重试失败，请手动刷新或切换摄像头。`;
+        console.error("已达到最大重试次数，停止重试。");
+      }
     }
   });
   isPlayerReady.value = true;
@@ -488,7 +507,16 @@ const initCanvas = () => {
 };
 
 const handleResize = () => {
-    initCanvas();
+   // 保留原有的canvas重绘逻辑
+   initCanvas();
+
+   // 新增：调用播放器的resize方法
+   if (player.value && videoContainer.value) {
+     const width = videoContainer.value.clientWidth;
+     const height = videoContainer.value.clientHeight;
+     player.value.resize(width, height);
+     console.log(`Player resized to: ${width}x${height}`); // (可选) 用于调试
+   }
 };
 
 const drawAnnotations = () => {
@@ -565,6 +593,8 @@ const switchCamera = async (cameraId) => {
     console.log(`播放器正在加载或摄像头未改变，取消切换。`);
     return;
   }
+
+  playerRetryCounter.value = 0; // 重置重试计数器
 
   try {
     isCameraDrawerOpen.value = false;

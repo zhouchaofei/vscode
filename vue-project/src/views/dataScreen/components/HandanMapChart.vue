@@ -55,6 +55,11 @@ const activePopups = ref<any[]>([]);
 const players = new Map<string, any>(); // Storing EZUIKit player instances
 const lines = ref<any[]>([]);
 
+// --- 新增：为播放器添加重试逻辑 ---
+const playerMaxRetries = 3; // 每个播放器的最大重试次数
+const playerRetryDelay = 5000; // 重试间隔 (5秒)
+// --- 结束新增 ---
+
 // const maxRetries = 30;
 // const retryDelay = 5000;
 
@@ -204,7 +209,8 @@ const openAllPopups = async () => {
         transform: getPopupTransform(camera.name),
       };
       // const popup = { camera, style, loading: true, retryCount: 0, errorMsg: '' };
-      const popup = { camera, style, loading: true, errorMsg: '' };
+      // const popup = { camera, style, loading: true, errorMsg: '' };
+      const popup = { camera, style, loading: true, errorMsg: '', retryCount: 0 };
       activePopups.value.push(popup);
 
       // (async () => {
@@ -409,7 +415,7 @@ const initVideoPlayer = (camera: any, token: string) => {
     accessToken: token,
     url: ezopenURL,
     template: 'simple',
-    quality: 2,
+    quality: 'qp',
     autoplay: true,
     muted: true,
     audio: false,
@@ -418,13 +424,22 @@ const initVideoPlayer = (camera: any, token: string) => {
       if (popup) {
         popup.loading = false;
         popup.errorMsg = '';
+        popup.retryCount = 0; // 播放成功，重置计数器
       }
     },
     handleError: (e: any) => {
       console.error(`${camera.name} 播放错误:`, e);
-      if (popup) {
+      if (popup && popup.retryCount < playerMaxRetries) {
+        popup.retryCount++;
+        popup.errorMsg = `尝试重连... (${popup.retryCount}/${playerMaxRetries})`;
+        console.log(`${camera.name} 准备在 ${playerRetryDelay / 1000} 秒后重试...`);
+        setTimeout(() => {
+          initVideoPlayer(camera, token);
+        }, playerRetryDelay);
+      } else if (popup) {
         popup.loading = false;
-        popup.errorMsg = '播放失败';
+        popup.errorMsg = '重连失败';
+        console.error(`${camera.name} 已达到最大重试次数，停止重试。`);
       }
     },
   });
