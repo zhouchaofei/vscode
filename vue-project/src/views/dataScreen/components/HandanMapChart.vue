@@ -40,9 +40,6 @@
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
 import * as echarts from "echarts";
 import handanMapJson from "../assets/yn_and_feixiang.json";
-// import videojs from 'video.js';
-// import 'video.js/dist/video-js.css';
-// import '@videojs/http-streaming';
 import EZUIKit from "ezuikit-js";
 
 const chartRef = ref<HTMLDivElement>();
@@ -51,17 +48,12 @@ let resizeObserver: ResizeObserver;
 const popupRefs = ref<HTMLDivElement[]>([]);
 
 const activePopups = ref<any[]>([]);
-// const players = new Map<string, videojs.Player>();
 const players = new Map<string, any>(); // Storing EZUIKit player instances
 const lines = ref<any[]>([]);
 
-// --- 新增：为播放器添加重试逻辑 ---
+// --- 为播放器添加重试逻辑 ---
 const playerMaxRetries = 3; // 每个播放器的最大重试次数
 const playerRetryDelay = 5000; // 重试间隔 (5秒)
-// --- 结束新增 ---
-
-// const maxRetries = 30;
-// const retryDelay = 5000;
 
 const appKey = 'd4baaab8baf24baa9541f1bbe64b2200';
 const appSecret = 'f42fb82edaed28c57b2045d882f0208e';
@@ -208,33 +200,9 @@ const openAllPopups = async () => {
         top: `${pointInPixel[1]}px`,
         transform: getPopupTransform(camera.name),
       };
-      // const popup = { camera, style, loading: true, retryCount: 0, errorMsg: '' };
-      // const popup = { camera, style, loading: true, errorMsg: '' };
       const popup = { camera, style, loading: true, errorMsg: '', retryCount: 0 };
       activePopups.value.push(popup);
 
-      // (async () => {
-      //   try {
-      //     const videoUrl = await fetchCameraUrl(token, camera);
-          
-      //     const targetPopup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-      //     if (targetPopup) {
-      //       targetPopup.loading = false;
-            
-      //       nextTick(() => {
-      //         initVideoPlayer(camera, videoUrl);
-      //       });
-      //     }
-      //   } catch (e: any) {
-      //     console.error(`无法加载 ${camera.name} 的视频:`, e);
-      //     const targetPopup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-      //     if (targetPopup) {
-      //       targetPopup.loading = false;
-      //       targetPopup.errorMsg = '加载失败';
-      //     }
-      //   }
-      // })();
-      // The video player will handle its own loading state via callbacks
       nextTick(() => {
         initVideoPlayer(camera, token);
       });
@@ -289,106 +257,6 @@ const getValidAccessToken = async () => {
     throw error;
   }
 };
-
-// const fetchCameraUrl = async (token: string, camera: any) => {
-//   const url = 'https://open.ys7.com/api/lapp/v2/live/address/get';
-//   const params = new URLSearchParams();
-//   params.append('accessToken', token);
-//   params.append('deviceSerial', camera.deviceSerial);
-//   params.append('channelNo', '1');
-//   params.append('protocol', '2');
-
-//   try {
-//     const response = await fetch(url, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-//       body: params
-//     });
-//     const data = await response.json();
-//     if (data.code === '200' && data.data) {
-//       return data.data.url;
-//     } else {
-//       throw new Error(`获取 ${camera.name} 视频流地址失败: ${data.msg}`);
-//     }
-//   } catch(error) {
-//     console.error(`获取视频流地址时出错:`, error);
-//     throw error;
-//   }
-// };
-
-// const handlePlaybackErrorAndRetry = async (camera: any) => {
-//     const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-//     if (!popup) return;
-
-//     try {
-//         popup.retryCount++;
-//         console.log(`为 ${camera.name} 重新获取播放地址... (尝试次数: ${popup.retryCount})`);
-//         popup.errorMsg = `尝试恢复... (${popup.retryCount}/${maxRetries})`;
-        
-//         const token = await getValidAccessToken();
-//         const newUrl = await fetchCameraUrl(token, camera);
-        
-//         console.log(`成功为 ${camera.name} 获取新地址, 正在重新初始化播放器。`);
-//         initVideoPlayer(camera, newUrl);
-
-//     } catch (error) {
-//         console.error(`为 ${camera.name} 恢复失败:`, error);
-//         popup.errorMsg = "恢复失败";
-//     }
-// };
-
-// const initVideoPlayer = (camera: any, url: string) => {
-//   const playerId = camera.english;
-//   if (players.has(playerId)) {
-//     players.get(playerId)?.dispose();
-//   }
-  
-//   const videoOptions: videojs.PlayerOptions = {
-//     autoplay: true,
-//     muted: true,
-//     controls: false,
-//     preload: 'auto',
-//     fluid: true,
-//     sources: [{ src: url, type: 'application/x-mpegURL' }]
-//   };
-
-//   const videoContainer = document.getElementById(`video-container-${playerId}`);
-//   if (videoContainer) {
-//     videoContainer.innerHTML = `<video class="video-js vjs-default-skin"></video>`;
-//     const videoElement = videoContainer.querySelector('video');
-    
-//     if (videoElement) {
-//         const player = videojs(videoElement, videoOptions, function() {
-//           const popup = activePopups.value.find(p => p.camera.deviceSerial === camera.deviceSerial);
-          
-//           this.on('playing', () => {
-//               if (popup) {
-//                   popup.retryCount = 0;
-//                   popup.errorMsg = '';
-//               }
-//               console.log(`${camera.name} 播放成功。`);
-//           });
-
-//           this.on('error', (e) => {
-//               const error = this.error() || e;
-//               console.error(`${camera.name} 播放错误:`, error);
-              
-//               if (popup && error && error.code === 3 && popup.retryCount < maxRetries) {
-//                   popup.retryCount++;
-//                   console.log(`${camera.name} 发生解码错误。进行第 ${popup.retryCount} 次重试...`);
-//                   setTimeout(() => handlePlaybackErrorAndRetry(camera), retryDelay);
-//               } else if (popup) {
-//                   popup.errorMsg = "播放失败";
-//                   console.error(`${camera.name} 已达到最大重试次数或发生不可恢复的错误。`);
-//               }
-//           });
-
-//           this.play().catch(e => console.warn(`自动播放 ${camera.name} 被阻止:`, e));
-//         });
-//         players.set(playerId, player);
-//     }
-//   }
-// };
 
 const initVideoPlayer = (camera: any, token: string) => {
   const playerId = camera.english;
@@ -465,7 +333,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  // players.forEach(player => player.dispose());
   players.forEach(player => player.destroy());
   players.clear();
 

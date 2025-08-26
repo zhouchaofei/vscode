@@ -118,7 +118,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(item, index) in safetyWarnings" :key="index">
+                    <tr v-for="(item, index) in safetyWarnings" :key="index" @click="showSafetyWarningImage(item)" class="clickable-row">
                       <td>{{ item.alert_event }}</td>
                       <td>{{ item.location }}</td>
                       <td>{{ item.time }}</td>
@@ -178,6 +178,19 @@ const dataScreenRef = ref<HTMLElement | null>(null);
 const openVideoPlayback = () => {
   const url = `/videoplayback`;
   window.open(url, '_blank');
+};
+
+// --- 点击安全预警事件行，打开对应图片 ---
+const showSafetyWarningImage = (item: any) => {
+  // 从时间字符串 "2025-08-22 19:30:12" 中移除所有非数字字符
+  // 结果为 "20250822193012"
+  const imageName = item.time.replace(/\D/g, '');
+
+  // public 目录下的资源可以直接通过根路径 "/" 访问
+  const imageUrl = `/images/${imageName}.png`;
+
+  // 在新标签页中打开图片
+  window.open(imageUrl, '_blank');
 };
 
 // 存储图表数据
@@ -768,6 +781,10 @@ onBeforeUnmount(() => {
   
   tbody tr:hover {
     background-color: rgba(5, 232, 254, 0.3);
+  }
+
+  tbody tr.clickable-row {
+    cursor: pointer;
   }
 }
 
