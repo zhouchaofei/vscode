@@ -118,7 +118,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(item, index) in safetyWarnings" :key="index" @click="showSafetyWarningImage(item)" class="clickable-row">
+                    <tr v-for="(item, index) in safetyWarnings" :key="index" @click="showSafetyWarningImage(item.pic)" class="clickable-row">
                       <td>{{ item.alert_event }}</td>
                       <td>{{ item.location }}</td>
                       <td>{{ item.time }}</td>
@@ -181,13 +181,9 @@ const openVideoPlayback = () => {
 };
 
 // --- 点击安全预警事件行，打开对应图片 ---
-const showSafetyWarningImage = (item: any) => {
-  // 从时间字符串 "2025-08-22 19:30:12" 中移除所有非数字字符
-  // 结果为 "20250822193012"
-  const imageName = item.time.replace(/\D/g, '');
-
+const showSafetyWarningImage = (pic: string) => {
   // public 目录下的资源可以直接通过根路径 "/" 访问
-  const imageUrl = `/images/${imageName}.png`;
+  const imageUrl = `/images/${pic}.jpg`;
 
   // 在新标签页中打开图片
   window.open(imageUrl, '_blank');
@@ -551,54 +547,116 @@ const progressFilterMapping = {
 const progressFilters = ref({
   location: '永年',
   structure: '匝道',
-  model: 'A'
+  model: '全部'
 });
+
+// const fetchProgressData = async () => {
+//   const { location, structure, model } = progressFilters.value;
+
+//   if (location && structure && model) {
+//     try {
+//       const locationMap = progressFilterMapping[location as keyof typeof progressFilterMapping];
+//       const structureMap = locationMap[structure as keyof typeof locationMap];
+//       const params = structureMap[model as keyof typeof structureMap];
+//       if (!params) return;
+
+//       const encodedType = encodeURIComponent(params.t).replace(/%2B/g, '%2B').replace(/%23/g, '%23');
+//       const url = `http://59.110.65.210:8081/query?location=${params.l}&structure=${params.s}&type=${encodedType}`;
+      
+//       const response = await fetch(url);
+//       if (!response.ok) {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+//       const textData = await response.text();
+//       let data;
+//       try {
+//         data = JSON.parse(textData);
+//       } catch (e) {
+//         data = null;
+//       }
+
+//       if (Array.isArray(data)) {
+//         progressData.value = data.map((item: any) => ({
+//           ...item,
+//           location: location,
+//           structure: structure + '-' + model,
+//         }));
+//       } else {
+//         progressData.value = [{
+//           location: location,
+//           structure: structure + '-' + model,
+//           state: '未开工',
+//           start_date: '-',
+//           end_date: '-'
+//         }];
+//       }
+
+//     } catch (error) {
+//       console.error("获取施工进度数据失败:", error);
+//       progressData.value = [];
+//     }
+//   }
+// };
 
 const fetchProgressData = async () => {
   const { location, structure, model } = progressFilters.value;
 
-  if (location && structure && model) {
-    try {
-      const locationMap = progressFilterMapping[location as keyof typeof progressFilterMapping];
-      const structureMap = locationMap[structure as keyof typeof locationMap];
-      const params = structureMap[model as keyof typeof structureMap];
-      if (!params) return;
+  if (!location || !structure || !model) return;
 
-      const encodedType = encodeURIComponent(params.t).replace(/%2B/g, '%2B').replace(/%23/g, '%23');
-      const url = `http://59.110.65.210:8081/query?location=${params.l}&structure=${params.s}&type=${encodedType}`;
-      
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const textData = await response.text();
-      let data;
-      try {
-        data = JSON.parse(textData);
-      } catch (e) {
-        data = null;
-      }
+  try {
+     const locationMap = progressFilterMapping[location as keyof typeof progressFilterMapping];
+     const structureMap = locationMap[structure as keyof typeof locationMap];
+     if (!structureMap) return;
 
-      if (Array.isArray(data)) {
-        progressData.value = data.map((item: any) => ({
-          ...item,
-          location: location,
-          structure: structure + '-' + model,
-        }));
-      } else {
+     let params;
+     let isQueryAll = model === '全部';
+
+     if (isQueryAll) {
+       // 当查询"全部"时, type为'all', location和structure代码从第一个可用模型中获取
+       const firstModelKey = Object.keys(structureMap)[0];
+       const firstModelParams = structureMap[firstModelKey as keyof typeof structureMap];
+       params = { l: firstModelParams.l, s: firstModelParams.s, t: 'all' };
+     } else {
+       // 按原逻辑获取特定模型的参数
+       params = structureMap[model as keyof typeof structureMap];
+     }
+
+     if (!params) return;
+
+     const encodedType = encodeURIComponent(params.t).replace(/%2B/g, '%2B').replace(/%23/g, '%23');
+     const url = `http://59.110.65.210:8081/query?location=${params.l}&structure=${params.s}&type=${encodedType}`;
+
+     const response = await fetch(url);
+     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+     const data = await response.json();
+
+     if (isQueryAll) {
+       // 处理"全部"查询返回的对象格式
+       progressData.value = Object.entries(data).flatMap(([structureName, states]) =>
+         (states as any[]).map(state => ({
+           ...state,
+           location: location,
+           structure: structureName,
+         }))
+       );
+     } else {
+       // 处理特定模型查询返回的数组格式 (原逻辑)
+       if (Array.isArray(data)) {
+         progressData.value = data.map((item: any) => ({
+           ...item,
+           location: location,
+           structure: `${structure}-${model}`,
+         }));
+       } else {
         progressData.value = [{
-          location: location,
-          structure: structure + '-' + model,
-          state: '未开工',
-          start_date: '-',
-          end_date: '-'
+          location: location, structure: `${structure}-${model}`, state: '未开工', start_date: '-', end_date: '-'
         }];
       }
-
-    } catch (error) {
-      console.error("获取施工进度数据失败:", error);
-      progressData.value = [];
     }
+  } catch (error) {
+    console.error("获取施工进度数据失败:", error);
+    progressData.value = [];
   }
 };
 
@@ -607,11 +665,18 @@ const progressStructures = computed(() => {
   const loc = progressFilters.value.location as keyof typeof progressFilterMapping;
   return Object.keys(progressFilterMapping[loc]);
 });
+// const progressModels = computed(() => {
+//   const loc = progressFilters.value.location as keyof typeof progressFilterMapping;
+//   const struc = progressFilters.value.structure as keyof typeof progressFilterMapping[typeof loc];
+//   const structureMap = progressFilterMapping[loc]?.[struc];
+//   return structureMap ? Object.keys(structureMap) : [];
+// });
 const progressModels = computed(() => {
   const loc = progressFilters.value.location as keyof typeof progressFilterMapping;
   const struc = progressFilters.value.structure as keyof typeof progressFilterMapping[typeof loc];
   const structureMap = progressFilterMapping[loc]?.[struc];
-  return structureMap ? Object.keys(structureMap) : [];
+  // 在模型列表的最前面加入"全部"选项
+  return structureMap ? ['全部', ...Object.keys(structureMap)] : ['全部'];
 });
 
 watch(() => progressFilters.value.location, (newLocation) => {
@@ -624,7 +689,9 @@ watch(() => progressFilters.value.structure, (newStructure, oldStructure) => {
         const loc = progressFilters.value.location as keyof typeof progressFilterMapping;
         const struc = newStructure as keyof typeof progressFilterMapping[typeof loc];
         const newModels = Object.keys(progressFilterMapping[loc]?.[struc] || {});
-        progressFilters.value.model = newModels[0] || '';
+        // progressFilters.value.model = newModels[0] || '';
+        // 当"施工构件"改变时，默认选中"全部"
+        progressFilters.value.model = '全部';
     }
 }, { immediate: true });
 

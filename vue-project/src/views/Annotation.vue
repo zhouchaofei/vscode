@@ -277,7 +277,7 @@ const initPlayer = async () => {
     accessToken: accessToken.value,
     url: ezopenURL,
     template: 'simple', // 使用极简模板
-    quality: '2',
+    quality: '0',
     autoplay: true,
     muted: true,
     audio: false,

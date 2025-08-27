@@ -283,7 +283,7 @@ const initVideoPlayer = (camera: any, token: string) => {
     accessToken: token,
     url: ezopenURL,
     template: 'simple',
-    quality: 'qp',
+    quality: '0',
     autoplay: true,
     muted: true,
     audio: false,
