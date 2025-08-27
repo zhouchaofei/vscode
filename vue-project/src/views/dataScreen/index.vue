@@ -26,16 +26,28 @@
               <div class="location-filter">
                 <select v-model="selectedLocation">
                   <option value="yn">永年</option>
-                  <option value="fx_n">肥乡北</option>
-                  <option value="fx_s">肥乡南</option>
+                  <!-- <option value="fx_n">肥乡北</option>
+                  <option value="fx_s">肥乡南</option> -->
+                  <option value="fx">肥乡</option>
                 </select>
               </div>
             </div>
             <div class="dataScreen-main-chart-container">
               <div v-if="loading" class="loading-text">加载中...</div>
-              <div v-else class="pie-chart-item" v-for="item in constructionData" :key="item.cons">
+              <!-- <div v-else class="pie-chart-item" v-for="item in constructionData" :key="item.cons">
+                <ProjectCompletionChart :chartData="item" />
+              </div> -->
+              <!-- <div v-else class="pie-chart-item" v-for="item in paginatedData" :key="item.cons">
+                <ProjectCompletionChart :chartData="item" />
+              </div> -->
+              <div v-else class="pie-chart-item" v-for="(item, index) in paginatedData" :key="item.cons + '_' + currentPage">
                 <ProjectCompletionChart :chartData="item" />
               </div>
+            </div>
+            <div class="pagination-controls" v-if="totalPages > 1">
+              <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+              <span>第 {{ currentPage }} / {{ totalPages }} 页</span>
+              <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
             </div>
           </div>
         </div>
@@ -195,6 +207,32 @@ const constructionData = ref<any[]>([]);
 const selectedLocation = ref('yn');
 const loading = ref(false);
 
+// --- 新增分页状态 ---
+const currentPage = ref(1);
+const itemsPerPage = 8;
+
+const totalPages = computed(() => {
+  return Math.ceil(constructionData.value.length / itemsPerPage);
+});
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return constructionData.value.slice(start, end);
+});
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
 const fetchData = async () => {
   loading.value = true;
   constructionData.value = [];
@@ -205,6 +243,7 @@ const fetchData = async () => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
+
     constructionData.value = data;
   } catch (error) {
     console.error("获取数据失败:", error);
@@ -214,6 +253,7 @@ const fetchData = async () => {
 };
 
 watch(selectedLocation, () => {
+  currentPage.value = 1; // 切换地点时，重置到第一页
   fetchData();
 });
 
@@ -550,54 +590,6 @@ const progressFilters = ref({
   model: '全部'
 });
 
-// const fetchProgressData = async () => {
-//   const { location, structure, model } = progressFilters.value;
-
-//   if (location && structure && model) {
-//     try {
-//       const locationMap = progressFilterMapping[location as keyof typeof progressFilterMapping];
-//       const structureMap = locationMap[structure as keyof typeof locationMap];
-//       const params = structureMap[model as keyof typeof structureMap];
-//       if (!params) return;
-
-//       const encodedType = encodeURIComponent(params.t).replace(/%2B/g, '%2B').replace(/%23/g, '%23');
-//       const url = `http://59.110.65.210:8081/query?location=${params.l}&structure=${params.s}&type=${encodedType}`;
-      
-//       const response = await fetch(url);
-//       if (!response.ok) {
-//         throw new Error(`HTTP error! status: ${response.status}`);
-//       }
-//       const textData = await response.text();
-//       let data;
-//       try {
-//         data = JSON.parse(textData);
-//       } catch (e) {
-//         data = null;
-//       }
-
-//       if (Array.isArray(data)) {
-//         progressData.value = data.map((item: any) => ({
-//           ...item,
-//           location: location,
-//           structure: structure + '-' + model,
-//         }));
-//       } else {
-//         progressData.value = [{
-//           location: location,
-//           structure: structure + '-' + model,
-//           state: '未开工',
-//           start_date: '-',
-//           end_date: '-'
-//         }];
-//       }
-
-//     } catch (error) {
-//       console.error("获取施工进度数据失败:", error);
-//       progressData.value = [];
-//     }
-//   }
-// };
-
 const fetchProgressData = async () => {
   const { location, structure, model } = progressFilters.value;
 
@@ -919,6 +911,37 @@ onBeforeUnmount(() => {
   }
   to {
     transform: rotate(360deg); /* 旋转到 360 度 */
+  }
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+  color: #fff;
+  gap: 15px;
+
+  button {
+    background-color: rgba(5, 232, 254, 0.3);
+    border: 1px solid #05e8fe;
+    color: #fff;
+    padding: 5px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: rgba(5, 232, 254, 0.5);
+      box-shadow: 0 0 10px rgba(5, 232, 254, 0.5);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: rgba(128, 128, 128, 0.2);
+      border-color: rgba(128, 128, 128, 0.5);
+    }
   }
 }
 </style>

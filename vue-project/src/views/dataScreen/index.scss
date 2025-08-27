@@ -117,7 +117,8 @@
             flex: 1;
             display: flex;
             flex-wrap: wrap;
-            align-content: stretch;
+            // align-content: stretch;
+            align-content: flex-start;
             .pie-chart-item {
               flex-basis: 50%;
               height: 25%;

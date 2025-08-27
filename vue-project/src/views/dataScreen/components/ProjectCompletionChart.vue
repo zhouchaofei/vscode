@@ -5,7 +5,7 @@
     </div>
     <div class="info-panel" v-if="props.chartData">
       <p>未完成数量: {{ props.chartData.uncomplete_count }}</p>
-      <p>{{ consNameMap[props.chartData.cons] || props.chartData.cons }}已开展时长: {{ props.chartData.duration_percent }}</p>
+      <p>{{ formattedConsNameForInfo }}已开展时长: {{ props.chartData.duration_percent }}</p>
       <p>计划完工日期: {{ props.chartData.end_date_plan }}</p>
     </div>
   </div>
@@ -37,6 +37,37 @@ const props = defineProps<{
     end_date_plan: string;
   };
 }>();
+
+const formattedConsName = computed(() => {
+  const cons = props.chartData.cons;
+  if (!cons) return "";
+
+  const firstUnderscoreIndex = cons.indexOf("_");
+
+  // 检查是否存在 "数字_" 前缀
+  if (firstUnderscoreIndex > 0) {
+    const bridgeNumber = cons.substring(0, firstUnderscoreIndex);
+    const consCode = cons.substring(firstUnderscoreIndex + 1);
+
+    const bridgeNameMap: { [key: string]: string } = {
+      "1": "一号桥",
+      "2": "二号桥"
+    };
+
+    const targetConsCodes = ["Z", "GL", "YZL_5", "YZL_6"];
+
+    if (bridgeNameMap[bridgeNumber] && consNameMap[consCode] && targetConsCodes.includes(consCode)) {
+      return `${bridgeNameMap[bridgeNumber]}\n${consNameMap[consCode]}`;
+    }
+  }
+
+  // 如果不匹配 "数字_" 前缀规则，则使用原始的映射
+  return consNameMap[cons] || cons;
+});
+
+const formattedConsNameForInfo = computed(() => {
+    return formattedConsName.value.replace('\n', '');
+});
 
 const colors = ["#F6C95C", "#184EA1"];
 
@@ -108,10 +139,11 @@ const option = computed<ECOption>(() => {
             label: {
               show: true,
               position: "center",
-              formatter: consNameMap[props.chartData.cons] || props.chartData.cons,
+              formatter: formattedConsName.value,
               color: "#ffffff",
               fontSize: 12,
-              fontWeight: "bold"
+              fontWeight: "bold",
+              lineHeight: 16,
             }
           }
         ]
@@ -140,9 +172,9 @@ const option = computed<ECOption>(() => {
   width: 100%;
   text-align: center;
   color: #fff;
-  font-size: 13px;
+  font-size: 11px;
   line-height: 1.4;
-  padding: 0 5px 5px 5px;
+  padding: 0 5px 15px 5px;
   box-sizing: border-box;
 
   p {

@@ -60,8 +60,8 @@ const appSecret = 'f42fb82edaed28c57b2045d882f0208e';
 
 const cameraData = ref([
     { id: 1, name: '永年', english: 'yn', deviceSerial: '33011063992677425735:33010516991327760034', view: 'view1', value: [114.5569, 36.7897] },
-    { id: 2, name: '肥乡北', english: 'fx_n', deviceSerial: '33011063992677425735:33010084991327588111', view: 'view1', value: [114.7002, 36.5716] },
-    { id: 3, name: '肥乡南', english: 'fx_s', deviceSerial: '33011063992677425735:33011012991327147072', view: 'view1', value: [114.7002, 36.5716] },
+    { id: 2, name: '肥乡一号桥', english: 'fx_n', deviceSerial: '33011063992677425735:33010084991327588111', view: 'view1', value: [114.7002, 36.5716] },
+    { id: 3, name: '肥乡二号桥', english: 'fx_s', deviceSerial: '33011063992677425735:33011012991327147072', view: 'view1', value: [114.7002, 36.5716] },
     { id: 4, name: '肥乡梁场', english: 'fx_lc', deviceSerial: '33011063992677425735:33011033991327056374', view: 'view1', value: [114.7002, 36.5716] }
 ]);
 
@@ -118,9 +118,9 @@ const option: any = {
 const getPopupTransform = (cameraName: string) => {
   switch (cameraName) {
     case '永年': return 'translate(20%, -110%)';
-    case '肥乡北': return 'translate(70%, -163%)';
+    case '肥乡一号桥': return 'translate(70%, -163%)';
     case '肥乡梁场': return 'translate(70%, -26%)';
-    case '肥乡南': return 'translate(-136%, -70%)';
+    case '肥乡二号桥': return 'translate(-136%, -70%)';
     default: return 'translate(-50%, -120%)';
   }
 };
