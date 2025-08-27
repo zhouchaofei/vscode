@@ -183,7 +183,7 @@ const openVideoPlayback = () => {
 // --- 点击安全预警事件行，打开对应图片 ---
 const showSafetyWarningImage = (pic: string) => {
   // public 目录下的资源可以直接通过根路径 "/" 访问
-  const imageUrl = `/images/${pic}.jpg`;
+  const imageUrl = `/images/${pic}`;
 
   // 在新标签页中打开图片
   window.open(imageUrl, '_blank');
