@@ -21,7 +21,7 @@ const consNameMap: { [key: string]: string } = {
   GL: "盖梁",
   YZL_5: "预制梁完成",
   YZL_6: "预制梁吊装",
-  ZD_1: "匝道开挖台阶",
+  ZD_1: "路基填筑",
   ZD_4: "匝道完成",
   TD: "通道完成",
   HD: "涵洞完成"

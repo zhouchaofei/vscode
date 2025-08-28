@@ -404,7 +404,7 @@ const progressFilterMapping = {
       'GK0+432': { l: 'yn', s: 'HD', t: 'GK0+432' }
     }
   },
-  '肥乡北': {
+  '肥乡一号桥': {
     '桥台': {
       '0#Z-1': { l: 'fx_n', s: 'QT', t: '0#Z-1' },
       '0#Z-2': { l: 'fx_n', s: 'QT', t: '0#Z-2' },
@@ -489,7 +489,7 @@ const progressFilterMapping = {
       'AK0+000-AK0+080': { l: 'fx_n', s: 'LJQ', t: 'AK0+000-AK0+080' }
     }
   },
-  '肥乡南': {
+  '肥乡二号桥': {
     '桥台': {
       '0#Z-1': { l: 'fx_s', s: 'QT', t: '0#Z-1' },
       '0#Z-2': { l: 'fx_s', s: 'QT', t: '0#Z-2' },
