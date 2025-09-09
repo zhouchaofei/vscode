@@ -3,7 +3,7 @@
     <div class="dataScreen-content" ref="dataScreenRef">
       <div class="dataScreen-header">
         <div class="header-lf" v-if="allDataLoaded">
-          <span class="header-screening" @click="router.push('/')">首页</span>
+          <span class="header-screening" @click="downloadSchedule">表格下载</span>
         </div>
         <div class="header-ct" v-if="allDataLoaded">
           <div class="header-ct-title">
@@ -186,6 +186,27 @@ const allDataLoaded = ref(false);
 
 const router = useRouter();
 const dataScreenRef = ref<HTMLElement | null>(null);
+
+// 表格下载功能
+const downloadSchedule = async () => {
+  // try {
+  //   // 创建一个隐藏的 a 标签来触发下载
+  //   const link = document.createElement('a');
+  //   link.href = 'http://59.110.65.210:8081/schedule';
+  //   link.download = ''; // 让浏览器决定文件名
+  //   link.style.display = 'none';
+    
+  //   // 将链接添加到 DOM，点击它，然后移除
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // } catch (error) {
+  //   console.error('下载失败:', error);
+  //   // 如果上面的方法失败，直接打开链接
+  //   window.open('http://59.110.65.210:8081/schedule', '_blank');
+  // }
+  window.open('http://59.110.65.210:8081/schedule', '_blank');
+};
 
 const openVideoPlayback = () => {
   const url = `/videoplayback`;
