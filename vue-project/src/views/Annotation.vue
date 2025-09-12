@@ -84,6 +84,9 @@ const cameras = ref({
    fx_lc: { id: 'fx_lc', name: '肥乡梁场', viewCount: 1, deviceSerial: '33011063992677425735:33011033991327056374' }
 });
 
+// label.json数据缓存
+let labelData = null;
+
 // --- 为播放器添加重试逻辑 ---
 const playerMaxRetries = 5; // 最大重试次数
 const playerRetryCounter = ref(0);
@@ -177,6 +180,66 @@ const formattedPopupDetails = computed(() => {
 
   return processedLines.filter(line => line).join('<br>');
 });
+
+// 加载label.json文件
+const loadLabelData = async () => {
+  if (labelData !== null) {
+    return labelData; // 如果已经加载过，直接返回缓存
+  }
+
+  try {
+    console.log("正在加载label.json文件...");
+    const response = await fetch('/label.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    labelData = await response.json();
+    console.log("label.json文件加载成功:", labelData);
+    return labelData;
+  } catch (error) {
+    console.error("加载label.json文件失败:", error);
+    labelData = {}; // 设置为空对象避免重复加载
+    return {};
+  }
+};
+
+// 计算多边形中心点的函数
+const calculatePolygonCenter = (points) => {
+  if (!points || points.length === 0) return { x: 0, y: 0 };
+  
+  let centerX = 0;
+  let centerY = 0;
+  
+  points.forEach(point => {
+    centerX += point[0];
+    centerY += point[1];
+  });
+  
+  return {
+    x: centerX / points.length,
+    y: centerY / points.length
+  };
+};
+
+// 将label数据转换为API格式
+const convertLabelToApiFormat = (labelItems, imageWidth, imageHeight, idPrefix = -1000) => {
+  return labelItems.map((item, index) => {
+    const center = calculatePolygonCenter(item.points);
+    return {
+      id: `${idPrefix + index}`,
+      type: '',
+      title: item.label,
+      details: '',
+      coordinates: [{
+        x: center.x,
+        y: center.y
+      }],
+      imageHeight: imageHeight,
+      imageWidth: imageWidth,
+      isFlag: true // 标记这是红旗数据
+    };
+  });
+};
 
 onMounted(async () => {
   await nextTick();
@@ -340,6 +403,38 @@ const handleResize = () => {
    }
 };
 
+// 绘制红旗图标
+const drawFlag = (ctx, x, y, size = 20) => {
+  // 保存上下文状态
+  ctx.save();
+  
+  // 旗杆
+  ctx.strokeStyle = '#8B4513'; // 棕色
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x, y - size * 1.5);
+  ctx.stroke();
+  
+  // 旗子
+  ctx.fillStyle = '#FF0000'; // 红色
+  ctx.beginPath();
+  ctx.moveTo(x, y - size * 1.5);
+  ctx.lineTo(x + size, y - size * 1.2);
+  ctx.lineTo(x + size * 0.7, y - size);
+  ctx.lineTo(x, y - size * 1.2);
+  ctx.closePath();
+  ctx.fill();
+  
+  // 旗子边框
+  ctx.strokeStyle = '#8B0000'; // 深红色
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  
+  // 恢复上下文状态
+  ctx.restore();
+};
+
 const drawAnnotations = () => {
   if (!annotationCtx) return;
   const currentCanvasWidth = annotationCtx.canvas.width;
@@ -349,7 +444,8 @@ const drawAnnotations = () => {
 
   let taizuoCounter = 1;
 
-  annotations.value.forEach(anno => {
+  // 先绘制普通标注
+  annotations.value.filter(anno => !anno.isFlag).forEach(anno => {
     const color = typeColors[anno.type] || '#FFFFFF'; 
     const coordinates = anno.coordinates;
 
@@ -390,6 +486,41 @@ const drawAnnotations = () => {
     const textY = startY + 10;
     annotationCtx.fillText(labelText, textX, textY);
   });
+
+  // 然后绘制红旗（确保在最上层）
+  annotations.value.filter(anno => anno.isFlag).forEach(anno => {
+    const coordinates = anno.coordinates;
+    if (!coordinates || coordinates.length === 0 || !anno.imageWidth || !anno.imageHeight) return;
+
+    const scaleX = currentCanvasWidth / anno.imageWidth;
+    const scaleY = currentCanvasHeight / anno.imageHeight;
+
+    const flagX = coordinates[0].x * scaleX;
+    const flagY = coordinates[0].y * scaleY;
+    const flagSize = 25; // 旗子大小
+    
+    // 1. 绘制旗子图标
+    drawFlag(annotationCtx, flagX, flagY, flagSize);
+
+    // --- 新增代码开始 ---
+    // 2. 在旗子旁边绘制标题文字
+    if (anno.title) {
+      const labelText = anno.title;
+      const textPadding = 5; // 文字与旗子之间的间距
+      const textX = flagX + flagSize + textPadding; // X坐标：旗杆X + 旗子宽度 + 间距
+      const textY = flagY - flagSize; // Y坐标：与旗子顶部对齐
+
+      // 设置文字样式
+      annotationCtx.fillStyle = '#FFFFFF'; // 白色文字
+      annotationCtx.font = 'bold 16px Arial';
+      annotationCtx.textBaseline = 'middle'; // 垂直居中对齐
+      annotationCtx.textAlign = 'left'; // 水平向左对齐
+
+      // 绘制文字
+      annotationCtx.fillText(labelText, textX, textY);
+    }
+    // --- 新增代码结束 ---
+  });
 };
 
 
@@ -400,9 +531,30 @@ const fetchAnnotations = async (location, view) => {
     const response = await fetch(url, { method: 'GET' });
     if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
     
-    const data = await response.json();
-    console.log("标注数据加载成功:", data);
-    return data;
+    const apiData = await response.json();
+    console.log("API标注数据加载成功:", apiData);
+    
+    // 加载label.json数据
+    const labelData = await loadLabelData();
+
+    // 获取对应的label数据
+    const labelKey = `${location}_${view}`;
+    const labelItems = labelData[labelKey] || [];
+    console.log(`找到${labelKey}对应的label数据:`, labelItems);
+
+    // 从label数据中获取图像尺寸
+    const imageWidth = labelData.imageWidth || 3840;
+    const imageHeight = labelData.imageHeight || 2160;
+
+    // 转换label数据为API格式
+    const convertedLabelData = convertLabelToApiFormat(labelItems, imageWidth, imageHeight);
+    console.log("转换后的label数据:", convertedLabelData);
+
+    // 合并API数据和label数据
+    const mergedData = [...apiData, ...convertedLabelData];
+    console.log("合并后的数据:", mergedData);
+    
+    return mergedData;
   } catch (error) {
     console.error("获取标注数据失败:", error);
     return [];
@@ -533,6 +685,14 @@ function isPointInPolygon(point, polygon) {
     return isInside;
 }
 
+// 检查点是否在红旗附近
+const isPointNearFlag = (mousePos, flagPos, tolerance = 15) => {
+  const distance = Math.sqrt(
+    Math.pow(mousePos.x - flagPos.x, 2) + Math.pow(mousePos.y - flagPos.y, 2)
+  );
+  return distance <= tolerance;
+};
+
 const handleCanvasMouseMove = (e) => {
   if (!annotationCanvas.value) return;
   const rect = annotationCanvas.value.getBoundingClientRect();
@@ -541,8 +701,28 @@ const handleCanvasMouseMove = (e) => {
   const currentCanvasWidth = annotationCanvas.value.width;
   const currentCanvasHeight = annotationCanvas.value.height;
 
+  // 检查是否在红旗上（但不显示弹窗）
+  const flagAnnotation = annotations.value.slice().reverse().find(anno => {
+    if (!anno.isFlag || !anno.imageWidth || !anno.imageHeight) return false;
+    const scaleX = currentCanvasWidth / anno.imageWidth;
+    const scaleY = currentCanvasHeight / anno.imageHeight;
+    
+    const flagX = anno.coordinates[0].x * scaleX;
+    const flagY = anno.coordinates[0].y * scaleY;
+    
+    return isPointNearFlag(mousePos, { x: flagX, y: flagY });
+  });
+
+  if (flagAnnotation) {
+    // 在红旗上，显示指针但不显示弹窗
+    canvasCursor.value = 'pointer';
+    hoveredAnnotation.value = null;
+    return;
+  }
+
+  // 检查普通标注
   const currentHover = annotations.value.slice().reverse().find(anno => {
-      if (!anno.imageWidth || !anno.imageHeight) return false;
+      if (anno.isFlag || !anno.imageWidth || !anno.imageHeight) return false;
       const scaleX = currentCanvasWidth / anno.imageWidth;
       const scaleY = currentCanvasHeight / anno.imageHeight;
 
