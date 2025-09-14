@@ -642,7 +642,7 @@ const switchView = async (viewId, forceExecution = false, isRetry = false) => {
      switchViewRetryCounter.value = 0; // 成功后重置计数器
 
      const newAnnotations = await fetchAnnotations(currentCameraId.value, viewId);
-     const delayTime = 5000;
+     const delayTime = 6000;
 
      annotationDelayTimer.value = setTimeout(() => {
        console.log("延迟结束，正在显示新标注。");
